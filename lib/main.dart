@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
+import 'package:saraba_mobile/ui/akun/akun_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
+import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Saraba Mobile',
+      home: BlocProvider(
+        create: (_) => NavigationBloc(),
+        child: MainPage(),
+      ),
+    );
+  }
+}
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
@@ -10,65 +33,15 @@ class MainPage extends StatelessWidget {
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
       case NavigationTab.dashboard:
-        return Center(child: Text('Dashboard Page'));
+        return DashboardPage();
       case NavigationTab.absensi:
-        return Center(child: Text('Absensi Page'));
+        return AbsensiPage();
       case NavigationTab.pekerjaan:
-        return Center(child: Text('Pekerjaan Page'));
+        return PekerjaanPage();
       case NavigationTab.akun:
-        return Center(child: Text('Akun Page'));
+        return AkunPage();
     }
   }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return BlocProvider(create: (_) => NavigationBloc(), 
-  //   child: Scaffold(
-  //     body: BlocBuilder<NavigationBloc, NavigationState>(
-  //       builder: (context, state) {
-  //         return _buildPage(state.selectedTab);
-  //       },
-  //     ),
-  //     bottomSheet: Container(
-  //       height: 80,
-  //       decoration: BoxDecoration(
-  //         color: Colors.white,
-  //         borderRadius: BorderRadius.only(
-  //           topLeft: Radius.circular(20),
-  //           topRight: Radius.circular(20),
-  //         ),
-  //         boxShadow: [
-  //           BoxShadow(
-  //             color: Colors.black12,
-  //             blurRadius: 10,
-  //             offset: Offset(0, -2),
-  //           ),
-  //         ],
-  //       ),
-  //       child: Row(
-  //         mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //         children: [
-  //           IconButton(
-  //             icon: Icon(Icons.dashboard),
-  //             onPressed: () => context.read<NavigationBloc>().add(NavigateToPage(NavigationTab.dashboard)),
-  //           ),
-  //           IconButton(
-  //             icon: Icon(Icons.check_circle),
-  //             onPressed: () => context.read<NavigationBloc>().add(NavigateToPage(NavigationTab.absensi)),
-  //           ),
-  //           IconButton(
-  //             icon: Icon(Icons.work),
-  //             onPressed: () => context.read<NavigationBloc>().add(NavigateToPage(NavigationTab.pekerjaan)),
-  //           ),
-  //           IconButton(
-  //             icon: Icon(Icons.account_circle),
-  //             onPressed: () => context.read<NavigationBloc>().add(NavigateToPage(NavigationTab.akun)),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   ));
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -76,19 +49,32 @@ class MainPage extends StatelessWidget {
       create: (_) => NavigationBloc(),
       child: BlocBuilder<NavigationBloc, NavigationState>(
         builder: (context, state) {
-
           return Scaffold(
             body: _buildPage(state.selectedTab),
-
-            bottomNavigationBar: BottomNavigationBar(
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: BottomNavigationBar(
               currentIndex: state.selectedTab.index,
-
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.grey,
               onTap: (index) {
                 context.read<NavigationBloc>().add(
                   NavigateToPage(NavigationTab.values[index]),
                 );
               },
-
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard),
@@ -108,6 +94,7 @@ class MainPage extends StatelessWidget {
                 ),
               ],
             ),
+            )
           );
         },
       ),
