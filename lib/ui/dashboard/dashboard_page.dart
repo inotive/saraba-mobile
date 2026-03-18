@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -6,23 +7,21 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFB7C4D6),
-            ),
-            child: Column(
-              children: [
-                _header(),
-                const SizedBox(height: 16),
-                _attendanceCard(false),
-              ],
-            ),
+      children: [
+        Container(
+          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+          child: Column(
+            children: [
+              _header(),
+              const SizedBox(height: 16),
+              _attendanceCard(true),
+            ],
           ),
-          const SizedBox(height: 16),
-          _projectSection(),
-        ],
-      );
+        ),
+        const SizedBox(height: 16),
+        _projectSection(),
+      ],
+    );
   }
 
   Widget _header() {
@@ -33,9 +32,7 @@ class DashboardPage extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 24,
-            backgroundImage: NetworkImage(
-              'https://i.pravatar.cc/150?img=12',
-            ),
+            backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=12'),
           ),
           const SizedBox(width: 12),
           Column(
@@ -43,19 +40,14 @@ class DashboardPage extends StatelessWidget {
             children: const [
               Text(
                 'Halo, Biko 👋',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
                 'Senior Accountant',
-                style: TextStyle(
-                  color: Colors.black54,
-                ),
+                style: TextStyle(color: Colors.black54),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -84,10 +76,17 @@ class DashboardPage extends StatelessWidget {
                   Text("22 July 2024   02:45:30"),
                 ],
               ),
-              isClockedIn == true ? Container(
-                margin: EdgeInsetsDirectional.symmetric(vertical: 16.0),
-                child: attendanceStatusCard(),
-              ) : const SizedBox(height: 16),
+              isClockedIn == true
+                  ? Container(
+                      margin: EdgeInsetsDirectional.symmetric(vertical: 16.0),
+                      child: AttendanceStatusCard(
+                        clockInTime: "09:00 WITA",
+                        clockOutTime: "17:00 WITA",
+                        isClockInDone: true,
+                        isClockOutDone: true,
+                      ),
+                    )
+                  : const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.orange,
@@ -105,11 +104,7 @@ class DashboardPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(
-                      width: 1,
-                      height: 24,
-                      color: Colors.white,
-                    ),
+                    Container(width: 1, height: 24, color: Colors.white),
                     Expanded(
                       child: TextButton.icon(
                         onPressed: () {},
@@ -122,106 +117,13 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget attendanceStatusCard() {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: Row(
-      children: [
-        // CLOCK IN
-        Expanded(
-          child: _statusItem(
-            icon: Icons.arrow_upward,
-            title: "Clock In",
-            time: "09:00 WITA",
-            iconColor: Colors.blueGrey,
-          ),
-        ),
-
-        // DIVIDER
-        Container(
-          width: 1,
-          height: 40,
-          color: Colors.grey.shade300,
-        ),
-
-        // CLOCK OUT
-        Expanded(
-          child: _statusItem(
-            icon: Icons.arrow_downward,
-            title: "Clock Out",
-            time: "09:00 WITA",
-            iconColor: Colors.blueGrey,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _statusItem({
-  required IconData icon,
-  required String title,
-  required String time,
-  required Color iconColor,
-}) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Icon(icon, color: iconColor, size: 20),
-      const SizedBox(width: 8),
-
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            time,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-
-      const SizedBox(width: 8),
-
-      // CHECK ICON
-      Container(
-        padding: const EdgeInsets.all(4),
-        decoration: const BoxDecoration(
-          color: Colors.green,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.check,
-          size: 10,
-          color: Colors.white,
-        ),
-      )
-    ],
-  );
-}
 
   Widget _projectSection() {
     return Expanded(
@@ -231,13 +133,10 @@ Widget _statusItem({
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-                  "Proyek Anda",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
+              "Proyek Anda",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -270,10 +169,7 @@ Widget _statusItem({
         children: [
           Row(
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               const Spacer(),
               Text("${(progress * 100).toInt()}%"),
             ],
@@ -302,14 +198,16 @@ Widget _statusItem({
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Pengeluaran:",
-                        style: TextStyle(color: Colors.black54)),
+                    Text(
+                      "Pengeluaran:",
+                      style: TextStyle(color: Colors.black54),
+                    ),
                     Text("Rp 120.000.000"),
                   ],
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -324,7 +222,7 @@ Widget _statusItem({
           color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 10,
           offset: const Offset(0, 4),
-        )
+        ),
       ],
     );
   }
