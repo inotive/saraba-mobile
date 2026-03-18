@@ -5,90 +5,76 @@ class AkunPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+    return Container(
+      margin: const EdgeInsets.only(top: 30),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Profil',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+            ),
           ),
-        ),
-        centerTitle: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _profileCard(),
-            const SizedBox(height: 16),
-            _menuCard(),
-            const SizedBox(height: 16),
-            _logoutButton(),
-          ],
-        ),
+          const SizedBox(height: 32),
+          _profileCard(),
+          const SizedBox(height: 16),
+          _menuCard(),
+          const SizedBox(height: 16),
+          _logoutButton(),
+        ],
       ),
     );
   }
 
   Widget _profileCard() {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: _cardDecoration(),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            CircleAvatar(
-              radius: 30,
-              backgroundImage: NetworkImage(
-                'https://i.pravatar.cc/150?img=3',
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              CircleAvatar(
+                radius: 30,
+                backgroundImage: NetworkImage(
+                  'https://i.pravatar.cc/150?img=3',
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Rahmad Hidayat',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
+              SizedBox(height: 8),
+              Text(
+                'Rahmad Hidayat',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Manajer Keuangan',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+              SizedBox(height: 4),
+              Text(
+                'Manajer Keuangan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-            ),
-          ],
-        ),
-
-        const Spacer(),
-
-        OutlinedButton(
-          onPressed: () {},
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Colors.orange),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            ],
           ),
-          child: const Text(
-            'Edit',
-            style: TextStyle(color: Colors.orange),
-          ),
-        ),
-      ],
-    ),
-  );
-}
 
+          const Spacer(),
+
+          OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.orange),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Edit', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _menuCard() {
     return Container(
@@ -117,10 +103,7 @@ class AkunPage extends StatelessWidget {
       decoration: _cardDecoration(),
       child: ListTile(
         leading: const Icon(Icons.logout, color: Colors.red),
-        title: const Text(
-          'Keluar',
-          style: TextStyle(color: Colors.red),
-        ),
+        title: const Text('Keluar', style: TextStyle(color: Colors.red)),
         onTap: () {},
       ),
     );
