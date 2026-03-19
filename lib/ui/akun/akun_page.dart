@@ -1,31 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
+import 'package:saraba_mobile/ui/login/login_page.dart';
 
 class AkunPage extends StatelessWidget {
   const AkunPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 30),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profil',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Akun')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _profileCard(),
+              const SizedBox(height: 16),
+              _menuCard(),
+              const SizedBox(height: 16),
+              _logoutButton(context),
+            ],
           ),
-          const SizedBox(height: 32),
-          _profileCard(),
-          const SizedBox(height: 16),
-          _menuCard(),
-          const SizedBox(height: 16),
-          _logoutButton(),
-        ],
+        ),
       ),
     );
   }
@@ -97,14 +105,16 @@ class AkunPage extends StatelessWidget {
     );
   }
 
-  Widget _logoutButton() {
+  Widget _logoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: _cardDecoration(),
       child: ListTile(
         leading: const Icon(Icons.logout, color: Colors.red),
         title: const Text('Keluar', style: TextStyle(color: Colors.red)),
-        onTap: () {},
+        onTap: () {
+          context.read<AuthBloc>().add(LogoutRequested());
+        },
       ),
     );
   }

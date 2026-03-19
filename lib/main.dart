@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:saraba_mobile/ui/auth/login_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
+import 'package:saraba_mobile/repository/services/auth_service.dart';
+import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserAdapter());
+
+  await Hive.openBox<User>("userBox");
+
   runApp(const MyApp());
 }
 
@@ -10,6 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Saraba Mobile', home: const LoginPage());
+    return MultiBlocProvider(
+      providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
+      child: MaterialApp(title: 'Saraba Mobile', home: const AuthWrapper()),
+    );
   }
 }

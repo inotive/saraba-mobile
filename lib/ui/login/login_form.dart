@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_bloc.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_state.dart';
 
 class LoginForm extends StatefulWidget {
   final Function(String email, String password)? onLogin;
@@ -91,18 +94,20 @@ class _LoginFormState extends State<LoginForm> {
               },
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            BlocBuilder<LoginBloc, LoginState>(
+              builder: (context, state) {
+                final isLoading = state is LoginLoading;
+
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : _submit,
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Login"),
                   ),
-                ),
-                child: const Text("Login"),
-              ),
+                );
+              },
             ),
           ],
         ),
