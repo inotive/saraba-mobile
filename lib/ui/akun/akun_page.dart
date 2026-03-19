@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/ui/common/auth/auth_bloc.dart';
-import 'package:saraba_mobile/ui/common/auth/auth_event.dart';
-import 'package:saraba_mobile/ui/common/auth/auth_state.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
 import 'package:saraba_mobile/ui/login/login_page.dart';
 
 class AkunPage extends StatelessWidget {

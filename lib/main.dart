@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
-import 'package:saraba_mobile/ui/common/auth/auth_bloc.dart';
-import 'package:saraba_mobile/ui/login/login_page.dart';
+import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
-      child: MaterialApp(title: 'Saraba Mobile', home: const LoginPage()),
+      child: MaterialApp(title: 'Saraba Mobile', home: const AuthWrapper()),
     );
   }
 }
