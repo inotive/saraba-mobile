@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
+import 'package:saraba_mobile/repository/model/login_response_model.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
@@ -10,7 +13,7 @@ class AuthService {
   );
 
   // ================= LOGIN =================
-  Future<Map<String, dynamic>?> login({
+  Future<LoginResponse?> login({
     required String email,
     required String password,
   }) async {
@@ -20,25 +23,24 @@ class AuthService {
         data: {
           "email": email,
           "password": password,
-          "device_name": "flutter_app",
+          "device_name": "saraba_app",
         },
       );
 
-      if (response.statusCode == 200 && response.data["success"] == true) {
-        final data = response.data["data"];
+      if (response.statusCode == 200) {
+        final loginResponse = LoginResponse.fromJson(response.data);
 
-        final String token = data["token"];
-        final String tokenType = data["token_type"];
+        final token =
+            "${loginResponse.data.tokenType} ${loginResponse.data.token}";
 
-        // SAVE TOKEN
-        await _saveToken("$tokenType $token");
+        await _saveUserToHive(loginResponse.data.user);
+        await _saveToken(token);
 
-        return data;
+        return loginResponse;
       }
 
       return null;
-    } on DioException catch (e) {
-      print("Login error: ${e.response?.data}");
+    } catch (e) {
       return null;
     }
   }
@@ -47,6 +49,11 @@ class AuthService {
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("token", token);
+  }
+
+  Future<void> _saveUserToHive(User user) async {
+    final box = Hive.box<User>('userBox');
+    await box.put('current_user', user);
   }
 
   // ================= GET TOKEN =================
