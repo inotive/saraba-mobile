@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/ui/auth/bloc/login_bloc.dart';
-import 'package:saraba_mobile/ui/auth/bloc/login_state.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_bloc.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_state.dart';
 
 class LoginForm extends StatefulWidget {
   final Function(String email, String password)? onLogin;

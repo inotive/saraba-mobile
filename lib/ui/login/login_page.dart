@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
-import 'package:saraba_mobile/ui/auth/bloc/login_bloc.dart';
-import 'package:saraba_mobile/ui/auth/bloc/login_event.dart';
-import 'package:saraba_mobile/ui/auth/bloc/login_state.dart';
-import 'package:saraba_mobile/ui/auth/login_form.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_bloc.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_event.dart';
+import 'package:saraba_mobile/ui/login/bloc/login_state.dart';
+import 'package:saraba_mobile/ui/login/login_form.dart';
 import 'package:saraba_mobile/ui/common/home_page.dart';
 import '../common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,7 +29,6 @@ class _LoginView extends StatelessWidget {
       body: BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            // ✅ GO TO MAIN PAGE
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -52,7 +51,6 @@ class _LoginView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: LoginForm(
               onLogin: (email, password) {
-                // 🔥 TRIGGER BLOC
                 context.read<LoginBloc>().add(LoginSubmitted(email, password));
               },
             ),

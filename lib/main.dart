@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
-import 'package:saraba_mobile/ui/auth/login_page.dart';
+import 'package:saraba_mobile/ui/login/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

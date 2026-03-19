@@ -63,9 +63,29 @@ class AuthService {
   }
 
   // ================= LOGOUT =================
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("token");
+  Future<bool> logout() async {
+    try {
+      final token = await getToken();
+
+      final response = await _dio.post(
+        "/logout",
+        options: Options(headers: {"Authorization": token}),
+      );
+
+      if (response.statusCode == 200 && response.data["success"] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("token");
+
+        final box = Hive.box<User>('userBox');
+        await box.delete('current_user');
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
   // ================= AUTH DIO =================
