@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
@@ -17,36 +16,49 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  bool _isOpeningPreview = false;
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AttendanceBloc, AttendanceState>(
-      listener: (context, state) {
-        if (state.isSuccess && state.message != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message!)));
-        } else if (state.isError && state.message != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message!)));
-        }
-      },
-      child: Column(
-        children: [
+    return Stack(
+      children: [
+        Column(
+          children: [
+            Container(
+              decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+              child: Column(
+                children: [
+                  _header(),
+                  const SizedBox(height: 16),
+                  _attendanceCard(context),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _projectSection(),
+          ],
+        ),
+        if (_isOpeningPreview)
           Container(
-            decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-            child: Column(
-              children: [
-                _header(),
-                const SizedBox(height: 16),
-                _attendanceCard(context),
-              ],
+            color: Colors.black.withValues(alpha: 0.2),
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 12),
+                  Text(
+                    "Menyiapkan preview...",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          _projectSection(),
-        ],
-      ),
+      ],
     );
   }
 
@@ -291,16 +303,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (photo == null) return;
 
-    final position = await _getLocation();
-    if (position == null) return;
-
-    final latitude = position.latitude.toString();
-    final longitude = position.longitude.toString();
+    setState(() {
+      _isOpeningPreview = true;
+    });
 
     final imageFile = File(photo.path);
     final now = TimeOfDay.now().format(context);
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
@@ -311,14 +321,18 @@ class _DashboardPageState extends State<DashboardPage> {
             timeText: now,
             buttonText: "Clock In",
             retryText: "Foto Ulang",
-            latitude: latitude,
-            longitude: longitude,
             isClockIn: true,
             onRetake: () => Navigator.pop(context),
           ),
         ),
       ),
     );
+
+    if (!mounted) return;
+    setState(() {
+      _isOpeningPreview = false;
+    });
+    await Future.delayed(const Duration(milliseconds: 50));
   }
 
   Future<void> handleClockOut(BuildContext context) async {
@@ -331,16 +345,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (photo == null) return;
 
-    final position = await _getLocation();
-    if (position == null) return;
-
-    final latitude = position.latitude.toString();
-    final longitude = position.longitude.toString();
+    setState(() {
+      _isOpeningPreview = true;
+    });
 
     final imageFile = File(photo.path);
     final now = TimeOfDay.now().format(context);
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
@@ -351,29 +363,17 @@ class _DashboardPageState extends State<DashboardPage> {
             timeText: now,
             buttonText: "Clock Out",
             retryText: "Foto Ulang",
-            latitude: latitude,
-            longitude: longitude,
             isClockIn: false,
             onRetake: () => Navigator.pop(context),
           ),
         ),
       ),
     );
-  }
 
-  Future<Position?> _getLocation() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return null;
-    }
-
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    if (!mounted) return;
+    setState(() {
+      _isOpeningPreview = false;
+    });
+    await Future.delayed(const Duration(milliseconds: 50));
   }
 }
