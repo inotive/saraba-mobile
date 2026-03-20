@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_event.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -15,26 +18,36 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  String? clockInTime;
-  String? clockOutTime;
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-          child: Column(
-            children: [
-              _header(),
-              const SizedBox(height: 16),
-              _attendanceCard(context),
-            ],
+    return BlocListener<AttendanceBloc, AttendanceState>(
+      listener: (context, state) {
+        if (state.isSuccess && state.message != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message!)));
+        } else if (state.isError && state.message != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message!)));
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+            child: Column(
+              children: [
+                _header(),
+                const SizedBox(height: 16),
+                _attendanceCard(context),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _projectSection(),
-      ],
+          const SizedBox(height: 16),
+          _projectSection(),
+        ],
+      ),
     );
   }
 
@@ -90,51 +103,72 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text("22 July 2024   02:45:30"),
                 ],
               ),
-              (clockInTime != null || clockOutTime != null)
-                  ? Container(
-                      margin: EdgeInsetsDirectional.symmetric(vertical: 16.0),
-                      child: AttendanceStatusCard(
-                        clockInTime: clockInTime,
-                        clockOutTime: clockOutTime,
-                        isClockInDone: clockInTime != null,
-                        isClockOutDone: clockOutTime != null,
-                      ),
-                    )
-                  : const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () async {
-                          await handleClockIn(context);
-                        },
-                        icon: const Icon(Icons.login, color: Colors.white),
-                        label: const Text(
-                          "Clock in",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
+              BlocBuilder<AttendanceBloc, AttendanceState>(
+                builder: (context, state) {
+                  final hasAttendance =
+                      state.clockInTime != null || state.clockOutTime != null;
+
+                  return Column(
+                    children: [
+                      hasAttendance
+                          ? Container(
+                              margin: const EdgeInsetsDirectional.symmetric(
+                                vertical: 16.0,
+                              ),
+                              child: AttendanceStatusCard(
+                                clockInTime: state.clockInTime,
+                                clockOutTime: state.clockOutTime,
+                                isClockInDone: state.clockInTime != null,
+                                isClockOutDone: state.clockOutTime != null,
+                              ),
+                            )
+                          : const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              ),
+              BlocBuilder<AttendanceBloc, AttendanceState>(
+                builder: (context, state) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Container(width: 1, height: 24, color: Colors.white),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () async {
-                          await handleClockOut(context);
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text(
-                          "Clock out",
-                          style: TextStyle(color: Colors.white),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: state.isLoading
+                                ? null
+                                : () async {
+                                    await handleClockIn(context);
+                                  },
+                            icon: const Icon(Icons.login, color: Colors.white),
+                            label: const Text(
+                              "Clock in",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
-                      ),
+                        Container(width: 1, height: 24, color: Colors.white),
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: state.isLoading
+                                ? null
+                                : () async {
+                                    await handleClockOut(context);
+                                  },
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: const Text(
+                              "Clock out",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -289,28 +323,16 @@ class _DashboardPageState extends State<DashboardPage> {
             Navigator.pop(context);
           },
           onSubmit: () async {
-            final service = AbsensiService();
-
-            final result = await service.clockIn(
-              latitude: latitude,
-              longitude: longitude,
-              imagePath: imageFile.path,
-              deviceInfo: "android",
+            context.read<AttendanceBloc>().add(
+              ClockInSubmitted(
+                latitude: latitude,
+                longitude: longitude,
+                imagePath: imageFile.path,
+                deviceInfo: "android",
+              ),
             );
 
-            if (result != null && result.success) {
-              setState(() {
-                clockInTime = result.data.absensi.jamMasuk;
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Clock in berhasil")),
-              );
-            } else {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Clock in gagal")));
-            }
+            Navigator.pop(context);
           },
         ),
       ),
@@ -358,28 +380,16 @@ class _DashboardPageState extends State<DashboardPage> {
             Navigator.pop(context);
           },
           onSubmit: () async {
-            final service = AbsensiService();
-
-            final result = await service.clockOut(
-              latitude: latitude,
-              longitude: longitude,
-              imagePath: imageFile.path,
-              deviceInfo: "android",
+            context.read<AttendanceBloc>().add(
+              ClockOutSubmitted(
+                latitude: latitude,
+                longitude: longitude,
+                imagePath: imageFile.path,
+                deviceInfo: "android",
+              ),
             );
 
-            if (result != null && result.success) {
-              setState(() {
-                clockOutTime = result.data.absensi.jamKeluar;
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Clock out berhasil")),
-              );
-            } else {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Clock out gagal")));
-            }
+            Navigator.pop(context);
           },
         ),
       ),
