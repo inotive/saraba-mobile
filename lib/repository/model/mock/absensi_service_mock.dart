@@ -1,12 +1,18 @@
 import 'package:saraba_mobile/repository/model/attendace_response_model.dart';
 
 class AbsensiMock {
+  static const bool isSuccess = true; // Toggle this to simulate success/failure
+
   static Future<AttendanceResponse> clockIn({
     required String latitude,
     required String longitude,
     required String imagePath,
   }) async {
     await Future.delayed(const Duration(seconds: 2));
+
+    if (!isSuccess) {
+      throw Exception("Clock in gagal (mock)");
+    }
 
     return AttendanceResponse.fromJson({
       "success": true,
@@ -31,6 +37,10 @@ class AbsensiMock {
     required String imagePath,
   }) async {
     await Future.delayed(const Duration(seconds: 2));
+
+    if (!isSuccess) {
+      throw Exception("Clock out gagal (mock)");
+    }
 
     return AttendanceResponse.fromJson({
       "success": true,

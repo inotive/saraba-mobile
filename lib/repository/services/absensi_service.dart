@@ -21,11 +21,16 @@ class AbsensiService {
     required String deviceInfo,
   }) async {
     if (useMock) {
-      return AbsensiMock.clockIn(
-        latitude: latitude,
-        longitude: longitude,
-        imagePath: imagePath,
-      );
+      try {
+        return await AbsensiMock.clockIn(
+          latitude: latitude,
+          longitude: longitude,
+          imagePath: imagePath,
+        );
+      } catch (e) {
+        print("Mock error: $e");
+        return null;
+      }
     }
 
     try {
@@ -58,11 +63,16 @@ class AbsensiService {
     required String deviceInfo,
   }) async {
     if (useMock) {
-      return AbsensiMock.clockOut(
-        latitude: latitude,
-        longitude: longitude,
-        imagePath: imagePath,
-      );
+      try {
+        return await AbsensiMock.clockOut(
+          latitude: latitude,
+          longitude: longitude,
+          imagePath: imagePath,
+        );
+      } catch (e) {
+        print("Mock error: $e");
+        return null;
+      }
     }
 
     try {
