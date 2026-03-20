@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/akun_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
 
@@ -14,7 +16,10 @@ class HomePage extends StatelessWidget {
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
       case NavigationTab.dashboard:
-        return DashboardPage();
+        return BlocProvider(
+          create: (_) => AttendanceBloc(AbsensiService()),
+          child: const DashboardPage(),
+        );
       case NavigationTab.absensi:
         return AbsensiPage();
       case NavigationTab.pekerjaan:

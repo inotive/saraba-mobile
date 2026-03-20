@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AttendanceStatusCard extends StatelessWidget {
-  final String clockInTime;
-  final String clockOutTime;
+  final String? clockInTime;
+  final String? clockOutTime;
   final bool isClockInDone;
   final bool isClockOutDone;
 
   const AttendanceStatusCard({
     super.key,
-    required this.clockInTime,
-    required this.clockOutTime,
+    this.clockInTime,
+    this.clockOutTime,
     this.isClockInDone = false,
     this.isClockOutDone = false,
   });
@@ -17,7 +17,7 @@ class AttendanceStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
@@ -28,23 +28,16 @@ class AttendanceStatusCard extends StatelessWidget {
           Expanded(
             child: _statusItem(
               title: "Clock In",
-              time: clockInTime,
+              time: clockInTime ?? "--:--",
               icon: Icons.arrow_upward,
               isDone: isClockInDone,
             ),
           ),
-
-          Container(
-            width: 1,
-            height: 40,
-            margin: EdgeInsets.symmetric(horizontal: 4),
-            color: Colors.grey.shade300,
-          ),
-
+          Container(width: 1, height: 40, color: Colors.grey.shade300),
           Expanded(
             child: _statusItem(
               title: "Clock Out",
-              time: clockOutTime,
+              time: clockOutTime ?? "--:--",
               icon: Icons.arrow_downward,
               isDone: isClockOutDone,
             ),
@@ -65,7 +58,6 @@ class AttendanceStatusCard extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: Colors.blueGrey),
         const SizedBox(width: 8),
-
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -76,9 +68,7 @@ class AttendanceStatusCard extends StatelessWidget {
             Text(time, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
-
         const SizedBox(width: 8),
-
         if (isDone)
           Container(
             padding: const EdgeInsets.all(4),

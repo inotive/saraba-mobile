@@ -1,9 +1,23 @@
+import 'dart:io';
+
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
+import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
+import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -14,7 +28,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               _header(),
               const SizedBox(height: 16),
-              _attendanceCard(true),
+              _attendanceCard(context),
             ],
           ),
         ),
@@ -53,7 +67,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _attendanceCard(bool isClockedIn) {
+  Widget _attendanceCard(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Padding(
@@ -76,47 +90,72 @@ class DashboardPage extends StatelessWidget {
                   Text("22 July 2024   02:45:30"),
                 ],
               ),
-              isClockedIn == true
-                  ? Container(
-                      margin: EdgeInsetsDirectional.symmetric(vertical: 16.0),
-                      child: AttendanceStatusCard(
-                        clockInTime: "09:00 WITA",
-                        clockOutTime: "17:00 WITA",
-                        isClockInDone: true,
-                        isClockOutDone: true,
-                      ),
-                    )
-                  : const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.login, color: Colors.white),
-                        label: const Text(
-                          "Clock in",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
+              BlocBuilder<AttendanceBloc, AttendanceState>(
+                builder: (context, state) {
+                  final hasAttendance =
+                      state.clockInTime != null || state.clockOutTime != null;
+
+                  return Column(
+                    children: [
+                      hasAttendance
+                          ? Container(
+                              margin: const EdgeInsetsDirectional.symmetric(
+                                vertical: 16.0,
+                              ),
+                              child: AttendanceStatusCard(
+                                clockInTime: state.clockInTime,
+                                clockOutTime: state.clockOutTime,
+                                isClockInDone: state.clockInTime != null,
+                                isClockOutDone: state.clockOutTime != null,
+                              ),
+                            )
+                          : const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              ),
+              BlocBuilder<AttendanceBloc, AttendanceState>(
+                builder: (context, state) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Container(width: 1, height: 24, color: Colors.white),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text(
-                          "Clock out",
-                          style: TextStyle(color: Colors.white),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: state.isLoading
+                                ? null
+                                : () async {
+                                    await handleClockIn(context);
+                                  },
+                            icon: const Icon(Icons.login, color: Colors.white),
+                            label: const Text(
+                              "Clock in",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
-                      ),
+                        Container(width: 1, height: 24, color: Colors.white),
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: state.isLoading
+                                ? null
+                                : () async {
+                                    await handleClockOut(context);
+                                  },
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: const Text(
+                              "Clock out",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -225,5 +264,92 @@ class DashboardPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> handleClockIn(BuildContext context) async {
+    final attendanceBloc = context.read<AttendanceBloc>();
+    final now = TimeOfDay.now().format(context);
+    final frontCamera = await getFrontCamera();
+    if (frontCamera == null) return;
+
+    if (!context.mounted) return;
+    final XFile? photo = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraPage(camera: frontCamera, title: "Clock In"),
+      ),
+    );
+
+    if (photo == null) return;
+
+    final imageFile = File(photo.path);
+
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: attendanceBloc,
+          child: AttendancePreviewPage(
+            imageFile: imageFile,
+            employeeName: "Rahmad Hidayat",
+            timeText: now,
+            buttonText: "Clock In",
+            isClockIn: true,
+            onRetake: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> handleClockOut(BuildContext context) async {
+    final attendanceBloc = context.read<AttendanceBloc>();
+    final now = TimeOfDay.now().format(context);
+
+    final frontCamera = await getFrontCamera();
+    if (frontCamera == null) return;
+
+    if (!context.mounted) return;
+    final XFile? photo = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraPage(camera: frontCamera, title: "Clock Out"),
+      ),
+    );
+
+    if (photo == null) return;
+
+    final imageFile = File(photo.path);
+
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: attendanceBloc,
+          child: AttendancePreviewPage(
+            imageFile: imageFile,
+            employeeName: "Rahmad Hidayat",
+            timeText: now,
+            buttonText: "Clock Out",
+            isClockIn: false,
+            onRetake: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<CameraDescription?> getFrontCamera() async {
+    final cameras = await availableCameras();
+
+    try {
+      return cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      );
+    } catch (_) {
+      return cameras.isNotEmpty ? cameras.first : null;
+    }
   }
 }
