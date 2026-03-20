@@ -6,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
-import 'package:saraba_mobile/ui/dashboard/bloc/attendance_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
@@ -283,6 +282,8 @@ class _DashboardPageState extends State<DashboardPage> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> handleClockIn(BuildContext context) async {
+    final attendanceBloc = context.read<AttendanceBloc>();
+
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 70,
@@ -290,56 +291,39 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (photo == null) return;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    final position = await _getLocation();
+    if (position == null) return;
 
     final latitude = position.latitude.toString();
     final longitude = position.longitude.toString();
 
     final imageFile = File(photo.path);
+    final now = TimeOfDay.now().format(context);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AttendancePreviewPage(
-          imageFile: imageFile,
-          employeeName: "Rahmad Hidayat",
-          timeText: "08:00 WITA",
-          buttonText: "Clock In",
-          retryText: "Foto Ulang",
-          latitude: latitude,
-          longitude: longitude,
-          onRetake: () {
-            Navigator.pop(context);
-          },
-          onSubmit: () async {
-            context.read<AttendanceBloc>().add(
-              ClockInSubmitted(
-                latitude: latitude,
-                longitude: longitude,
-                imagePath: imageFile.path,
-                deviceInfo: "android",
-              ),
-            );
-
-            Navigator.pop(context);
-          },
+        builder: (_) => BlocProvider.value(
+          value: attendanceBloc,
+          child: AttendancePreviewPage(
+            imageFile: imageFile,
+            employeeName: "Rahmad Hidayat",
+            timeText: now,
+            buttonText: "Clock In",
+            retryText: "Foto Ulang",
+            latitude: latitude,
+            longitude: longitude,
+            isClockIn: true,
+            onRetake: () => Navigator.pop(context),
+          ),
         ),
       ),
     );
   }
 
   Future<void> handleClockOut(BuildContext context) async {
+    final attendanceBloc = context.read<AttendanceBloc>();
+
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 70,
@@ -347,52 +331,49 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (photo == null) return;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    final position = await _getLocation();
+    if (position == null) return;
 
     final latitude = position.latitude.toString();
     final longitude = position.longitude.toString();
 
     final imageFile = File(photo.path);
+    final now = TimeOfDay.now().format(context);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AttendancePreviewPage(
-          imageFile: imageFile,
-          employeeName: "Rahmad Hidayat",
-          timeText: "08:00 WITA",
-          buttonText: "Clock Out",
-          retryText: "Foto Ulang",
-          latitude: latitude,
-          longitude: longitude,
-          onRetake: () {
-            Navigator.pop(context);
-          },
-          onSubmit: () async {
-            context.read<AttendanceBloc>().add(
-              ClockOutSubmitted(
-                latitude: latitude,
-                longitude: longitude,
-                imagePath: imageFile.path,
-                deviceInfo: "android",
-              ),
-            );
-
-            Navigator.pop(context);
-          },
+        builder: (_) => BlocProvider.value(
+          value: attendanceBloc,
+          child: AttendancePreviewPage(
+            imageFile: imageFile,
+            employeeName: "Rahmad Hidayat",
+            timeText: now,
+            buttonText: "Clock Out",
+            retryText: "Foto Ulang",
+            latitude: latitude,
+            longitude: longitude,
+            isClockIn: false,
+            onRetake: () => Navigator.pop(context),
+          ),
         ),
       ),
+    );
+  }
+
+  Future<Position?> _getLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    return Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
     );
   }
 }
