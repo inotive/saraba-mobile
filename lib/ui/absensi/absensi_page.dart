@@ -25,9 +25,12 @@ Widget _headerSection() {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Absensi",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            "Absensi",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -79,14 +82,20 @@ Widget _periodeSection() {
       children: [
         const Text("Periode", style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: _cardDecoration(),
-          child: Row(
-            children: const [
-              Expanded(child: Text("Maret 2026")),
-              Icon(Icons.keyboard_arrow_down),
-            ],
+        InkWell(
+          onTap: () {
+            // Handle period selection
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: _cardDecoration(),
+            child: Row(
+              children: const [
+                Expanded(child: Text("Maret 2026")),
+                Icon(Icons.keyboard_arrow_down),
+              ],
+            ),
           ),
         ),
       ],
@@ -136,18 +145,46 @@ class AttendanceItem extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "Tanggal",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+              children: [
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: "Tanggal ",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      TextSpan(
+                        text: day,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                Text("Waktu 08:42:10"),
+                const SizedBox(height: 4),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: "Waktu ",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      TextSpan(
+                        text: "08:42:10",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-
           _divider(),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,9 +198,7 @@ class AttendanceItem extends StatelessWidget {
               ],
             ),
           ),
-
           _divider(),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
