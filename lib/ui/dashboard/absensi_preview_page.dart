@@ -7,6 +7,8 @@ class AttendancePreviewPage extends StatelessWidget {
   final String timeText;
   final String buttonText;
   final String retryText;
+  final String latitude;
+  final String longitude;
   final VoidCallback onSubmit;
   final VoidCallback onRetake;
 
@@ -17,6 +19,8 @@ class AttendancePreviewPage extends StatelessWidget {
     required this.timeText,
     required this.buttonText,
     required this.retryText,
+    required this.latitude,
+    required this.longitude,
     required this.onSubmit,
     required this.onRetake,
   });

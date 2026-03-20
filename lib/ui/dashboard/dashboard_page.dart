@@ -3,11 +3,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
-class DashboardPage extends StatelessWidget {
-  DashboardPage({super.key});
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  String? clockInTime;
+  String? clockOutTime;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +28,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               _header(),
               const SizedBox(height: 16),
-              _attendanceCard(true, context),
+              _attendanceCard(context),
             ],
           ),
         ),
@@ -58,7 +67,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _attendanceCard(bool isClockedIn, BuildContext context) {
+  Widget _attendanceCard(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Padding(
@@ -81,14 +90,14 @@ class DashboardPage extends StatelessWidget {
                   Text("22 July 2024   02:45:30"),
                 ],
               ),
-              isClockedIn == true
+              (clockInTime != null || clockOutTime != null)
                   ? Container(
                       margin: EdgeInsetsDirectional.symmetric(vertical: 16.0),
                       child: AttendanceStatusCard(
-                        clockInTime: "09:00 WITA",
-                        clockOutTime: "17:00 WITA",
-                        isClockInDone: true,
-                        isClockOutDone: true,
+                        clockInTime: clockInTime,
+                        clockOutTime: clockOutTime,
+                        isClockInDone: clockInTime != null,
+                        isClockOutDone: clockOutTime != null,
                       ),
                     )
                   : const SizedBox(height: 16),
@@ -114,7 +123,9 @@ class DashboardPage extends StatelessWidget {
                     Container(width: 1, height: 24, color: Colors.white),
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await handleClockOut(context);
+                        },
                         icon: const Icon(Icons.logout, color: Colors.white),
                         label: const Text(
                           "Clock out",
@@ -238,8 +249,6 @@ class DashboardPage extends StatelessWidget {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> handleClockIn(BuildContext context) async {
-    final ImagePicker _picker = ImagePicker();
-
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 70,
@@ -274,12 +283,104 @@ class DashboardPage extends StatelessWidget {
           timeText: "08:00 WITA",
           buttonText: "Clock In",
           retryText: "Foto Ulang",
-
+          latitude: latitude,
+          longitude: longitude,
           onRetake: () {
             Navigator.pop(context);
           },
+          onSubmit: () async {
+            final service = AbsensiService();
 
-          onSubmit: () {},
+            final result = await service.clockIn(
+              latitude: latitude,
+              longitude: longitude,
+              imagePath: imageFile.path,
+              deviceInfo: "android",
+            );
+
+            if (result != null && result.success) {
+              setState(() {
+                clockInTime = result.data.absensi.jamMasuk;
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Clock in berhasil")),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text("Clock in gagal")));
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> handleClockOut(BuildContext context) async {
+    final XFile? photo = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
+
+    if (photo == null) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final latitude = position.latitude.toString();
+    final longitude = position.longitude.toString();
+
+    final imageFile = File(photo.path);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendancePreviewPage(
+          imageFile: imageFile,
+          employeeName: "Rahmad Hidayat",
+          timeText: "08:00 WITA",
+          buttonText: "Clock Out",
+          retryText: "Foto Ulang",
+          latitude: latitude,
+          longitude: longitude,
+          onRetake: () {
+            Navigator.pop(context);
+          },
+          onSubmit: () async {
+            final service = AbsensiService();
+
+            final result = await service.clockOut(
+              latitude: latitude,
+              longitude: longitude,
+              imagePath: imageFile.path,
+              deviceInfo: "android",
+            );
+
+            if (result != null && result.success) {
+              setState(() {
+                clockOutTime = result.data.absensi.jamKeluar;
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Clock out berhasil")),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text("Clock out gagal")));
+            }
+          },
         ),
       ),
     );

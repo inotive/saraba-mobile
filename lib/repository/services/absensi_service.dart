@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:saraba_mobile/repository/model/attendace_response_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
 class AbsensiService {
@@ -9,7 +10,7 @@ class AbsensiService {
     ),
   );
 
-  Future<bool> clockIn({
+  Future<AttendanceResponse?> clockIn({
     required String latitude,
     required String longitude,
     required String imagePath,
@@ -31,13 +32,14 @@ class AbsensiService {
         options: Options(headers: {"Authorization": token}),
       );
 
-      return response.data["success"] == true;
+      return AttendanceResponse.fromJson(response.data);
     } catch (e) {
-      return false;
+      print("Unexpected error: $e");
+      return null;
     }
   }
 
-  Future<bool> clockOut({
+  Future<AttendanceResponse?> clockOut({
     required String latitude,
     required String longitude,
     required String imagePath,
@@ -59,9 +61,10 @@ class AbsensiService {
         options: Options(headers: {"Authorization": token}),
       );
 
-      return response.data["success"] == true;
+      return AttendanceResponse.fromJson(response.data);
     } catch (e) {
-      return false;
+      print("Unexpected error: $e");
+      return null;
     }
   }
 }
