@@ -14,7 +14,6 @@ class AttendancePreviewPage extends StatefulWidget {
   final String employeeName;
   final String timeText;
   final String buttonText;
-  final String retryText;
   final bool isClockIn;
   final VoidCallback onRetake;
 
@@ -24,7 +23,6 @@ class AttendancePreviewPage extends StatefulWidget {
     required this.employeeName,
     required this.timeText,
     required this.buttonText,
-    required this.retryText,
     required this.isClockIn,
     required this.onRetake,
   });
@@ -302,7 +300,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                                   ),
                                 ),
                                 child: Text(
-                                  widget.retryText,
+                                  "Foto Ulang",
                                   style: const TextStyle(color: Colors.orange),
                                 ),
                               ),

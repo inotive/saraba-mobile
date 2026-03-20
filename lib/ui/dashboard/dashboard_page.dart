@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
+import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -16,48 +18,22 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  bool _isOpeningPreview = false;
-
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Column(
       children: [
-        Column(
-          children: [
-            Container(
-              decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-              child: Column(
-                children: [
-                  _header(),
-                  const SizedBox(height: 16),
-                  _attendanceCard(context),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _projectSection(),
-          ],
-        ),
-        if (_isOpeningPreview)
-          Container(
-            color: Colors.black.withValues(alpha: 0.2),
-            child: const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 12),
-                  Text(
-                    "Menyiapkan preview...",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        Container(
+          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+          child: Column(
+            children: [
+              _header(),
+              const SizedBox(height: 16),
+              _attendanceCard(context),
+            ],
           ),
+        ),
+        const SizedBox(height: 16),
+        _projectSection(),
       ],
     );
   }
@@ -290,26 +266,25 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Need refactor later, this is just a quick implementation for demo purpose
-  final ImagePicker _picker = ImagePicker();
-
   Future<void> handleClockIn(BuildContext context) async {
     final attendanceBloc = context.read<AttendanceBloc>();
+    final now = TimeOfDay.now().format(context);
+    final frontCamera = await getFrontCamera();
+    if (frontCamera == null) return;
 
-    final XFile? photo = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 70,
+    if (!context.mounted) return;
+    final XFile? photo = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraPage(camera: frontCamera, title: "Clock In"),
+      ),
     );
 
     if (photo == null) return;
 
-    setState(() {
-      _isOpeningPreview = true;
-    });
-
     final imageFile = File(photo.path);
-    final now = TimeOfDay.now().format(context);
 
+    if (!context.mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -320,38 +295,34 @@ class _DashboardPageState extends State<DashboardPage> {
             employeeName: "Rahmad Hidayat",
             timeText: now,
             buttonText: "Clock In",
-            retryText: "Foto Ulang",
             isClockIn: true,
             onRetake: () => Navigator.pop(context),
           ),
         ),
       ),
     );
-
-    if (!mounted) return;
-    setState(() {
-      _isOpeningPreview = false;
-    });
-    await Future.delayed(const Duration(milliseconds: 50));
   }
 
   Future<void> handleClockOut(BuildContext context) async {
     final attendanceBloc = context.read<AttendanceBloc>();
+    final now = TimeOfDay.now().format(context);
 
-    final XFile? photo = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 70,
+    final frontCamera = await getFrontCamera();
+    if (frontCamera == null) return;
+
+    if (!context.mounted) return;
+    final XFile? photo = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CameraPage(camera: frontCamera, title: "Clock Out"),
+      ),
     );
 
     if (photo == null) return;
 
-    setState(() {
-      _isOpeningPreview = true;
-    });
-
     final imageFile = File(photo.path);
-    final now = TimeOfDay.now().format(context);
 
+    if (!context.mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -362,18 +333,23 @@ class _DashboardPageState extends State<DashboardPage> {
             employeeName: "Rahmad Hidayat",
             timeText: now,
             buttonText: "Clock Out",
-            retryText: "Foto Ulang",
             isClockIn: false,
             onRetake: () => Navigator.pop(context),
           ),
         ),
       ),
     );
+  }
 
-    if (!mounted) return;
-    setState(() {
-      _isOpeningPreview = false;
-    });
-    await Future.delayed(const Duration(milliseconds: 50));
+  Future<CameraDescription?> getFrontCamera() async {
+    final cameras = await availableCameras();
+
+    try {
+      return cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      );
+    } catch (_) {
+      return cameras.isNotEmpty ? cameras.first : null;
+    }
   }
 }
