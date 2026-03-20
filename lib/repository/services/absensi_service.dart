@@ -1,8 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/repository/model/attendace_response_model.dart';
+import 'package:saraba_mobile/repository/model/mock/absensi_service_mock.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
 class AbsensiService {
+  static const bool useMock =
+      true; // For development, delete this when backend is ready
+
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: "https://saraba.inotivedev.com/api/v1",
@@ -16,6 +20,14 @@ class AbsensiService {
     required String imagePath,
     required String deviceInfo,
   }) async {
+    if (useMock) {
+      return AbsensiMock.clockIn(
+        latitude: latitude,
+        longitude: longitude,
+        imagePath: imagePath,
+      );
+    }
+
     try {
       final token = await AuthService().getToken();
 
@@ -45,6 +57,14 @@ class AbsensiService {
     required String imagePath,
     required String deviceInfo,
   }) async {
+    if (useMock) {
+      return AbsensiMock.clockOut(
+        latitude: latitude,
+        longitude: longitude,
+        imagePath: imagePath,
+      );
+    }
+
     try {
       final token = await AuthService().getToken();
 
