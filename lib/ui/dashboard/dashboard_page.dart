@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+  DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +19,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               _header(),
               const SizedBox(height: 16),
-              _attendanceCard(true),
+              _attendanceCard(true, context),
             ],
           ),
         ),
@@ -53,7 +58,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _attendanceCard(bool isClockedIn) {
+  Widget _attendanceCard(bool isClockedIn, BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Padding(
@@ -96,7 +101,9 @@ class DashboardPage extends StatelessWidget {
                   children: [
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await handleClockIn(context);
+                        },
                         icon: const Icon(Icons.login, color: Colors.white),
                         label: const Text(
                           "Clock in",
@@ -224,6 +231,57 @@ class DashboardPage extends StatelessWidget {
           offset: const Offset(0, 4),
         ),
       ],
+    );
+  }
+
+  // Need refactor later, this is just a quick implementation for demo purpose
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> handleClockIn(BuildContext context) async {
+    final ImagePicker _picker = ImagePicker();
+
+    final XFile? photo = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
+
+    if (photo == null) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final latitude = position.latitude.toString();
+    final longitude = position.longitude.toString();
+
+    final imageFile = File(photo.path);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendancePreviewPage(
+          imageFile: imageFile,
+          employeeName: "Rahmad Hidayat",
+          timeText: "08:00 WITA",
+          buttonText: "Clock In",
+          retryText: "Foto Ulang",
+
+          onRetake: () {
+            Navigator.pop(context);
+          },
+
+          onSubmit: () {},
+        ),
+      ),
     );
   }
 }
