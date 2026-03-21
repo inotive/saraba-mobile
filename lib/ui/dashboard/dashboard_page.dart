@@ -8,6 +8,7 @@ import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
+import 'package:saraba_mobile/ui/widgets/project_card.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -179,74 +180,66 @@ class _DashboardPageState extends State<DashboardPage> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _projectCard("Proyek A", 0.6),
-                  const SizedBox(height: 12),
-                  _projectCard("Proyek B", 0.3),
-                  const SizedBox(height: 12),
-                  _projectCard("Proyek C", 0.2),
-                  const SizedBox(height: 12),
-                  _projectCard("Proyek D", 0.1),
-                  const SizedBox(height: 12),
-                  _projectCard("Proyek E", 0.546),
-                  const SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek A",
+                    progress: 0.6,
+                    nilai: "Rp 500.000.000",
+                    pengeluaran: "Rp 120.000.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek B",
+                    progress: 0.3,
+                    nilai: "Rp 300.000.000",
+                    pengeluaran: "Rp 120.000.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek c",
+                    progress: 0.23,
+                    nilai: "Rp 30.000.000",
+                    pengeluaran: "Rp 20.000.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek D",
+                    progress: 0.7,
+                    nilai: "Rp 3.040.000",
+                    pengeluaran: "Rp 50.600.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek E",
+                    progress: 0.643,
+                    nilai: "Rp 120.000.000",
+                    pengeluaran: "Rp 432.000.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek F",
+                    progress: 0.986,
+                    nilai: "Rp 4.430.000",
+                    pengeluaran: "Rp 54.064.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek G",
+                    progress: 0.123,
+                    nilai: "Rp 734.000.000",
+                    pengeluaran: "Rp 853.000.000",
+                  ),
+                  SizedBox(height: 12),
+                  ProjectCard(
+                    title: "Proyek H",
+                    progress: 0.856,
+                    nilai: "Rp 563.000",
+                    pengeluaran: "Rp 223.000",
+                  ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _projectCard(String title, double progress) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              Text("${(progress * 100).toInt()}%"),
-            ],
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: Colors.grey.shade300,
-            color: Colors.blue,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: const [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Nilai:", style: TextStyle(color: Colors.black54)),
-                    Text("Rp 500.000.000"),
-                  ],
-                ),
-              ),
-              VerticalDivider(),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Pengeluaran:",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    Text("Rp 120.000.000"),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
