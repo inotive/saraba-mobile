@@ -27,7 +27,7 @@ class ProjectDetailPage extends StatelessWidget {
               Expanded(
                 child: TabBarView(
                   children: [
-                    ProjectOverviewView(projectModel: projectModel),
+                    ProjectOverviewView(project: projectModel),
                     ProjectRabView(),
                     ProjectProgressView(),
                     ProjectPengeluaranView(),
