@@ -19,15 +19,29 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
     LoadAbsensiPage event,
     Emitter<AbsensiState> emit,
   ) async {
-    emit(
-      state.copyWith(
-        isLoading: true,
-        isError: false,
-        errorMessage: null,
-        currentPage: 1,
-        hasReachedMax: false,
-      ),
-    );
+    final box = Hive.box<AbsensiItem>("absensi_history");
+    final cachedItems = box.values.toList();
+
+    if (cachedItems.isNotEmpty) {
+      emit(
+        state.copyWith(
+          historyList: cachedItems,
+          isLoading: false,
+          isError: false,
+          errorMessage: null,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          isLoading: true,
+          isError: false,
+          errorMessage: null,
+          currentPage: 1,
+          hasReachedMax: false,
+        ),
+      );
+    }
 
     try {
       final todayResponse = await absensiService.getTodayAbsensi();
@@ -43,20 +57,21 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
       );
 
       if (todayResponse == null || historyResponse == null) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            isError: true,
-            errorMessage: 'Gagal memuat data absensi',
-          ),
-        );
+        if (cachedItems.isEmpty) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              isError: true,
+              errorMessage: 'Gagal memuat data absensi',
+            ),
+          );
+        }
         return;
       }
 
       final pagination = historyResponse.data.pagination;
       final historyList = historyResponse.data.absensis;
 
-      final box = Hive.box<AbsensiItem>('absensi_history');
       await box.clear();
       await box.addAll(historyList);
 
@@ -73,19 +88,7 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
         ),
       );
     } catch (_) {
-      final box = Hive.box<AbsensiItem>('absensi_history');
-      final cachedItems = box.values.toList();
-
-      if (cachedItems.isNotEmpty) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            historyList: cachedItems,
-            isError: false,
-            errorMessage: null,
-          ),
-        );
-      } else {
+      if (cachedItems.isEmpty) {
         emit(
           state.copyWith(
             isLoading: false,
