@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';

@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:saraba_mobile/repository/model/login_response_model.dart';
+import 'package:saraba_mobile/repository/model/mock/auth_service_mock.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
+  static const bool useMock =
+      true; // For development, delete this when backend is ready
+
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: "https://saraba.inotivedev.com/api/v1",
@@ -17,6 +21,23 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    if (useMock) {
+      try {
+        final response = await AuthServiceMock.login(
+          email: email,
+          password: password,
+        );
+        final token = "${response.data.tokenType} ${response.data.token}";
+
+        await _saveUserToHive(response.data.user);
+        await _saveToken(token);
+        return response;
+      } catch (e) {
+        print("Mock error: $e");
+        return null;
+      }
+    }
+
     try {
       final response = await _dio.post(
         "/login",
@@ -64,6 +85,19 @@ class AuthService {
 
   // ================= LOGOUT =================
   Future<bool> logout() async {
+    if (useMock) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("token");
+
+        final box = Hive.box<User>('userBox');
+        await box.delete('current_user');
+        return true; // Just return true for mock logout
+      } catch (e) {
+        print("Mock logout error: $e");
+      }
+    }
+
     try {
       final token = await getToken();
 

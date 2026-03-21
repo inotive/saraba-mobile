@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
@@ -11,8 +12,10 @@ void main() async {
 
   await Hive.initFlutter();
   Hive.registerAdapter(UserAdapter());
+  Hive.registerAdapter(AbsensiItemAdapter());
 
   await Hive.openBox<User>("userBox");
+  await Hive.openBox<AbsensiItem>("absensi_history");
 
   runApp(const MyApp());
 }

@@ -1,124 +1,379 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/repository/services/absensi_service.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AbsensiPage extends StatelessWidget {
   const AbsensiPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _headerSection(),
-        const SizedBox(height: 16),
-        _periodeSection(),
-        const SizedBox(height: 12),
-        _attendanceList(),
-      ],
+    return BlocProvider(
+      create: (_) => AbsensiBloc(AbsensiService())..add(LoadAbsensiPage()),
+      child: _AbsensiView(),
     );
   }
 }
 
-Widget _headerSection() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.only(top: 50, bottom: 20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Absensi",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: _cardDecoration(),
+class _AbsensiView extends StatefulWidget {
+  const _AbsensiView();
+
+  @override
+  State<_AbsensiView> createState() => _AbsensiViewState();
+}
+
+class _AbsensiViewState extends State<_AbsensiView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    if (currentScroll >= maxScroll - 200) {
+      context.read<AbsensiBloc>().add(LoadMoreAbsensiHistory());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AbsensiBloc, AbsensiState>(
+      builder: (context, state) {
+        return Column(
+          children: [
+            _headerSection(state),
+            const SizedBox(height: 16),
+            _periodeSection(context, state),
+            const SizedBox(height: 12),
+            _attendanceList(state),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _headerSection(AbsensiState state) {
+    final todayData = state.todayData;
+    final absensi = todayData?.absensi;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 50, bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "Absensi",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: _cardDecoration(),
+              child: Column(
+                children: [
+                  const Row(
+                    children: [
+                      CircleAvatar(radius: 20),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Jadwal Kerja"),
+                          Text(
+                            "5 Hari Kerja",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  AttendanceStatusCard(
+                    clockInTime: absensi?.jamMasuk.isNotEmpty == true
+                        ? absensi!.jamMasuk
+                        : null,
+                    clockOutTime: absensi?.jamKeluar.isNotEmpty == true
+                        ? absensi!.jamKeluar
+                        : null,
+                    isClockInDone: todayData?.isClockedIn ?? false,
+                    isClockOutDone: todayData?.isClockedOut ?? false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _periodeSection(BuildContext context, AbsensiState state) {
+    final monthText = _monthLabel(state.selectedMonth);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Periode", style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () async {
+              final selected = await _showMonthPicker(
+                context,
+                state.selectedMonth,
+              );
+
+              if (selected == null || !context.mounted) return;
+
+              context.read<AbsensiBloc>().add(ChangeAbsensiMonth(selected));
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: _cardDecoration(),
+              child: Row(
+                children: [
+                  Expanded(child: Text(monthText)),
+                  const Icon(Icons.keyboard_arrow_down),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<DateTime?> _showMonthPicker(
+    BuildContext context,
+    DateTime current,
+  ) async {
+    final now = DateTime.now();
+    final months = List.generate(24, (index) {
+      return DateTime(now.year, now.month - index, 1);
+    });
+
+    return showModalBottomSheet<DateTime>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: const [
-                    CircleAvatar(radius: 20),
-                    SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Jadwal Kerja"),
-                        Text(
-                          "5 Hari Kerja",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    "Pilih Periode",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                const SizedBox(height: 12),
-                AttendanceStatusCard(
-                  clockInTime: "09:00 WITA",
-                  clockOutTime: "17:00 WITA",
-                  isClockInDone: true,
-                  isClockOutDone: true,
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: months.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final month = months[index];
+                      final isSelected =
+                          month.year == current.year &&
+                          month.month == current.month;
+
+                      return ListTile(
+                        title: Text(_monthLabel(month)),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: Colors.green)
+                            : null,
+                        onTap: () => Navigator.pop(context, month),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        );
+      },
+    );
+  }
 
-Widget _periodeSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Periode", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: _cardDecoration(),
-          child: Row(
-            children: const [
-              Expanded(child: Text("Maret 2026")),
-              Icon(Icons.keyboard_arrow_down),
+  Widget _attendanceList(AbsensiState state) {
+    if (state.isLoading && state.historyList.isEmpty) {
+      return Expanded(
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 6,
+          itemBuilder: (_, _) => const AttendanceItemSkeleton(),
+        ),
+      );
+    }
+
+    if (state.isError && state.historyList.isEmpty) {
+      return Expanded(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            context.read<AbsensiBloc>().add(LoadAbsensiPage());
+          },
+          child: ListView(
+            physics: AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: 300,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(state.errorMessage ?? "Gagal memuat absensi"),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<AbsensiBloc>().add(LoadAbsensiPage());
+                        },
+                        child: const Text("Coba Lagi"),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-      ],
-    ),
-  );
-}
+      );
+    }
 
-Widget _attendanceList() {
-  return Expanded(
-    child: ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      children: const [
-        AttendanceItem(day: "30", status: "Masuk", note: "On Time"),
-        AttendanceItem(day: "29", status: "Masuk", note: "On Time"),
-        AttendanceItem(day: "28", status: "Ijin", note: "-"),
-        AttendanceItem(day: "27", status: "Sakit", note: "-"),
-        AttendanceItem(day: "26", status: "Masuk", note: "On Time"),
+    return Expanded(
+      child: RefreshIndicator(
+        onRefresh: () async {
+          context.read<AbsensiBloc>().add(LoadAbsensiPage());
+        },
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: state.historyList.length + (state.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= state.historyList.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final item = state.historyList[index];
+
+            return TweenAnimationBuilder(
+              duration: Duration(milliseconds: 300 + (index * 50)),
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, double value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: AttendanceItem(
+                day: _extractDay(item.tanggal),
+                status: item.status,
+                note: item.keterangan,
+                time: item.jamMasuk.isNotEmpty ? item.jamMasuk : "-",
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _extractDay(String tanggal) {
+    if (tanggal.isEmpty) return "-";
+
+    final parts = tanggal.split('-');
+    if (parts.length == 3) {
+      return parts[2];
+    }
+
+    return tanggal;
+  }
+
+  String _monthLabel(DateTime date) {
+    const months = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    return '${months[date.month]} ${date.year}';
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 class AttendanceItem extends StatelessWidget {
   final String day;
   final String status;
   final String note;
+  final String time;
 
   const AttendanceItem({
     super.key,
     required this.day,
     required this.status,
     required this.note,
+    required this.time,
   });
 
   @override
@@ -136,18 +391,31 @@ class AttendanceItem extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "Tanggal",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+              children: [
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: "Tanggal ",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      TextSpan(
+                        text: day,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                Text("Waktu 08:42:10"),
+                const SizedBox(height: 4),
+                Text("Waktu $time"),
               ],
             ),
           ),
-
           _divider(),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,9 +429,7 @@ class AttendanceItem extends StatelessWidget {
               ],
             ),
           ),
-
           _divider(),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,16 +498,46 @@ class AttendanceItem extends StatelessWidget {
   }
 }
 
-BoxDecoration _cardDecoration() {
-  return BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(16),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.05),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
+class AttendanceItemSkeleton extends StatelessWidget {
+  const AttendanceItemSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            _block(width: 80, height: 40),
+            const SizedBox(width: 8),
+            _block(width: 1, height: 40),
+            const SizedBox(width: 8),
+            _block(width: 60, height: 20),
+            const SizedBox(width: 8),
+            _block(width: 1, height: 40),
+            const SizedBox(width: 8),
+            _block(width: 80, height: 20),
+          ],
+        ),
       ),
-    ],
-  );
+    );
+  }
+
+  Widget _block({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
 }
