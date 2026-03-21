@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'absensi_event.dart';
 import 'absensi_state.dart';
@@ -54,6 +56,10 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
       final pagination = historyResponse.data.pagination;
       final historyList = historyResponse.data.absensis;
 
+      final box = Hive.box<AbsensiItem>('absensi_history');
+      await box.clear();
+      await box.addAll(historyList);
+
       emit(
         state.copyWith(
           isLoading: false,
@@ -67,13 +73,27 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
         ),
       );
     } catch (_) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          isError: true,
-          errorMessage: 'Terjadi kesalahan saat memuat absensi',
-        ),
-      );
+      final box = Hive.box<AbsensiItem>('absensi_history');
+      final cachedItems = box.values.toList();
+
+      if (cachedItems.isNotEmpty) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            historyList: cachedItems,
+            isError: false,
+            errorMessage: null,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isError: true,
+            errorMessage: 'Tidak ada koneksi & cache kosong',
+          ),
+        );
+      }
     }
   }
 

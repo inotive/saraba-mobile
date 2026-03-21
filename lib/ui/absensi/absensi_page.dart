@@ -203,7 +203,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
                   child: ListView.separated(
                     shrinkWrap: true,
                     itemCount: months.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final month = months[index];
                       final isSelected =
