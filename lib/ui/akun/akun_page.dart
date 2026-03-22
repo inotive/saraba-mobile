@@ -6,6 +6,7 @@ import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:saraba_mobile/ui/akun/change_password_page.dart';
 import 'package:saraba_mobile/ui/akun/edit_profile_page.dart';
+import 'package:saraba_mobile/ui/akun/project_profit_page.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
@@ -86,7 +87,7 @@ class _AkunPageState extends State<AkunPage> {
                 children: [
                   _profileCard(profile),
                   const SizedBox(height: 16),
-                  _menuCard(profile),
+                  _menuCard(),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -156,7 +157,7 @@ class _AkunPageState extends State<AkunPage> {
     return const NetworkImage('https://i.pravatar.cc/150?img=3');
   }
 
-  Widget _menuCard(_ProfileData profile) {
+  Widget _menuCard() {
     return Container(
       decoration: _cardDecoration(),
       child: Column(
@@ -164,7 +165,14 @@ class _AkunPageState extends State<AkunPage> {
           _menuItem(
             icon: Icons.person,
             title: 'Personal',
-            onTap: () => _openEditProfile(profile),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProjectProfitPage(),
+                ),
+              );
+            },
           ),
           _menuItem(
             icon: Icons.build,
