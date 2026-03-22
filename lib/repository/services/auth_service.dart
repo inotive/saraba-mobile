@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
+import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/login_response_model.dart';
 import 'package:saraba_mobile/repository/model/mock/auth_service_mock.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   static const bool useMock =
       false; // For development, delete this when backend is ready
+  static const AppLogger _logger = AppLogger('AuthService');
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -23,17 +25,19 @@ class AuthService {
   }) async {
     if (useMock) {
       try {
+        _logger.log('Mock login request');
         final response = await AuthServiceMock.login(
           email: email,
           password: password,
         );
         final token = "${response.data.tokenType} ${response.data.token}";
+        _logger.log('Mock login success: ${response.message}');
 
         await _saveUserToHive(response.data.user);
         await _saveToken(token);
         return response;
       } catch (e) {
-        print("Mock error: $e");
+        _logger.error('Mock error: $e');
         return null;
       }
     }
@@ -48,6 +52,8 @@ class AuthService {
         },
       );
 
+      _logger.response(response);
+
       if (response.statusCode == 200) {
         final loginResponse = LoginResponse.fromJson(response.data);
 
@@ -56,6 +62,7 @@ class AuthService {
 
         await _saveUserToHive(loginResponse.data.user);
         await _saveToken(token);
+        _logger.log('Login success');
 
         return loginResponse;
       }
@@ -87,14 +94,16 @@ class AuthService {
   Future<bool> logout() async {
     if (useMock) {
       try {
+        _logger.log('Mock logout request');
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove("token");
 
         final box = Hive.box<User>('userBox');
         await box.delete('current_user');
+        _logger.log('Mock logout success');
         return true; // Just return true for mock logout
       } catch (e) {
-        print("Mock logout error: $e");
+        _logger.error('Mock logout error: $e');
       }
     }
 
@@ -106,12 +115,15 @@ class AuthService {
         options: Options(headers: {"Authorization": token}),
       );
 
+      _logger.response(response);
+
       if (response.statusCode == 200 && response.data["success"] == true) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove("token");
 
         final box = Hive.box<User>('userBox');
         await box.delete('current_user');
+        _logger.log('Logout success');
 
         return true;
       }

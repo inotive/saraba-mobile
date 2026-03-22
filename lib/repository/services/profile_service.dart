@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import 'package:saraba_mobile/repository/model/profile_response_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
@@ -8,26 +8,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileService {
   static const String _avatarPathKey = 'current_user_avatar_path';
+  static const AppLogger _logger = AppLogger('ProfileService');
 
   Future<ProfileResponse?> getProfile() async {
     try {
       final dio = await AuthService().getAuthDio();
-      debugPrint('[ProfileService] GET /profile');
       final response = await dio.get('/profile');
-      debugPrint(
-        '[ProfileService] Response status: ${response.statusCode}',
-      );
-      debugPrint('[ProfileService] Response data: ${response.data}');
+      _logger.response(response);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final profileResponse = ProfileResponse.fromJson(
           response.data as Map<String, dynamic>,
-        );
-        debugPrint(
-          '[ProfileService] Parsed profile: '
-          'name=${profileResponse.data.karyawan?.nama.isNotEmpty == true ? profileResponse.data.karyawan!.nama : profileResponse.data.user.name}, '
-          'role=${_resolveRole(profileResponse)}, '
-          'avatar=${profileResponse.data.user.avatar}',
         );
 
         await saveCurrentUser(
@@ -43,15 +34,16 @@ class ProfileService {
           ),
         );
 
+        _logger.log('Profile loaded successfully');
+
         return profileResponse;
       }
-      debugPrint('[ProfileService] Profile request was not successful');
+      _logger.error('Profile request was not successful');
     } on DioException catch (e) {
-      debugPrint('[ProfileService] Dio error while loading profile: ${e.message}');
-      debugPrint('[ProfileService] Dio response: ${e.response?.data}');
+      _logger.dioError(e);
       return null;
     } catch (e) {
-      debugPrint('[ProfileService] Unexpected error while loading profile: $e');
+      _logger.error('Unexpected error while loading profile: $e');
       return null;
     }
 
