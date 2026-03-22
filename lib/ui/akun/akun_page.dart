@@ -1,12 +1,66 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
+import 'package:saraba_mobile/repository/services/profile_service.dart';
+import 'package:saraba_mobile/ui/akun/change_password_page.dart';
+import 'package:saraba_mobile/ui/akun/edit_profile_page.dart';
+import 'package:saraba_mobile/ui/akun/project_profit_page.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
 import 'package:saraba_mobile/ui/login/login_page.dart';
 
-class AkunPage extends StatelessWidget {
+class AkunPage extends StatefulWidget {
   const AkunPage({super.key});
+
+  @override
+  State<AkunPage> createState() => _AkunPageState();
+}
+
+class _AkunPageState extends State<AkunPage> {
+  final ProfileService _profileService = ProfileService();
+  late Future<_ProfileData> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _loadProfile();
+  }
+
+  Future<_ProfileData> _loadProfile() async {
+    final user = await _profileService.getCurrentUser();
+    final avatarPath = await _profileService.getAvatarPath();
+
+    return _ProfileData(user: user, avatarPath: avatarPath);
+  }
+
+  Future<void> _openEditProfile(_ProfileData profile) async {
+    final isUpdated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            EditProfilePage(user: profile.user, avatarPath: profile.avatarPath),
+      ),
+    );
+
+    if (isUpdated != true) {
+      return;
+    }
+
+    setState(() {
+      _profileFuture = _loadProfile();
+    });
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,23 +76,32 @@ class AkunPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Akun')),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _profileCard(),
-              const SizedBox(height: 16),
-              _menuCard(),
-              const SizedBox(height: 16),
-              _logoutButton(context),
-            ],
-          ),
+        body: FutureBuilder<_ProfileData>(
+          future: _profileFuture,
+          builder: (context, snapshot) {
+            final profile = snapshot.data ?? const _ProfileData();
+
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _profileCard(profile),
+                  const SizedBox(height: 16),
+                  _menuCard(),
+                  const SizedBox(height: 16),
+                  _logoutButton(context),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _profileCard() {
+  Widget _profileCard(_ProfileData profile) {
+    final user = profile.user;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -47,30 +110,32 @@ class AkunPage extends StatelessWidget {
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               CircleAvatar(
                 radius: 30,
-                backgroundImage: NetworkImage(
-                  'https://i.pravatar.cc/150?img=3',
+                backgroundImage: _buildProfileImage(profile.avatarPath),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                user?.name ?? 'Rahmad Hidayat',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
-                'Rahmad Hidayat',
-                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Manajer Keuangan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                user?.role ?? 'Manajer Keuangan',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
-
           const Spacer(),
-
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () => _openEditProfile(profile),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.orange),
               shape: RoundedRectangleBorder(
@@ -84,24 +149,56 @@ class AkunPage extends StatelessWidget {
     );
   }
 
+  ImageProvider _buildProfileImage(String? avatarPath) {
+    if (avatarPath != null && avatarPath.isNotEmpty) {
+      return FileImage(File(avatarPath));
+    }
+
+    return const NetworkImage('https://i.pravatar.cc/150?img=3');
+  }
+
   Widget _menuCard() {
     return Container(
       decoration: _cardDecoration(),
       child: Column(
         children: [
-          _menuItem(Icons.person, 'Personal'),
-          _menuItem(Icons.build, 'General'),
+          _menuItem(
+            icon: Icons.person,
+            title: 'Personal',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProjectProfitPage(),
+                ),
+              );
+            },
+          ),
+          _menuItem(
+            icon: Icons.build,
+            title: 'General',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _menuItem(IconData icon, String title) {
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 
@@ -132,4 +229,11 @@ class AkunPage extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ProfileData {
+  final User? user;
+  final String? avatarPath;
+
+  const _ProfileData({this.user, this.avatarPath});
 }
