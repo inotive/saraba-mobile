@@ -20,14 +20,18 @@ class AkunPage extends StatelessWidget {
     BuildContext context,
     ProfileState profile,
   ) async {
+    final profileBloc = context.read<ProfileBloc>();
     final isUpdated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfilePage(
-          name: profile.displayName,
-          role: profile.displayRole,
-          avatarPath: profile.avatarPath,
-          avatarUrl: profile.remoteAvatar,
+        builder: (_) => BlocProvider.value(
+          value: profileBloc,
+          child: EditProfilePage(
+            name: profile.displayName,
+            role: profile.displayRole,
+            avatarPath: profile.avatarPath,
+            avatarUrl: profile.remoteAvatar,
+          ),
         ),
       ),
     );
@@ -171,9 +175,15 @@ class AkunPage extends StatelessWidget {
             icon: Icons.build,
             title: 'General',
             onTap: () {
+              final profileBloc = context.read<ProfileBloc>();
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: profileBloc,
+                    child: const ChangePasswordPage(),
+                  ),
+                ),
               );
             },
           ),

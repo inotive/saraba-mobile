@@ -9,6 +9,9 @@ class ProfileState {
   final String? fallbackName;
   final String? fallbackRole;
   final String? fallbackEmail;
+  final bool isChangingPassword;
+  final String? changePasswordSuccessMessage;
+  final String? changePasswordErrorMessage;
 
   const ProfileState({
     this.isLoading = false,
@@ -19,6 +22,9 @@ class ProfileState {
     this.fallbackName,
     this.fallbackRole,
     this.fallbackEmail,
+    this.isChangingPassword = false,
+    this.changePasswordSuccessMessage,
+    this.changePasswordErrorMessage,
   });
 
   ProfileState copyWith({
@@ -31,6 +37,10 @@ class ProfileState {
     String? fallbackName,
     String? fallbackRole,
     String? fallbackEmail,
+    bool? isChangingPassword,
+    String? changePasswordSuccessMessage,
+    String? changePasswordErrorMessage,
+    bool clearChangePasswordFeedback = false,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -41,6 +51,13 @@ class ProfileState {
       fallbackName: fallbackName ?? this.fallbackName,
       fallbackRole: fallbackRole ?? this.fallbackRole,
       fallbackEmail: fallbackEmail ?? this.fallbackEmail,
+      isChangingPassword: isChangingPassword ?? this.isChangingPassword,
+      changePasswordSuccessMessage: clearChangePasswordFeedback
+          ? null
+          : changePasswordSuccessMessage ?? this.changePasswordSuccessMessage,
+      changePasswordErrorMessage: clearChangePasswordFeedback
+          ? null
+          : changePasswordErrorMessage ?? this.changePasswordErrorMessage,
     );
   }
 

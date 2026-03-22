@@ -169,9 +169,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: _buildAvatar(),
-                  ),
+                  Center(child: _buildAvatar()),
                   const SizedBox(height: 16),
                   Center(
                     child: OutlinedButton.icon(
@@ -226,7 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    initialValue: _selectedRole,
                     icon: const Icon(
                       Icons.keyboard_arrow_down,
                       color: Color(0xFFB8B8B8),

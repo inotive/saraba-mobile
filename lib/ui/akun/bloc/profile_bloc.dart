@@ -8,6 +8,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   ProfileBloc(this.profileService) : super(const ProfileState()) {
     on<ProfileRequested>(_onProfileRequested);
+    on<ChangePasswordSubmitted>(_onChangePasswordSubmitted);
+    on<ChangePasswordFeedbackCleared>(_onChangePasswordFeedbackCleared);
   }
 
   Future<void> _onProfileRequested(
@@ -38,5 +40,42 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         fallbackEmail: localUser?.email,
       ),
     );
+  }
+
+  Future<void> _onChangePasswordSubmitted(
+    ChangePasswordSubmitted event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isChangingPassword: true,
+        clearChangePasswordFeedback: true,
+      ),
+    );
+
+    final result = await profileService.changePassword(
+      currentPassword: event.currentPassword,
+      newPassword: event.newPassword,
+      newPasswordConfirmation: event.newPasswordConfirmation,
+    );
+
+    emit(
+      state.copyWith(
+        isChangingPassword: false,
+        changePasswordSuccessMessage: result?.success == true
+            ? result!.message
+            : null,
+        changePasswordErrorMessage: result?.success == true
+            ? null
+            : result?.message ?? 'Gagal mengubah password',
+      ),
+    );
+  }
+
+  void _onChangePasswordFeedbackCleared(
+    ChangePasswordFeedbackCleared event,
+    Emitter<ProfileState> emit,
+  ) {
+    emit(state.copyWith(clearChangePasswordFeedback: true));
   }
 }

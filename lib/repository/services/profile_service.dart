@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
+import 'package:saraba_mobile/repository/model/change_password_response_model.dart';
 import 'package:hive/hive.dart';
 import 'package:saraba_mobile/repository/model/profile_response_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
@@ -48,6 +49,53 @@ class ProfileService {
     }
 
     return null;
+  }
+
+  Future<ChangePasswordResponse?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.post(
+        '/profile/change-password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': newPasswordConfirmation,
+        },
+      );
+      _logger.response(response);
+
+      final actionResponse = ChangePasswordResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      if (actionResponse.success) {
+        _logger.log('Change password success');
+        return actionResponse;
+      }
+
+      _logger.error('Change password request was not successful');
+      return actionResponse;
+    } on DioException catch (e) {
+      _logger.dioError(e);
+      return ChangePasswordResponse(
+        success: false,
+        message:
+            (e.response?.data is Map<String, dynamic>)
+                ? (e.response?.data['message'] as String? ??
+                      'Gagal mengubah password')
+                : 'Gagal mengubah password',
+      );
+    } catch (e) {
+      _logger.error('Unexpected error while changing password: $e');
+      return ChangePasswordResponse(
+        success: false,
+        message: 'Gagal mengubah password',
+      );
+    }
   }
 
   Future<User?> getCurrentUser() async {

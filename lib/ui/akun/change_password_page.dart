@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
+import 'package:saraba_mobile/ui/login/login_page.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -46,10 +54,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   void _handleSave() {
     FocusScope.of(context).unfocus();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('UI password change ready. API integration comes later.'),
+    context.read<ProfileBloc>().add(
+      ChangePasswordSubmitted(
+        currentPassword: _oldPasswordController.text.trim(),
+        newPassword: _newPasswordController.text.trim(),
+        newPasswordConfirmation: _confirmPasswordController.text.trim(),
       ),
     );
   }
@@ -73,68 +82,124 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PasswordField(
-                label: 'Konfirmasi Kata Sandi Lama',
-                controller: _oldPasswordController,
-                obscureText: _obscureOldPassword,
-                onToggleVisibility: () {
-                  setState(() {
-                    _obscureOldPassword = !_obscureOldPassword;
-                  });
-                },
-              ),
-              const SizedBox(height: 18),
-              _PasswordField(
-                label: 'Kata Sandi Baru',
-                controller: _newPasswordController,
-                obscureText: _obscureNewPassword,
-                onToggleVisibility: () {
-                  setState(() {
-                    _obscureNewPassword = !_obscureNewPassword;
-                  });
-                },
-              ),
-              const SizedBox(height: 18),
-              _PasswordField(
-                label: 'Konfirmasi Kata Sandi Baru',
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                onToggleVisibility: () {
-                  setState(() {
-                    _obscureConfirmPassword = !_obscureConfirmPassword;
-                  });
-                },
-              ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isSubmitEnabled ? _handleSave : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF934D),
-                    disabledBackgroundColor: const Color(0xFFF9CBAE),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthBloc, AuthState>(
+              listener: (context, state) {
+                if (state is AuthUnauthenticated) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            BlocListener<ProfileBloc, ProfileState>(
+              listenWhen: (previous, current) =>
+                  previous.changePasswordSuccessMessage !=
+                      current.changePasswordSuccessMessage ||
+                  previous.changePasswordErrorMessage !=
+                      current.changePasswordErrorMessage,
+              listener: (context, state) {
+                if (state.changePasswordSuccessMessage != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.changePasswordSuccessMessage!)),
+                  );
+                  context.read<ProfileBloc>().add(ChangePasswordFeedbackCleared());
+                  context.read<AuthBloc>().add(LogoutRequested());
+                  return;
+                }
+
+                if (state.changePasswordErrorMessage != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.changePasswordErrorMessage!)),
+                  );
+                  context.read<ProfileBloc>().add(ChangePasswordFeedbackCleared());
+                }
+              },
+            ),
+          ],
+          child: BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, state) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _PasswordField(
+                      label: 'Konfirmasi Kata Sandi Lama',
+                      controller: _oldPasswordController,
+                      obscureText: _obscureOldPassword,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _obscureOldPassword = !_obscureOldPassword;
+                        });
+                      },
                     ),
-                  ),
-                  child: const Text(
-                    'Simpan',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 18),
+                    _PasswordField(
+                      label: 'Kata Sandi Baru',
+                      controller: _newPasswordController,
+                      obscureText: _obscureNewPassword,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _obscureNewPassword = !_obscureNewPassword;
+                        });
+                      },
                     ),
-                  ),
+                    const SizedBox(height: 18),
+                    _PasswordField(
+                      label: 'Konfirmasi Kata Sandi Baru',
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitEnabled && !state.isChangingPassword
+                            ? _handleSave
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF934D),
+                          disabledBackgroundColor: const Color(0xFFF9CBAE),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: state.isChangingPassword
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.3,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                'Simpan',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
