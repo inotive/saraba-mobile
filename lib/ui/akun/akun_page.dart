@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
+import 'package:saraba_mobile/ui/akun/change_password_page.dart';
 import 'package:saraba_mobile/ui/akun/edit_profile_page.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
@@ -38,10 +39,8 @@ class _AkunPageState extends State<AkunPage> {
     final isUpdated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfilePage(
-          user: profile.user,
-          avatarPath: profile.avatarPath,
-        ),
+        builder: (_) =>
+            EditProfilePage(user: profile.user, avatarPath: profile.avatarPath),
       ),
     );
 
@@ -57,9 +56,9 @@ class _AkunPageState extends State<AkunPage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profil berhasil diperbarui')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
   }
 
   @override
@@ -87,7 +86,7 @@ class _AkunPageState extends State<AkunPage> {
                 children: [
                   _profileCard(profile),
                   const SizedBox(height: 16),
-                  _menuCard(),
+                  _menuCard(profile),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -118,7 +117,10 @@ class _AkunPageState extends State<AkunPage> {
               const SizedBox(height: 8),
               Text(
                 user?.name ?? 'Rahmad Hidayat',
-                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -154,24 +156,41 @@ class _AkunPageState extends State<AkunPage> {
     return const NetworkImage('https://i.pravatar.cc/150?img=3');
   }
 
-  Widget _menuCard() {
+  Widget _menuCard(_ProfileData profile) {
     return Container(
       decoration: _cardDecoration(),
       child: Column(
         children: [
-          _menuItem(Icons.person, 'Personal'),
-          _menuItem(Icons.build, 'General'),
+          _menuItem(
+            icon: Icons.person,
+            title: 'Personal',
+            onTap: () => _openEditProfile(profile),
+          ),
+          _menuItem(
+            icon: Icons.build,
+            title: 'General',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _menuItem(IconData icon, String title) {
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 
