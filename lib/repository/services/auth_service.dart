@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static const bool useMock =
-      true; // For development, delete this when backend is ready
+      false; // For development, delete this when backend is ready
 
   final Dio _dio = Dio(
     BaseOptions(

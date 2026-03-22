@@ -2,14 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
 
 class EditProfilePage extends StatefulWidget {
-  final User? user;
+  final String? name;
+  final String? role;
   final String? avatarPath;
+  final String? avatarUrl;
 
-  const EditProfilePage({super.key, this.user, this.avatarPath});
+  const EditProfilePage({
+    super.key,
+    this.name,
+    this.role,
+    this.avatarPath,
+    this.avatarUrl,
+  });
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -17,6 +24,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   static const List<String> _roleOptions = [
+    'Admin',
     'Manajer Keuangan',
     'Super Admin',
     'Senior Accountant',
@@ -36,8 +44,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.user?.name ?? 'Rahmad Hidayat';
-    _selectedRole = _resolveInitialRole(widget.user?.role);
+    _nameController.text = widget.name ?? 'User';
+    _selectedRole = _resolveInitialRole(widget.role);
     _selectedImagePath = widget.avatarPath;
   }
 
@@ -56,7 +64,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return role;
     }
 
-    return _roleOptions.first;
+    return 'Admin';
   }
 
   Future<void> _pickImage() async {
@@ -97,12 +105,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
     Navigator.pop(context, true);
   }
 
-  ImageProvider _buildAvatarImage() {
+  ImageProvider? _buildAvatarImage() {
     if (_selectedImagePath != null && _selectedImagePath!.isNotEmpty) {
       return FileImage(File(_selectedImagePath!));
     }
 
-    return const NetworkImage('https://i.pravatar.cc/150?img=3');
+    if (widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty) {
+      return NetworkImage(widget.avatarUrl!);
+    }
+
+    return null;
+  }
+
+  Widget _buildAvatar() {
+    final image = _buildAvatarImage();
+    if (image != null) {
+      return CircleAvatar(radius: 36, backgroundImage: image);
+    }
+
+    return const CircleAvatar(
+      radius: 36,
+      backgroundColor: Color(0xFFF1F3F5),
+      child: Icon(Icons.person, color: Color(0xFF9AA0A6), size: 34),
+    );
   }
 
   @override
@@ -145,10 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: CircleAvatar(
-                      radius: 36,
-                      backgroundImage: _buildAvatarImage(),
-                    ),
+                    child: _buildAvatar(),
                   ),
                   const SizedBox(height: 16),
                   Center(

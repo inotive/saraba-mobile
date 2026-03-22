@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
+import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/akun_page.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
@@ -25,7 +28,10 @@ class HomePage extends StatelessWidget {
       case NavigationTab.pekerjaan:
         return PekerjaanPage();
       case NavigationTab.akun:
-        return AkunPage();
+        return BlocProvider(
+          create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+          child: const AkunPage(),
+        );
     }
   }
 

@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/repository/model/user_model.dart';
-import 'package:saraba_mobile/repository/services/profile_service.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/akun/change_password_page.dart';
 import 'package:saraba_mobile/ui/akun/edit_profile_page.dart';
 import 'package:saraba_mobile/ui/akun/project_profit_page.dart';
@@ -12,51 +13,30 @@ import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
 import 'package:saraba_mobile/ui/login/login_page.dart';
 
-class AkunPage extends StatefulWidget {
+class AkunPage extends StatelessWidget {
   const AkunPage({super.key});
 
-  @override
-  State<AkunPage> createState() => _AkunPageState();
-}
-
-class _AkunPageState extends State<AkunPage> {
-  final ProfileService _profileService = ProfileService();
-  late Future<_ProfileData> _profileFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _profileFuture = _loadProfile();
-  }
-
-  Future<_ProfileData> _loadProfile() async {
-    final user = await _profileService.getCurrentUser();
-    final avatarPath = await _profileService.getAvatarPath();
-
-    return _ProfileData(user: user, avatarPath: avatarPath);
-  }
-
-  Future<void> _openEditProfile(_ProfileData profile) async {
+  Future<void> _openEditProfile(
+    BuildContext context,
+    ProfileState profile,
+  ) async {
     final isUpdated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            EditProfilePage(user: profile.user, avatarPath: profile.avatarPath),
+        builder: (_) => EditProfilePage(
+          name: profile.displayName,
+          role: profile.displayRole,
+          avatarPath: profile.avatarPath,
+          avatarUrl: profile.remoteAvatar,
+        ),
       ),
     );
 
-    if (isUpdated != true) {
+    if (isUpdated != true || !context.mounted) {
       return;
     }
 
-    setState(() {
-      _profileFuture = _loadProfile();
-    });
-
-    if (!mounted) {
-      return;
-    }
-
+    context.read<ProfileBloc>().add(ProfileRequested());
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
@@ -76,18 +56,24 @@ class _AkunPageState extends State<AkunPage> {
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Akun')),
-        body: FutureBuilder<_ProfileData>(
-          future: _profileFuture,
-          builder: (context, snapshot) {
-            final profile = snapshot.data ?? const _ProfileData();
-
+        body: BlocConsumer<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state.isError && state.errorMessage != null) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            }
+          },
+          builder: (context, state) {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _profileCard(profile),
+                  if (state.isLoading) const LinearProgressIndicator(),
+                  if (state.isLoading) const SizedBox(height: 16),
+                  _profileCard(context, state),
                   const SizedBox(height: 16),
-                  _menuCard(),
+                  _menuCard(context),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -99,9 +85,7 @@ class _AkunPageState extends State<AkunPage> {
     );
   }
 
-  Widget _profileCard(_ProfileData profile) {
-    final user = profile.user;
-
+  Widget _profileCard(BuildContext context, ProfileState profile) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -111,13 +95,10 @@ class _AkunPageState extends State<AkunPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundImage: _buildProfileImage(profile.avatarPath),
-              ),
+              _buildProfileAvatar(profile),
               const SizedBox(height: 8),
               Text(
-                user?.name ?? 'Rahmad Hidayat',
+                profile.displayName,
                 style: const TextStyle(
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
@@ -125,7 +106,7 @@ class _AkunPageState extends State<AkunPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                user?.role ?? 'Manajer Keuangan',
+                profile.displayRole,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -135,7 +116,7 @@ class _AkunPageState extends State<AkunPage> {
           ),
           const Spacer(),
           OutlinedButton(
-            onPressed: () => _openEditProfile(profile),
+            onPressed: () => _openEditProfile(context, profile),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.orange),
               shape: RoundedRectangleBorder(
@@ -149,15 +130,29 @@ class _AkunPageState extends State<AkunPage> {
     );
   }
 
-  ImageProvider _buildProfileImage(String? avatarPath) {
-    if (avatarPath != null && avatarPath.isNotEmpty) {
-      return FileImage(File(avatarPath));
+  Widget _buildProfileAvatar(ProfileState profile) {
+    if (profile.avatarPath != null && profile.avatarPath!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 30,
+        backgroundImage: FileImage(File(profile.avatarPath!)),
+      );
     }
 
-    return const NetworkImage('https://i.pravatar.cc/150?img=3');
+    if (profile.remoteAvatar.isNotEmpty) {
+      return CircleAvatar(
+        radius: 30,
+        backgroundImage: NetworkImage(profile.remoteAvatar),
+      );
+    }
+
+    return const CircleAvatar(
+      radius: 30,
+      backgroundColor: Color(0xFFF1F3F5),
+      child: Icon(Icons.person, color: Color(0xFF9AA0A6), size: 30),
+    );
   }
 
-  Widget _menuCard() {
+  Widget _menuCard(BuildContext context) {
     return Container(
       decoration: _cardDecoration(),
       child: Column(
@@ -168,9 +163,7 @@ class _AkunPageState extends State<AkunPage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ProjectProfitPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const ProjectProfitPage()),
               );
             },
           ),
@@ -229,11 +222,4 @@ class _AkunPageState extends State<AkunPage> {
       ],
     );
   }
-}
-
-class _ProfileData {
-  final User? user;
-  final String? avatarPath;
-
-  const _ProfileData({this.user, this.avatarPath});
 }
