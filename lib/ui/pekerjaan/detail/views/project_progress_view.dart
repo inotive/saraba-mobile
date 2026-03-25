@@ -52,7 +52,7 @@ class ProjectProgressView extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   itemCount: progressItems.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
                     final item = progressItems[index];
                     return ProgressItemCard(
