@@ -9,6 +9,8 @@ import 'package:saraba_mobile/ui/akun/pages/akun_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
@@ -22,6 +24,9 @@ class HomePage extends StatelessWidget {
         return MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
+            BlocProvider(
+              create: (_) => AbsensiBloc(AbsensiService())..add(FetchTodayAbsensi()),
+            ),
             BlocProvider(
               create: (_) =>
                   ProfileBloc(ProfileService())..add(FetchProfileData()),

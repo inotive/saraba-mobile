@@ -7,6 +7,8 @@ import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
@@ -105,89 +107,97 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: _cardDecoration(),
-          child: Column(
-            children: [
-              const Text(
-                "Don’t miss your attendance today!",
-                style: TextStyle(color: Colors.black54),
-              ),
-              const SizedBox(height: 8),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_today, size: 16),
-                  SizedBox(width: 6),
-                  Text("22 July 2024   02:45:30"),
-                ],
-              ),
-              BlocBuilder<AttendanceBloc, AttendanceState>(
-                builder: (context, state) {
-                  final hasAttendance =
-                      state.clockInTime != null || state.clockOutTime != null;
+          child: BlocBuilder<AbsensiBloc, AbsensiState>(
+            builder: (context, absensiState) {
+              final todayData = absensiState.todayData;
+              final absensi = todayData?.absensi;
 
-                  return Column(
+              return Column(
+                children: [
+                  const Text(
+                    "Don’t miss your attendance today!",
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      hasAttendance
-                          ? Container(
-                              margin: const EdgeInsetsDirectional.symmetric(
-                                vertical: 16.0,
-                              ),
-                              child: AttendanceStatusCard(
-                                clockInTime: state.clockInTime,
-                                clockOutTime: state.clockOutTime,
-                                isClockInDone: state.clockInTime != null,
-                                isClockOutDone: state.clockOutTime != null,
-                              ),
-                            )
-                          : const SizedBox(height: 16),
+                      const Icon(Icons.calendar_today, size: 16),
+                      const SizedBox(width: 6),
+                      Text(todayData?.today.isNotEmpty == true
+                          ? todayData!.today
+                          : '-'),
                     ],
-                  );
-                },
-              ),
-              BlocBuilder<AttendanceBloc, AttendanceState>(
-                builder: (context, state) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextButton.icon(
-                            onPressed: state.isLoading
-                                ? null
-                                : () async {
-                                    await handleClockIn(context);
-                                  },
-                            icon: const Icon(Icons.login, color: Colors.white),
-                            label: const Text(
-                              "Clock in",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
+                  ),
+                  if (absensiState.isLoadingToday)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: CircularProgressIndicator(),
+                    )
+                  else if (todayData != null)
+                    Container(
+                      margin: const EdgeInsetsDirectional.symmetric(
+                        vertical: 16.0,
+                      ),
+                      child: AttendanceStatusCard(
+                        clockInTime: absensi?.jamMasuk.isNotEmpty == true
+                            ? absensi!.jamMasuk
+                            : null,
+                        clockOutTime: absensi?.jamKeluar.isNotEmpty == true
+                            ? absensi!.jamKeluar
+                            : null,
+                        isClockInDone: todayData.isClockedIn,
+                        isClockOutDone: todayData.isClockedOut,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 16),
+                  BlocBuilder<AttendanceBloc, AttendanceState>(
+                    builder: (context, state) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        Container(width: 1, height: 24, color: Colors.white),
-                        Expanded(
-                          child: TextButton.icon(
-                            onPressed: state.isLoading
-                                ? null
-                                : () async {
-                                    await handleClockOut(context);
-                                  },
-                            icon: const Icon(Icons.logout, color: Colors.white),
-                            label: const Text(
-                              "Clock out",
-                              style: TextStyle(color: Colors.white),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: state.isLoading
+                                    ? null
+                                    : () async {
+                                        await handleClockIn(context);
+                                      },
+                                icon: const Icon(Icons.login, color: Colors.white),
+                                label: const Text(
+                                  "Clock in",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
                             ),
-                          ),
+                            Container(width: 1, height: 24, color: Colors.white),
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: state.isLoading
+                                    ? null
+                                    : () async {
+                                        await handleClockOut(context);
+                                      },
+                                icon: const Icon(Icons.logout, color: Colors.white),
+                                label: const Text(
+                                  "Clock out",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
