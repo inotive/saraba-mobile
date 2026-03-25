@@ -23,7 +23,8 @@ class HomePage extends StatelessWidget {
           providers: [
             BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
             BlocProvider(
-              create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+              create: (_) =>
+                  ProfileBloc(ProfileService())..add(FetchProfileData()),
             ),
           ],
           child: const DashboardPage(),
@@ -34,7 +35,8 @@ class HomePage extends StatelessWidget {
         return PekerjaanPage();
       case NavigationTab.akun:
         return BlocProvider(
-          create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+          create: (_) =>
+              ProfileBloc(ProfileService())..add(CheckLocalProfileData()),
           child: const AkunPage(),
         );
     }

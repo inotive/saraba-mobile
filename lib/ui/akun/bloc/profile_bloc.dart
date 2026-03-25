@@ -7,13 +7,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ProfileService profileService;
 
   ProfileBloc(this.profileService) : super(const ProfileState()) {
-    on<ProfileRequested>(_onProfileRequested);
+    on<CheckLocalProfileData>(_onCheckLocalProfileData);
+    on<FetchProfileData>(_onFetchProfileData);
     on<ChangePasswordSubmitted>(_onChangePasswordSubmitted);
     on<ChangePasswordFeedbackCleared>(_onChangePasswordFeedbackCleared);
   }
 
-  Future<void> _onProfileRequested(
-    ProfileRequested event,
+  Future<void> _onCheckLocalProfileData(
+    CheckLocalProfileData event,
     Emitter<ProfileState> emit,
   ) async {
     emit(
@@ -24,6 +25,42 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       ),
     );
 
+    final localUser = await profileService.getCurrentUser();
+    final avatarPath = await profileService.getAvatarPath();
+
+    if (localUser != null) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          isError: false,
+          avatarPath: avatarPath,
+          fallbackName: localUser.name,
+          fallbackRole: localUser.role,
+          fallbackEmail: localUser.email,
+        ),
+      );
+      return;
+    }
+
+    await _fetchProfileData(emit);
+  }
+
+  Future<void> _onFetchProfileData(
+    FetchProfileData event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isLoading: true,
+        isError: false,
+        clearErrorMessage: true,
+      ),
+    );
+
+    await _fetchProfileData(emit);
+  }
+
+  Future<void> _fetchProfileData(Emitter<ProfileState> emit) async {
     final profile = await profileService.getProfile();
     final localUser = await profileService.getCurrentUser();
     final avatarPath = await profileService.getAvatarPath();

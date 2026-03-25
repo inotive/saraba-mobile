@@ -40,7 +40,7 @@ class AkunPage extends StatelessWidget {
       return;
     }
 
-    context.read<ProfileBloc>().add(ProfileRequested());
+    context.read<ProfileBloc>().add(FetchProfileData());
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
