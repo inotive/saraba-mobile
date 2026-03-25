@@ -19,8 +19,13 @@ class HomePage extends StatelessWidget {
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
       case NavigationTab.dashboard:
-        return BlocProvider(
-          create: (_) => AttendanceBloc(AbsensiService()),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
+            BlocProvider(
+              create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+            ),
+          ],
           child: const DashboardPage(),
         );
       case NavigationTab.absensi:

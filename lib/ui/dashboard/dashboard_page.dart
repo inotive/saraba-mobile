@@ -4,6 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
@@ -44,28 +46,54 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 24),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 24,
-            backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=12'),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Halo, Biko 👋',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'Senior Accountant',
-                style: TextStyle(color: Colors.black54),
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, profile) {
+          return Row(
+            children: [
+              _buildProfileAvatar(profile),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Halo, ${profile.displayName} 👋',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    profile.displayRole,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildProfileAvatar(ProfileState profile) {
+    if (profile.avatarPath != null && profile.avatarPath!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 24,
+        backgroundImage: FileImage(File(profile.avatarPath!)),
+      );
+    }
+
+    if (profile.remoteAvatar.isNotEmpty) {
+      return CircleAvatar(
+        radius: 24,
+        backgroundImage: NetworkImage(profile.remoteAvatar),
+      );
+    }
+
+    return const CircleAvatar(
+      radius: 24,
+      backgroundColor: Color(0xFFF1F3F5),
+      child: Icon(Icons.person, color: Color(0xFF9AA0A6), size: 24),
     );
   }
 

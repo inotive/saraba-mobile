@@ -64,7 +64,7 @@ class ProfileUser {
 }
 
 class KaryawanProfile {
-  final String id;
+  final int id;
   final String nama;
   final String email;
   final String telepon;
@@ -88,7 +88,7 @@ class KaryawanProfile {
 
   factory KaryawanProfile.fromJson(Map<String, dynamic> json) {
     return KaryawanProfile(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as int? ?? 0,
       nama: json['nama'] as String? ?? '',
       email: json['email'] as String? ?? '',
       telepon: json['telepon'] as String? ?? '',
