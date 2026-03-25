@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
-import 'package:saraba_mobile/repository/model/change_password_response_model.dart';
+import 'package:saraba_mobile/repository/model/profile/change_password_response_model.dart';
 import 'package:hive/hive.dart';
-import 'package:saraba_mobile/repository/model/profile_response_model.dart';
+import 'package:saraba_mobile/repository/model/profile/profile_response_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';

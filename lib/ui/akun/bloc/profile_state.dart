@@ -1,4 +1,4 @@
-import 'package:saraba_mobile/repository/model/profile_response_model.dart';
+import 'package:saraba_mobile/repository/model/profile/profile_response_model.dart';
 
 class ProfileState {
   final bool isLoading;
