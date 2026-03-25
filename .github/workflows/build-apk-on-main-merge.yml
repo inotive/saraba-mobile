@@ -46,5 +46,5 @@ jobs:
         with:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           name: app-test ${{ steps.release_meta.outputs.tag }}
-          prerelease: true
+          prerelease: false
           files: build/app/outputs/flutter-apk/app-release.apk
