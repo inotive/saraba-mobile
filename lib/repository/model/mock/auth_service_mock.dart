@@ -19,11 +19,17 @@ class AuthServiceMock {
       "data": {
         "user": {
           "id": 1,
-          "name": "superadmin",
+          "name": "Super Admin",
           "email": "admin@gmail.com",
           "role": "Super Admin",
         },
-        "karyawan": null,
+        "karyawan": {
+          "id": 1,
+          "nama": "Super Admin",
+          "jabatan": "Administrator",
+          "departemen": "IT",
+          "status": "aktif",
+        },
         "token": "7|Tbwl6khAtmufKKH99MkwgBDJCrK7inTz67GiK1VJ60a28f3e",
         "token_type": "Bearer",
       },
