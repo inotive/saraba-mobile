@@ -23,6 +23,8 @@ class LoginPage extends StatelessWidget {
 class _LoginView extends StatelessWidget {
   const _LoginView();
 
+  static const Color _brandBlue = Color(0xFF3B6197);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,17 +48,121 @@ class _LoginView extends StatelessWidget {
             ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LoginForm(
-              onLogin: (email, password) {
-                context.read<LoginBloc>().add(LoginSubmitted(email, password));
-              },
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFBE3D2), Color(0xFFF4F6FB)],
             ),
+          ),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _LoginBackground()),
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 150),
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.10),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Image.asset('assets/images/saraba_logo.png'),
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'Selamat Datang',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        Text(
+                          'di Aplikasi',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'SARABA',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: LoginForm(
+                    onLogin: (email, password) {
+                      context.read<LoginBloc>().add(
+                        LoginSubmitted(email, password),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LoginBackground extends StatelessWidget {
+  const _LoginBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(child: Container(color: _LoginView._brandBlue)),
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/login_frame.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
+        ),
+      ],
     );
   }
 }
