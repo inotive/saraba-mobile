@@ -24,6 +24,7 @@ class _LoginFormState extends State<LoginForm> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      FocusScope.of(context).unfocus();
       widget.onLogin?.call(emailController.text, passwordController.text);
     }
   }

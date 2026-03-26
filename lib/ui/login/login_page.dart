@@ -5,6 +5,7 @@ import 'package:saraba_mobile/ui/login/bloc/login_event.dart';
 import 'package:saraba_mobile/ui/login/bloc/login_state.dart';
 import 'package:saraba_mobile/ui/login/login_form.dart';
 import 'package:saraba_mobile/ui/common/home_page.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import '../common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -36,16 +37,22 @@ class _LoginView extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => BlocProvider(
                   create: (_) => NavigationBloc(),
-                  child: const HomePage(),
+                  child: const HomePage(
+                    successBannerTitle: 'Log In Berhasil',
+                    successBannerMessage: 'Kamu Berhasil Masuk ke Akun Kamu',
+                  ),
                 ),
               ),
             );
           }
 
           if (state is LoginFailure) {
-            ScaffoldMessenger.of(
+            StatusBanner.show(
               context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+              title: 'Log In Tidak Berhasil',
+              message: state.message,
+              type: StatusBannerType.error,
+            );
           }
         },
         child: Container(

@@ -14,9 +14,41 @@ import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  final String? successBannerTitle;
+  final String? successBannerMessage;
+
+  const HomePage({
+    super.key,
+    this.successBannerTitle,
+    this.successBannerMessage,
+  });
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.successBannerTitle != null &&
+        widget.successBannerMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        StatusBanner.show(
+          context,
+          title: widget.successBannerTitle!,
+          message: widget.successBannerMessage!,
+          type: StatusBannerType.success,
+        );
+      });
+    }
+  }
 
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
