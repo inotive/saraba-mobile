@@ -31,6 +31,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const Color _selectedNavColor = Color(0xFF2A4FA2);
+
+  Widget _buildNavIcon(String assetPath, {required bool isSelected}) {
+    return Image.asset(
+      assetPath,
+      width: 18,
+      height: 18,
+      color: isSelected ? _selectedNavColor : Colors.grey,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -103,29 +114,46 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               child: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
                 currentIndex: state.selectedTab.index,
-                selectedItemColor: Colors.black,
+                selectedItemColor: _selectedNavColor,
                 unselectedItemColor: Colors.grey,
+                showSelectedLabels: true,
+                showUnselectedLabels: true,
+                selectedLabelStyle: const TextStyle(fontSize: 12),
+                unselectedLabelStyle: const TextStyle(fontSize: 12),
                 onTap: (index) {
                   context.read<NavigationBloc>().add(
                     NavigateToPage(NavigationTab.values[index]),
                   );
                 },
-                items: const [
+                items: [
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.dashboard),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_dashboard_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.dashboard,
+                    ),
                     label: "Dashboard",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.check_circle),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_absensi_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.absensi,
+                    ),
                     label: "Absensi",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.work),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_pekerjaan_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.pekerjaan,
+                    ),
                     label: "Pekerjaan",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.account_circle),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_akun_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.akun,
+                    ),
                     label: "Akun",
                   ),
                 ],
