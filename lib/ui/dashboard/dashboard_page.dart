@@ -30,11 +30,24 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Container(
           decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-          child: Column(
+          child: Stack(
             children: [
-              _header(),
-              const SizedBox(height: 16),
-              _attendanceCard(context),
+              Positioned(
+                top: 40,
+                right: 0,
+                child: Image.asset(
+                  'assets/images/dashboard_background_image.png',
+                  width: 130,
+                ),
+              ),
+              Column(
+                children: [
+                  _header(),
+                  const SizedBox(height: 16),
+                  _attendanceCard(context),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ],
           ),
         ),
@@ -47,7 +60,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _header() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 50, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 72, 16, 24),
       child: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, profile) {
           return Row(
@@ -124,9 +137,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     children: [
                       const Icon(Icons.calendar_today, size: 16),
                       const SizedBox(width: 6),
-                      Text(todayData?.today.isNotEmpty == true
-                          ? todayData!.today
-                          : '-'),
+                      Text(
+                        todayData?.today.isNotEmpty == true
+                            ? todayData!.today
+                            : '-',
+                      ),
                     ],
                   ),
                   if (absensiState.isLoadingToday)
@@ -168,14 +183,21 @@ class _DashboardPageState extends State<DashboardPage> {
                                     : () async {
                                         await handleClockIn(context);
                                       },
-                                icon: const Icon(Icons.login, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.login,
+                                  color: Colors.white,
+                                ),
                                 label: const Text(
                                   "Clock in",
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ),
                             ),
-                            Container(width: 1, height: 24, color: Colors.white),
+                            Container(
+                              width: 1,
+                              height: 24,
+                              color: Colors.white,
+                            ),
                             Expanded(
                               child: TextButton.icon(
                                 onPressed: state.isLoading
@@ -183,7 +205,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                     : () async {
                                         await handleClockOut(context);
                                       },
-                                icon: const Icon(Icons.logout, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.logout,
+                                  color: Colors.white,
+                                ),
                                 label: const Text(
                                   "Clock out",
                                   style: TextStyle(color: Colors.white),
