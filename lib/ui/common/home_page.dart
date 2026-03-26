@@ -9,18 +9,72 @@ import 'package:saraba_mobile/ui/akun/pages/akun_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  final String? successBannerTitle;
+  final String? successBannerMessage;
+
+  const HomePage({
+    super.key,
+    this.successBannerTitle,
+    this.successBannerMessage,
+  });
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  static const Color _selectedNavColor = Color(0xFF2A4FA2);
+
+  Widget _buildNavIcon(String assetPath, {required bool isSelected}) {
+    return Image.asset(
+      assetPath,
+      width: 18,
+      height: 18,
+      color: isSelected ? _selectedNavColor : Colors.grey,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.successBannerTitle != null &&
+        widget.successBannerMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        StatusBanner.show(
+          context,
+          title: widget.successBannerTitle!,
+          message: widget.successBannerMessage!,
+          type: StatusBannerType.success,
+        );
+      });
+    }
+  }
 
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
       case NavigationTab.dashboard:
-        return BlocProvider(
-          create: (_) => AttendanceBloc(AbsensiService()),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
+            BlocProvider(
+              create: (_) => AbsensiBloc(AbsensiService())..add(FetchTodayAbsensi()),
+            ),
+            BlocProvider(
+              create: (_) =>
+                  ProfileBloc(ProfileService())..add(FetchProfileData()),
+            ),
+          ],
           child: const DashboardPage(),
         );
       case NavigationTab.absensi:
@@ -29,7 +83,8 @@ class HomePage extends StatelessWidget {
         return PekerjaanPage();
       case NavigationTab.akun:
         return BlocProvider(
-          create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+          create: (_) =>
+              ProfileBloc(ProfileService())..add(CheckLocalProfileData()),
           child: const AkunPage(),
         );
     }
@@ -59,29 +114,46 @@ class HomePage extends StatelessWidget {
                 ],
               ),
               child: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
                 currentIndex: state.selectedTab.index,
-                selectedItemColor: Colors.black,
+                selectedItemColor: _selectedNavColor,
                 unselectedItemColor: Colors.grey,
+                showSelectedLabels: true,
+                showUnselectedLabels: true,
+                selectedLabelStyle: const TextStyle(fontSize: 12),
+                unselectedLabelStyle: const TextStyle(fontSize: 12),
                 onTap: (index) {
                   context.read<NavigationBloc>().add(
                     NavigateToPage(NavigationTab.values[index]),
                   );
                 },
-                items: const [
+                items: [
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.dashboard),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_dashboard_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.dashboard,
+                    ),
                     label: "Dashboard",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.check_circle),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_absensi_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.absensi,
+                    ),
                     label: "Absensi",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.work),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_pekerjaan_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.pekerjaan,
+                    ),
                     label: "Pekerjaan",
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.account_circle),
+                    icon: _buildNavIcon(
+                      'assets/icons/ic_akun_menu.png',
+                      isSelected: state.selectedTab == NavigationTab.akun,
+                    ),
                     label: "Akun",
                   ),
                 ],

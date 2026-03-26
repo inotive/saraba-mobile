@@ -10,9 +10,51 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
   final AbsensiService absensiService;
 
   AbsensiBloc(this.absensiService) : super(AbsensiState.initial()) {
+    on<FetchTodayAbsensi>(_onFetchTodayAbsensi);
     on<LoadAbsensiPage>(_onLoadAbsensiPage);
     on<LoadMoreAbsensiHistory>(_onLoadMoreAbsensiHistory);
     on<ChangeAbsensiMonth>(_onChangeAbsensiMonth);
+  }
+
+  Future<void> _onFetchTodayAbsensi(
+    FetchTodayAbsensi event,
+    Emitter<AbsensiState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isLoadingToday: true,
+        todayErrorMessage: null,
+      ),
+    );
+
+    try {
+      final todayResponse = await absensiService.getTodayAbsensi();
+
+      if (todayResponse == null) {
+        emit(
+          state.copyWith(
+            isLoadingToday: false,
+            todayErrorMessage: 'Gagal memuat data absensi hari ini',
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isLoadingToday: false,
+          todayData: todayResponse.data,
+          todayErrorMessage: null,
+        ),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          isLoadingToday: false,
+          todayErrorMessage: 'Gagal memuat data absensi hari ini',
+        ),
+      );
+    }
   }
 
   Future<void> _onLoadAbsensiPage(
@@ -44,8 +86,6 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
     }
 
     try {
-      final todayResponse = await absensiService.getTodayAbsensi();
-
       final startDate = _monthStart(state.selectedMonth);
       final endDate = _monthEnd(state.selectedMonth);
 
@@ -56,7 +96,7 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
         perPage: state.perPage,
       );
 
-      if (todayResponse == null || historyResponse == null) {
+      if (historyResponse == null) {
         if (cachedItems.isEmpty) {
           emit(
             state.copyWith(
@@ -78,7 +118,6 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
       emit(
         state.copyWith(
           isLoading: false,
-          todayData: todayResponse.data,
           historyList: historyList,
           currentPage: pagination.currentPage,
           lastPage: pagination.lastPage,

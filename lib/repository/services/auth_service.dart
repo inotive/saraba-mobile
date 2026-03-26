@@ -18,7 +18,6 @@ class AuthService {
     ),
   );
 
-  // ================= LOGIN =================
   Future<LoginResponse?> login({
     required String email,
     required String password,
@@ -33,7 +32,7 @@ class AuthService {
         final token = "${response.data.tokenType} ${response.data.token}";
         _logger.log('Mock login success: ${response.message}');
 
-        await _saveUserToHive(response.data.user);
+        await _saveUserToHive(_mapLoginUser(response.data));
         await _saveToken(token);
         return response;
       } catch (e) {
@@ -60,7 +59,7 @@ class AuthService {
         final token =
             "${loginResponse.data.tokenType} ${loginResponse.data.token}";
 
-        await _saveUserToHive(loginResponse.data.user);
+        await _saveUserToHive(_mapLoginUser(loginResponse.data));
         await _saveToken(token);
         _logger.log('Login success');
 
@@ -73,7 +72,6 @@ class AuthService {
     }
   }
 
-  // ================= SAVE TOKEN =================
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("token", token);
@@ -84,13 +82,24 @@ class AuthService {
     await box.put('current_user', user);
   }
 
-  // ================= GET TOKEN =================
+  User _mapLoginUser(LoginData data) {
+    final karyawan = data.karyawan;
+
+    return User(
+      id: data.user.id,
+      name: karyawan?.nama.isNotEmpty == true ? karyawan!.nama : data.user.name,
+      email: data.user.email,
+      role: karyawan?.jabatan.isNotEmpty == true
+          ? karyawan!.jabatan
+          : data.user.role,
+    );
+  }
+
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString("token");
   }
 
-  // ================= LOGOUT =================
   Future<bool> logout() async {
     if (useMock) {
       try {
@@ -134,7 +143,6 @@ class AuthService {
     }
   }
 
-  // ================= AUTH DIO =================
   Future<Dio> getAuthDio() async {
     final token = await getToken();
 
