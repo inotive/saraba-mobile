@@ -1,6 +1,8 @@
 abstract class ProfileEvent {}
 
-class ProfileRequested extends ProfileEvent {}
+class CheckLocalProfileData extends ProfileEvent {}
+
+class FetchProfileData extends ProfileEvent {}
 
 class ChangePasswordSubmitted extends ProfileEvent {
   final String currentPassword;

@@ -13,7 +13,9 @@ class AbsensiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => AbsensiBloc(AbsensiService())..add(LoadAbsensiPage()),
+      create: (_) => AbsensiBloc(AbsensiService())
+        ..add(FetchTodayAbsensi())
+        ..add(LoadAbsensiPage()),
       child: _AbsensiView(),
     );
   }

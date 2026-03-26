@@ -1,5 +1,7 @@
 abstract class AbsensiEvent {}
 
+class FetchTodayAbsensi extends AbsensiEvent {}
+
 class LoadAbsensiPage extends AbsensiEvent {}
 
 class LoadMoreAbsensiHistory extends AbsensiEvent {}

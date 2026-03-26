@@ -8,7 +8,7 @@ import 'package:saraba_mobile/repository/services/auth_service.dart';
 
 class AbsensiService {
   static const bool useMock =
-      true; // For development, delete this when backend is ready
+      false; // For development, delete this when backend is ready
   static const AppLogger _logger = AppLogger('AbsensiService');
 
   final Dio _dio = Dio(

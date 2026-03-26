@@ -9,6 +9,8 @@ import 'package:saraba_mobile/ui/akun/pages/akun_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
@@ -19,8 +21,17 @@ class HomePage extends StatelessWidget {
   Widget _buildPage(NavigationTab tab) {
     switch (tab) {
       case NavigationTab.dashboard:
-        return BlocProvider(
-          create: (_) => AttendanceBloc(AbsensiService()),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
+            BlocProvider(
+              create: (_) => AbsensiBloc(AbsensiService())..add(FetchTodayAbsensi()),
+            ),
+            BlocProvider(
+              create: (_) =>
+                  ProfileBloc(ProfileService())..add(FetchProfileData()),
+            ),
+          ],
           child: const DashboardPage(),
         );
       case NavigationTab.absensi:
@@ -29,7 +40,8 @@ class HomePage extends StatelessWidget {
         return PekerjaanPage();
       case NavigationTab.akun:
         return BlocProvider(
-          create: (_) => ProfileBloc(ProfileService())..add(ProfileRequested()),
+          create: (_) =>
+              ProfileBloc(ProfileService())..add(CheckLocalProfileData()),
           child: const AkunPage(),
         );
     }
