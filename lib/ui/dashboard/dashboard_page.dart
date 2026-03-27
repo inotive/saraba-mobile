@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
@@ -26,36 +27,47 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  Future<void> _refreshDashboard() async {
+    context.read<ProfileBloc>().add(FetchProfileData());
+    context.read<AbsensiBloc>().add(FetchTodayAbsensi());
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 40,
-                right: 0,
-                child: Image.asset(
-                  'assets/images/dashboard_background_image.png',
-                  width: 130,
+    return RefreshIndicator(
+      onRefresh: _refreshDashboard,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        children: [
+          Container(
+            decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 40,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/images/dashboard_background_image.png',
+                    width: 130,
+                  ),
                 ),
-              ),
-              Column(
-                children: [
-                  _header(),
-                  const SizedBox(height: 16),
-                  _attendanceCard(context),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ],
+                Column(
+                  children: [
+                    _header(),
+                    const SizedBox(height: 16),
+                    _attendanceCard(context),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _projectSection(),
-      ],
+          const SizedBox(height: 16),
+          _projectSection(),
+        ],
+      ),
     );
   }
 
@@ -291,40 +303,38 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     ];
 
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Proyek Anda",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.zero,
-                itemCount: projects.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = projects[index];
-                  return ProjectCard(
-                    project: item,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProjectDetailPage(projectModel: item),
-                        ),
-                      );
-                    },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Proyek Anda",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: projects.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final item = projects[index];
+              return ProjectCard(
+                project: item,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProjectDetailPage(projectModel: item),
+                    ),
                   );
                 },
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
