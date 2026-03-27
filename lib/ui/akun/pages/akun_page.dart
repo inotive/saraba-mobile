@@ -11,10 +11,37 @@ import 'package:saraba_mobile/ui/akun/pages/project_profit_page.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/login/login_page.dart';
 
 class AkunPage extends StatelessWidget {
   const AkunPage({super.key});
+
+  Future<bool?> _showLogoutConfirmation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Keluar Akun'),
+          content: const Text('Apakah kamu yakin ingin keluar dari akun ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Keluar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _openEditProfile(
     BuildContext context,
@@ -53,8 +80,21 @@ class AkunPage extends StatelessWidget {
         if (state is AuthUnauthenticated) {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(
+                bannerTitle: 'Logout Berhasil',
+                bannerMessage: 'Kamu berhasil keluar dari akun',
+                bannerType: StatusBannerType.success,
+              ),
+            ),
             (route) => false,
+          );
+        } else if (state is AuthAuthenticated) {
+          StatusBanner.show(
+            context,
+            title: 'Logout Gagal',
+            message: 'Gagal keluar dari akun. Coba lagi.',
+            type: StatusBannerType.error,
           );
         }
       },
@@ -212,7 +252,11 @@ class AkunPage extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.logout, color: Colors.red),
         title: const Text('Keluar', style: TextStyle(color: Colors.red)),
-        onTap: () {
+        onTap: () async {
+          final shouldLogout = await _showLogoutConfirmation(context);
+          if (shouldLogout != true || !context.mounted) {
+            return;
+          }
           context.read<AuthBloc>().add(LogoutRequested());
         },
       ),

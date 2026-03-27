@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/dashboard/absensi_preview_page.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
+import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
@@ -24,36 +27,47 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  Future<void> _refreshDashboard() async {
+    context.read<ProfileBloc>().add(FetchProfileData());
+    context.read<AbsensiBloc>().add(FetchTodayAbsensi());
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 40,
-                right: 0,
-                child: Image.asset(
-                  'assets/images/dashboard_background_image.png',
-                  width: 130,
+    return RefreshIndicator(
+      onRefresh: _refreshDashboard,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        children: [
+          Container(
+            decoration: const BoxDecoration(color: Color(0xFFB7C4D6)),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 40,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/images/dashboard_background_image.png',
+                    width: 130,
+                  ),
                 ),
-              ),
-              Column(
-                children: [
-                  _header(),
-                  const SizedBox(height: 16),
-                  _attendanceCard(context),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ],
+                Column(
+                  children: [
+                    _header(),
+                    const SizedBox(height: 16),
+                    _attendanceCard(context),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _projectSection(),
-      ],
+          const SizedBox(height: 16),
+          _projectSection(),
+        ],
+      ),
     );
   }
 
@@ -289,40 +303,38 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     ];
 
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Proyek Anda",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.zero,
-                itemCount: projects.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = projects[index];
-                  return ProjectCard(
-                    project: item,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProjectDetailPage(projectModel: item),
-                        ),
-                      );
-                    },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Proyek Anda",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: projects.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final item = projects[index];
+              return ProjectCard(
+                project: item,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProjectDetailPage(projectModel: item),
+                    ),
                   );
                 },
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -343,77 +355,107 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> handleClockIn(BuildContext context) async {
     final attendanceBloc = context.read<AttendanceBloc>();
+    final absensiBloc = context.read<AbsensiBloc>();
     final now = TimeOfDay.now().format(context);
     final frontCamera = await getFrontCamera();
     if (frontCamera == null) return;
 
-    if (!context.mounted) return;
-    final XFile? photo = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CameraPage(camera: frontCamera, title: "Clock In"),
-      ),
-    );
-
-    if (photo == null) return;
-
-    final imageFile = File(photo.path);
-
-    if (!context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: attendanceBloc,
-          child: AttendancePreviewPage(
-            imageFile: imageFile,
-            employeeName: "Rahmad Hidayat",
-            timeText: now,
-            buttonText: "Clock In",
-            isClockIn: true,
-            onRetake: () => Navigator.pop(context),
-          ),
-        ),
-      ),
+    await _runAttendanceFlow(
+      context: context,
+      attendanceBloc: attendanceBloc,
+      absensiBloc: absensiBloc,
+      frontCamera: frontCamera,
+      title: "Clock In",
+      timeText: now,
+      buttonText: "Clock In",
+      isClockIn: true,
     );
   }
 
   Future<void> handleClockOut(BuildContext context) async {
     final attendanceBloc = context.read<AttendanceBloc>();
+    final absensiBloc = context.read<AbsensiBloc>();
     final now = TimeOfDay.now().format(context);
 
     final frontCamera = await getFrontCamera();
     if (frontCamera == null) return;
 
-    if (!context.mounted) return;
-    final XFile? photo = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CameraPage(camera: frontCamera, title: "Clock Out"),
-      ),
+    await _runAttendanceFlow(
+      context: context,
+      attendanceBloc: attendanceBloc,
+      absensiBloc: absensiBloc,
+      frontCamera: frontCamera,
+      title: "Clock Out",
+      timeText: now,
+      buttonText: "Clock Out",
+      isClockIn: false,
     );
+  }
 
-    if (photo == null) return;
+  Future<void> _runAttendanceFlow({
+    required BuildContext context,
+    required AttendanceBloc attendanceBloc,
+    required AbsensiBloc absensiBloc,
+    required CameraDescription frontCamera,
+    required String title,
+    required String timeText,
+    required String buttonText,
+    required bool isClockIn,
+  }) async {
+    while (context.mounted) {
+      final XFile? photo = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CameraPage(camera: frontCamera, title: title),
+        ),
+      );
 
-    final imageFile = File(photo.path);
+      if (photo == null || !context.mounted) {
+        return;
+      }
 
-    if (!context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: attendanceBloc,
-          child: AttendancePreviewPage(
-            imageFile: imageFile,
-            employeeName: "Rahmad Hidayat",
-            timeText: now,
-            buttonText: "Clock Out",
-            isClockIn: false,
-            onRetake: () => Navigator.pop(context),
+      final result = await Navigator.push<AttendancePreviewResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: attendanceBloc,
+            child: AttendancePreviewPage(
+              imageFile: File(photo.path),
+              timeText: timeText,
+              buttonText: buttonText,
+              isClockIn: isClockIn,
+            ),
           ),
         ),
-      ),
-    );
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      if (result.action == AttendancePreviewAction.retake) {
+        continue;
+      }
+
+      final isSuccess = result.action == AttendancePreviewAction.success;
+
+      if (isSuccess) {
+        absensiBloc.add(FetchTodayAbsensi());
+      }
+
+      StatusBanner.show(
+        context,
+        title: isSuccess
+            ? (isClockIn ? 'Clock In Berhasil' : 'Clock Out Berhasil')
+            : (isClockIn ? 'Clock In Gagal' : 'Clock Out Gagal'),
+        message: result.message ??
+            (isSuccess
+                ? 'Absensi berhasil dikirim'
+                : 'Absensi gagal dikirim'),
+        type: isSuccess ? StatusBannerType.success : StatusBannerType.error,
+      );
+      return;
+    }
   }
 
   Future<CameraDescription?> getFrontCamera() async {
