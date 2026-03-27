@@ -5,27 +5,33 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:saraba_mobile/core/utils/device_info_helper.dart';
+import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:saraba_mobile/repository/services/location_service.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
 
+enum AttendancePreviewAction { success, failure, retake }
+
+class AttendancePreviewResult {
+  final AttendancePreviewAction action;
+  final String? message;
+
+  const AttendancePreviewResult({required this.action, this.message});
+}
+
 class AttendancePreviewPage extends StatefulWidget {
   final File imageFile;
-  final String employeeName;
   final String timeText;
   final String buttonText;
   final bool isClockIn;
-  final VoidCallback onRetake;
 
   const AttendancePreviewPage({
     super.key,
     required this.imageFile,
-    required this.employeeName,
     required this.timeText,
     required this.buttonText,
     required this.isClockIn,
-    required this.onRetake,
   });
 
   @override
@@ -34,10 +40,12 @@ class AttendancePreviewPage extends StatefulWidget {
 
 class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
   final LocationService _locationService = LocationService();
+  final ProfileService _profileService = ProfileService();
 
   String? latitude;
   String? longitude;
   String? deviceInfo;
+  String employeeName = 'User';
   bool isPreparingLocation = true;
   String? locationError;
 
@@ -45,6 +53,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
   void initState() {
     super.initState();
     _prepareAttendanceData();
+    _loadEmployeeName();
   }
 
   Future<void> _prepareAttendanceData() async {
@@ -82,6 +91,20 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
         locationError = "Gagal mendapatkan lokasi";
       });
     }
+  }
+
+  Future<void> _loadEmployeeName() async {
+    final currentUser = await _profileService.getCurrentUser();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      employeeName = currentUser?.name.isNotEmpty == true
+          ? currentUser!.name
+          : 'User';
+    });
   }
 
   void _submit(BuildContext context) {
@@ -123,11 +146,21 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
           previous.message != current.message,
       listener: (context, state) {
         if (state.isSuccess) {
-          Navigator.pop(context);
-        } else if (state.isError && state.message != null) {
-          ScaffoldMessenger.of(
+          Navigator.pop(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message!)));
+            AttendancePreviewResult(
+              action: AttendancePreviewAction.success,
+              message: state.message,
+            ),
+          );
+        } else if (state.isError && state.message != null) {
+          Navigator.pop(
+            context,
+            AttendancePreviewResult(
+              action: AttendancePreviewAction.failure,
+              message: state.message,
+            ),
+          );
         }
       },
       child: Scaffold(
@@ -144,7 +177,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
         body: Column(
           children: [
             Container(
-              height: 220,
+              height: 250,
               width: double.infinity,
               color: Colors.grey.shade300,
               child: isPreparingLocation
@@ -203,6 +236,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
                       "Nama Pegawai",
@@ -210,7 +244,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.employeeName,
+                      employeeName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -253,7 +287,15 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                               child: OutlinedButton(
                                 onPressed: state.isLoading
                                     ? null
-                                    : widget.onRetake,
+                                    : () {
+                                        Navigator.pop(
+                                          context,
+                                          const AttendancePreviewResult(
+                                            action:
+                                                AttendancePreviewAction.retake,
+                                          ),
+                                        );
+                                      },
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(color: Colors.orange),
                                   shape: RoundedRectangleBorder(
@@ -288,7 +330,10 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : Text(widget.buttonText),
+                                    : Text(
+                                        widget.buttonText,
+                                        style: TextStyle(color: Colors.white),
+                                      ),
                               ),
                             ),
                           ],
