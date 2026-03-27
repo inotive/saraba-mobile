@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:saraba_mobile/core/utils/device_info_helper.dart';
+import 'package:saraba_mobile/repository/services/location_service.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_state.dart';
@@ -32,26 +33,34 @@ class AttendancePreviewPage extends StatefulWidget {
 }
 
 class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
+  final LocationService _locationService = LocationService();
+
   String? latitude;
   String? longitude;
+  String? deviceInfo;
   bool isPreparingLocation = true;
   String? locationError;
 
   @override
   void initState() {
     super.initState();
-    _prepareLocation();
+    _prepareAttendanceData();
   }
 
-  Future<void> _prepareLocation() async {
+  Future<void> _prepareAttendanceData() async {
     try {
-      final position = await _getLocation();
+      final positionFuture = _locationService.getCurrentLocation();
+      final deviceInfoFuture = DeviceInfoHelper.getDeviceInfo();
+
+      final position = await positionFuture;
+      final resolvedDeviceInfo = await deviceInfoFuture;
 
       if (!mounted) return;
 
       if (position == null) {
         setState(() {
           isPreparingLocation = false;
+          deviceInfo = resolvedDeviceInfo;
           locationError = "Lokasi tidak diizinkan atau tidak tersedia";
         });
         return;
@@ -60,6 +69,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
       setState(() {
         latitude = position.latitude.toString();
         longitude = position.longitude.toString();
+        deviceInfo = resolvedDeviceInfo;
         isPreparingLocation = false;
         locationError = null;
       });
@@ -68,26 +78,10 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
 
       setState(() {
         isPreparingLocation = false;
+        deviceInfo = "Unknown Device";
         locationError = "Gagal mendapatkan lokasi";
       });
     }
-  }
-
-  Future<Position?> _getLocation() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return null;
-    }
-
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
   }
 
   void _submit(BuildContext context) {
@@ -104,7 +98,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
           latitude: latitude!,
           longitude: longitude!,
           imagePath: widget.imageFile.path,
-          deviceInfo: "android",
+          deviceInfo: deviceInfo ?? "Unknown Device",
         ),
       );
     } else {
@@ -113,7 +107,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
           latitude: latitude!,
           longitude: longitude!,
           imagePath: widget.imageFile.path,
-          deviceInfo: "android",
+          deviceInfo: deviceInfo ?? "Unknown Device",
         ),
       );
     }
@@ -178,7 +172,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                         TileLayer(
                           urlTemplate:
                               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.saraba_mobile',
+                          userAgentPackageName: 'com.saraba.inotive',
                         ),
                         MarkerLayer(
                           markers: [
@@ -246,39 +240,6 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    if (isPreparingLocation)
-                      const Text(
-                        "Menyiapkan lokasi...",
-                        style: TextStyle(color: Colors.grey),
-                      )
-                    else if (locationError != null)
-                      Text(
-                        locationError!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      )
-                    else
-                      const Text(
-                        "Lokasi siap",
-                        style: TextStyle(color: Colors.green),
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    BlocBuilder<AttendanceBloc, AttendanceState>(
-                      builder: (context, state) {
-                        return state.isError && state.message != null
-                            ? Text(
-                                state.message!,
-                                style: const TextStyle(color: Colors.red),
-                                textAlign: TextAlign.center,
-                              )
-                            : const SizedBox.shrink();
-                      },
-                    ),
-
-                    const Spacer(),
 
                     BlocBuilder<AttendanceBloc, AttendanceState>(
                       builder: (context, state) {
