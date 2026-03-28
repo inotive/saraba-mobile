@@ -5,6 +5,15 @@ class ProjectFotoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text("Foto View"));
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Foto proyek belum tersedia',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.black54),
+        ),
+      ),
+    );
   }
 }

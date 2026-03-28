@@ -133,7 +133,10 @@ class _PekerjaanPageState extends State<PekerjaanPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ProjectDetailPage(projectModel: item),
+                    builder: (_) => ProjectDetailPage(
+                      projectId: item.id,
+                      projectTitle: item.title,
+                    ),
                   ),
                 );
               },

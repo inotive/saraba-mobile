@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/rab_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/rab_segmented_tab.dart';
 
 class ProjectRabView extends StatefulWidget {
-  const ProjectRabView({super.key});
+  final ProjectRabSection rab;
+
+  const ProjectRabView({super.key, required this.rab});
 
   @override
   State<ProjectRabView> createState() => _ProjectRabViewState();
@@ -12,79 +16,9 @@ class ProjectRabView extends StatefulWidget {
 class _ProjectRabViewState extends State<ProjectRabView> {
   String selectedTab = 'Pekerjaan';
 
-  final List<Map<String, String>> pekerjaanItems = const [
-    {
-      'titleLabel': 'Nama Pekerjaan',
-      'title': 'Persiapan Lahan',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'pekerjaan',
-    },
-    {
-      'titleLabel': 'Nama Pekerjaan',
-      'title': 'Persiapan Lahan',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'pekerjaan',
-    },
-    {
-      'titleLabel': 'Nama Pekerjaan',
-      'title': 'Persiapan Lahan',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'pekerjaan',
-    },
-    {
-      'titleLabel': 'Nama Pekerjaan',
-      'title': 'Persiapan Lahan',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'pekerjaan',
-    },
-  ];
-
-  final List<Map<String, String>> materialItems = const [
-    {
-      'titleLabel': 'Nama Material',
-      'title': 'Pasir Hitam Kristal',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'material',
-    },
-    {
-      'titleLabel': 'Nama Material',
-      'title': 'Semen Bangunan AA',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'material',
-    },
-    {
-      'titleLabel': 'Nama Material',
-      'title': 'Batu Bata Merah',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'material',
-    },
-    {
-      'titleLabel': 'Nama Material',
-      'title': 'Bahan Bakar Minyak',
-      'volume': '100 m³',
-      'hargaSatuan': 'Rp120.000.000',
-      'jumlahHarga': 'Rp220.000.000',
-      'type': 'material',
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final items = selectedTab == 'Pekerjaan' ? pekerjaanItems : materialItems;
+    final items = widget.rab.items.where((item) => item.tipe == 'header').toList();
 
     return Column(
       children: [
@@ -107,7 +41,9 @@ class _ProjectRabViewState extends State<ProjectRabView> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              selectedTab,
+              selectedTab == 'Pekerjaan'
+                  ? 'Pekerjaan (${items.length})'
+                  : selectedTab,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -117,24 +53,62 @@ class _ProjectRabViewState extends State<ProjectRabView> {
           ),
         ),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return RabItemCard(
-                titleLabel: item['titleLabel']!,
-                title: item['title']!,
-                volume: item['volume']!,
-                hargaSatuan: item['hargaSatuan']!,
-                jumlahHarga: item['jumlahHarga']!,
-                type: item['type']!,
-              );
-            },
-          ),
+          child: selectedTab == 'Material'
+              ? const _EmptyRabState()
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return RabItemCard(
+                      titleLabel: 'Nama Pekerjaan',
+                      title: item.uraian,
+                      volume: '${_formatNumber(item.volume)} ${item.satuan}'.trim(),
+                      hargaSatuan: _formatCurrency(item.hargaSatuan),
+                      jumlahHarga: _formatCurrency(item.jumlah),
+                      type: 'pekerjaan',
+                    );
+                  },
+                ),
         ),
       ],
+    );
+  }
+}
+
+String _formatCurrency(String rawValue) {
+  final parsedValue = double.tryParse(rawValue) ?? 0;
+  return NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  ).format(parsedValue);
+}
+
+String _formatNumber(String rawValue) {
+  final parsedValue = double.tryParse(rawValue);
+  if (parsedValue == null) {
+    return rawValue;
+  }
+
+  return NumberFormat.decimalPattern('id_ID').format(parsedValue);
+}
+
+class _EmptyRabState extends StatelessWidget {
+  const _EmptyRabState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Data material belum tersedia',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.black54),
+        ),
+      ),
     );
   }
 }

@@ -328,7 +328,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProjectDetailPage(projectModel: item),
+                          builder: (_) => ProjectDetailPage(
+                            projectId: item.id,
+                            projectTitle: item.title,
+                          ),
                         ),
                       );
                     },
@@ -361,7 +364,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final absensiBloc = context.read<AbsensiBloc>();
     final now = TimeOfDay.now().format(context);
     final frontCamera = await getFrontCamera();
-    if (frontCamera == null) return;
+    if (!context.mounted || frontCamera == null) return;
 
     await _runAttendanceFlow(
       context: context,
@@ -381,7 +384,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final now = TimeOfDay.now().format(context);
 
     final frontCamera = await getFrontCamera();
-    if (frontCamera == null) return;
+    if (!context.mounted || frontCamera == null) return;
 
     await _runAttendanceFlow(
       context: context,

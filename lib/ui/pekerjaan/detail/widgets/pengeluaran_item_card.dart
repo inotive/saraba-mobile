@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 class PengeluaranItemCard extends StatelessWidget {
   final String title;
-  final String volume;
-  final String jumlahHarga;
+  final String category;
+  final String userName;
+  final String tanggal;
   final String pengeluaran;
-  final double progress;
-  final String persentase;
+  final String description;
 
   const PengeluaranItemCard({
     super.key,
     required this.title,
-    required this.volume,
-    required this.jumlahHarga,
+    required this.category,
+    required this.userName,
+    required this.tanggal,
     required this.pengeluaran,
-    required this.progress,
-    required this.persentase,
+    required this.description,
   });
 
   @override
@@ -43,19 +43,33 @@ class PengeluaranItemCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _TitleValueColumn(
-                        label: "Nama Pekerjaan",
-                        value: title,
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1B2A4A),
                       ),
                     ),
-                    Expanded(
-                      child: _TitleValueColumn(
-                        label: "Volume & Satuan",
-                        value: volume,
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _TitleValueColumn(
+                            label: "Kategori",
+                            value: category,
+                          ),
+                        ),
+                        Expanded(
+                          child: _TitleValueColumn(
+                            label: "Tanggal",
+                            value: tanggal,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -65,85 +79,48 @@ class PengeluaranItemCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F7F7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: _PriceRow(label: "Pengeluaran", value: pengeluaran),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F7F7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PriceRow(label: "Dicatat Oleh", value: userName),
+                const SizedBox(height: 10),
+                const Text(
+                  "Keterangan",
+                  style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F7F7),
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF4B5563),
+                  ),
                 ),
-                child: _PriceRow(label: "Jumlah Harga", value: jumlahHarga),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F7F7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    _PriceRow(
-                      label: "Pengeluaran",
-                      value: pengeluaran,
-                      valueColor: const Color(0xFF1B2A4A),
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFD9D9DF),
-                        valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFF7944D),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Text(
-                          "Persentase",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF8C8C8C),
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE7F6EA),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            persentase,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF2E7D32),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -183,12 +160,10 @@ class _TitleValueColumn extends StatelessWidget {
 class _PriceRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color valueColor;
 
   const _PriceRow({
     required this.label,
     required this.value,
-    this.valueColor = const Color(0xFF1B2A4A),
   });
 
   @override
@@ -203,10 +178,10 @@ class _PriceRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: valueColor,
+            color: Color(0xFF1B2A4A),
           ),
         ),
       ],

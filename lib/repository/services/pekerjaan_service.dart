@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
@@ -24,6 +25,25 @@ class PekerjaanService {
       _logger.error('Project list request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading proyeks: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectDetailResponse?> fetchProyekDetail(String proyekId) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get('/proyeks/$proyekId');
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return ProjectDetailResponse.fromJson(response.data);
+      }
+
+      _logger.error('Project detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading proyek detail: $e');
     }
 
     return null;
