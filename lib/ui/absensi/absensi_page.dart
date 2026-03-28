@@ -8,6 +8,7 @@ import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
+import 'package:saraba_mobile/ui/absensi/detail/absensi_history_detail_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -336,6 +337,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
                 );
               },
               child: AttendanceItem(
+                absensiId: item.id,
                 day: _extractDay(item.tanggal),
                 status: item.status,
                 note: item.keterangan,
@@ -396,6 +398,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
 }
 
 class AttendanceItem extends StatelessWidget {
+  final String absensiId;
   final String day;
   final String status;
   final String note;
@@ -403,6 +406,7 @@ class AttendanceItem extends StatelessWidget {
 
   const AttendanceItem({
     super.key,
+    required this.absensiId,
     required this.day,
     required this.status,
     required this.note,
@@ -413,99 +417,113 @@ class AttendanceItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayNote = note.trim().isEmpty ? '-' : note;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: "Tanggal ",
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
-                      ),
-                      TextSpan(
-                        text: day,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black,
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AbsensiHistoryDetailPage(
+              absensiId: absensiId,
+              initialStatus: status,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: "Tanggal ",
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
                         ),
-                      ),
+                        TextSpan(
+                          text: day,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: "Waktu ",
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                        TextSpan(
+                          text: time,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _divider(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Status",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  _statusBadge(status),
+                ],
+              ),
+            ),
+            _divider(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Keterangan",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Row(
+                    children: [
+                      Text(displayNote, style: const TextStyle(fontSize: 12)),
+                      if (displayNote == "On Time")
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: Icon(
+                            Icons.check_circle,
+                            size: 12,
+                            color: Colors.green,
+                          ),
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: "Waktu ",
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
-                      ),
-                      TextSpan(
-                        text: time,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          _divider(),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Status",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                _statusBadge(status),
-              ],
-            ),
-          ),
-          _divider(),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Keterangan",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Row(
-                  children: [
-                    Text(displayNote, style: const TextStyle(fontSize: 12)),
-                    if (displayNote == "On Time")
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4),
-                        child: Icon(
-                          Icons.check_circle,
-                          size: 12,
-                          color: Colors.green,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

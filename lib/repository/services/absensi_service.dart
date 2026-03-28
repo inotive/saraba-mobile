@@ -1,3 +1,4 @@
+import 'package:saraba_mobile/repository/model/absensi/absensi_detail_response_model.dart';
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_model.dart';
@@ -94,6 +95,29 @@ class AbsensiService {
 
       return null;
     } catch (_) {
+      return null;
+    }
+  }
+
+  Future<AbsensiDetailResponse?> fetchAbsensiDetail(String absensiId) async {
+    try {
+      final token = await AuthService().getToken();
+
+      final response = await _dio.get(
+        "/absensi/$absensiId",
+        options: Options(headers: {"Authorization": token}),
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data["success"] == true) {
+        _logger.log('Absensi detail success');
+        return AbsensiDetailResponse.fromJson(response.data);
+      }
+
+      return null;
+    } catch (e) {
+      _logger.error('Unexpected error while loading absensi detail: $e');
       return null;
     }
   }
