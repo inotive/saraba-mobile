@@ -1,10 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:saraba_mobile/repository/model/project_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/project_detail_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_event.dart';
+import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_state.dart';
 import 'package:saraba_mobile/ui/widgets/project_card.dart';
 
-class PekerjaanPage extends StatelessWidget {
+class PekerjaanPage extends StatefulWidget {
   const PekerjaanPage({super.key});
+
+  @override
+  State<PekerjaanPage> createState() => _PekerjaanPageState();
+}
+
+class _PekerjaanPageState extends State<PekerjaanPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  Future<void> _refreshProyeks() async {
+    context.read<PekerjaanBloc>().add(FetchProyeks(page: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels < threshold) {
+      return;
+    }
+
+    final state = context.read<PekerjaanBloc>().state;
+    if (state.currentPage < state.lastPage && !state.isLoadingMore) {
+      context.read<PekerjaanBloc>().add(
+            FetchProyeks(page: state.currentPage + 1),
+          );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +59,39 @@ class PekerjaanPage extends StatelessWidget {
       children: [
         _headerSection(),
         const SizedBox(height: 16),
-        _projectSection(),
+        Expanded(
+          child: BlocBuilder<PekerjaanBloc, PekerjaanState>(
+            builder: (context, state) {
+              if (state.isLoading && state.projects.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state.errorMessage != null && state.projects.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(state.errorMessage!),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<PekerjaanBloc>().add(FetchProyeks());
+                        },
+                        child: const Text('Muat Ulang'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state.projects.isEmpty) {
+                return const Center(child: Text('Belum ada data proyek'));
+              }
+
+              return _projectSection(context, state);
+            },
+          ),
+        ),
       ],
     );
   }
@@ -28,75 +107,26 @@ class PekerjaanPage extends StatelessWidget {
     );
   }
 
-  Widget _projectSection() {
-    final List<ProjectModel> projects = [
-      ProjectModel(
-        id: "1",
-        title: "Proyek A",
-        progress: 0.6,
-        nilai: "Rp 500.000.000",
-        pengeluaran: "Rp 120.000.000",
-      ),
-      ProjectModel(
-        id: "2",
-        title: "Proyek B",
-        progress: 0.3,
-        nilai: "Rp 300.000.000",
-        pengeluaran: "Rp 120.000.000",
-      ),
-      ProjectModel(
-        id: "3",
-        title: "Proyek C",
-        progress: 0.23,
-        nilai: "Rp 30.000.000",
-        pengeluaran: "Rp 20.000.000",
-      ),
-      ProjectModel(
-        id: "4",
-        title: "Proyek D",
-        progress: 0.7,
-        nilai: "Rp 3.040.000",
-        pengeluaran: "Rp 50.600.000",
-      ),
-      ProjectModel(
-        id: "5",
-        title: "Proyek E",
-        progress: 0.546,
-        nilai: "Rp 120.000.000",
-        pengeluaran: "Rp 432.000.000",
-      ),
-      ProjectModel(
-        id: "6",
-        title: "Proyek F",
-        progress: 0.986,
-        nilai: "Rp 4.430.000",
-        pengeluaran: "Rp 54.064.000",
-      ),
-      ProjectModel(
-        id: "7",
-        title: "Proyek G",
-        progress: 0.123,
-        nilai: "Rp 734.000.000",
-        pengeluaran: "Rp 853.000.000",
-      ),
-      ProjectModel(
-        id: "8",
-        title: "Proyek H",
-        progress: 0.856,
-        nilai: "Rp 563.000",
-        pengeluaran: "Rp 223.000",
-      ),
-    ];
-
-    return Expanded(
+  Widget _projectSection(BuildContext context, PekerjaanState state) {
+    return RefreshIndicator(
+      onRefresh: _refreshProyeks,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView.separated(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
-          itemCount: projects.length,
+          itemCount: state.projects.length + (state.isLoadingMore ? 1 : 0),
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final item = projects[index];
+            if (index >= state.projects.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final item = state.projects[index];
             return ProjectCard(
               project: item,
               onTap: () {

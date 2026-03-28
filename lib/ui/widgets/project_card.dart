@@ -19,11 +19,15 @@ class ProjectCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(
-                  project.title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    project.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 12),
                 Text("${(project.progress * 100).toInt()}%"),
               ],
             ),
@@ -45,7 +49,11 @@ class ProjectCard extends StatelessWidget {
                         "Nilai:",
                         style: TextStyle(color: Colors.black54),
                       ),
-                      Text(project.nilai),
+                      Text(
+                        project.nilai,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -58,7 +66,11 @@ class ProjectCard extends StatelessWidget {
                         "Pengeluaran:",
                         style: TextStyle(color: Colors.black54),
                       ),
-                      Text(project.pengeluaran),
+                      Text(
+                        project.pengeluaran,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
