@@ -24,18 +24,23 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       ),
     );
 
-    final result = await absensiService.clockIn(
+    final result = await absensiService.submitAbsensi(
       latitude: event.latitude,
       longitude: event.longitude,
       imagePath: event.imagePath,
       deviceInfo: event.deviceInfo,
     );
 
-    if (result != null && result.success) {
+    if (result != null && result.isSuccess) {
       emit(
         state.copyWith(
           isLoading: false,
-          clockInTime: result.data.absensi.jamMasuk,
+          clockInTime: result.data.jamMasuk.isNotEmpty
+              ? result.data.jamMasuk
+              : state.clockInTime,
+          clockOutTime: result.data.jamPulang.isNotEmpty
+              ? result.data.jamPulang
+              : state.clockOutTime,
           message: result.message,
           isSuccess: true,
           isError: false,
@@ -45,7 +50,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       emit(
         state.copyWith(
           isLoading: false,
-          message: "Clock in gagal",
+          message: result?.message ?? "Clock in gagal",
           isSuccess: false,
           isError: true,
         ),
@@ -66,18 +71,23 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       ),
     );
 
-    final result = await absensiService.clockOut(
+    final result = await absensiService.submitAbsensi(
       latitude: event.latitude,
       longitude: event.longitude,
       imagePath: event.imagePath,
       deviceInfo: event.deviceInfo,
     );
 
-    if (result != null && result.success) {
+    if (result != null && result.isSuccess) {
       emit(
         state.copyWith(
           isLoading: false,
-          clockOutTime: result.data.absensi.jamKeluar,
+          clockInTime: result.data.jamMasuk.isNotEmpty
+              ? result.data.jamMasuk
+              : state.clockInTime,
+          clockOutTime: result.data.jamPulang.isNotEmpty
+              ? result.data.jamPulang
+              : state.clockOutTime,
           message: result.message,
           isSuccess: true,
           isError: false,
@@ -87,7 +97,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       emit(
         state.copyWith(
           isLoading: false,
-          message: "Clock out gagal",
+          message: result?.message ?? "Clock out gagal",
           isSuccess: false,
           isError: true,
         ),

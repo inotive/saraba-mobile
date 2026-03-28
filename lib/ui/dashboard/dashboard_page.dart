@@ -186,6 +186,21 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 16),
                   BlocBuilder<AttendanceBloc, AttendanceState>(
                     builder: (context, state) {
+                      final canClockIn =
+                          !state.isLoading &&
+                          (todayData == null || !todayData.isClockedIn);
+                      final canClockOut =
+                          !state.isLoading &&
+                          todayData != null &&
+                          todayData.isClockedIn &&
+                          !todayData.isClockedOut;
+                      final clockInColor = canClockIn
+                          ? Colors.white
+                          : Colors.white54;
+                      final clockOutColor = canClockOut
+                          ? Colors.white
+                          : Colors.white54;
+
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.orange,
@@ -195,18 +210,18 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Expanded(
                               child: TextButton.icon(
-                                onPressed: state.isLoading
-                                    ? null
-                                    : () async {
+                                onPressed: canClockIn
+                                    ? () async {
                                         await handleClockIn(context);
-                                      },
-                                icon: const Icon(
+                                      }
+                                    : null,
+                                icon: Icon(
                                   Icons.login,
-                                  color: Colors.white,
+                                  color: clockInColor,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   "Clock in",
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(color: clockInColor),
                                 ),
                               ),
                             ),
@@ -217,18 +232,18 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             Expanded(
                               child: TextButton.icon(
-                                onPressed: state.isLoading
-                                    ? null
-                                    : () async {
+                                onPressed: canClockOut
+                                    ? () async {
                                         await handleClockOut(context);
-                                      },
-                                icon: const Icon(
+                                      }
+                                    : null,
+                                icon: Icon(
                                   Icons.logout,
-                                  color: Colors.white,
+                                  color: clockOutColor,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   "Clock out",
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(color: clockOutColor),
                                 ),
                               ),
                             ),

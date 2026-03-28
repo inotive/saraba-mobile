@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
-import 'package:saraba_mobile/repository/model/attendace_response_model.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_model.dart';
 import 'package:saraba_mobile/repository/model/mock/absensi_service_mock.dart';
+import 'package:saraba_mobile/repository/model/submit_absensi_response_model.dart';
 import 'package:saraba_mobile/repository/model/today_absensi_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
@@ -18,7 +18,7 @@ class AbsensiService {
     ),
   );
 
-  Future<AttendanceResponse?> clockIn({
+  Future<SubmitAbsensiResponse?> submitAbsensi({
     required String latitude,
     required String longitude,
     required String imagePath,
@@ -26,13 +26,14 @@ class AbsensiService {
   }) async {
     if (useMock) {
       try {
-        _logger.log('Mock clock-in request');
-        final response = await AbsensiServiceMock.clockIn(
+        _logger.log('Mock submit absensi request');
+        final response = await AbsensiServiceMock.submitAbsensi(
           latitude: latitude,
           longitude: longitude,
           imagePath: imagePath,
+          keterangan: deviceInfo,
         );
-        _logger.log('Mock clock-in success: ${response.message}');
+        _logger.log('Mock submit absensi success: ${response.message}');
         return response;
       } catch (e) {
         _logger.error('Mock error: $e');
@@ -44,80 +45,33 @@ class AbsensiService {
       final token = await AuthService().getToken();
 
       final formData = FormData.fromMap({
-        "latitude": latitude,
-        "longitude": longitude,
-        "device_info": deviceInfo,
+        "proyek_id": "",
+        "lat": latitude,
+        "long": longitude,
+        "keterangan": deviceInfo,
         "foto": await MultipartFile.fromFile(imagePath),
       });
 
       final response = await _dio.post(
-        "/absensi/clock-in",
+        "/absensi",
         data: formData,
         options: Options(headers: {"Authorization": token}),
       );
 
       _logger.response(response);
-      _logger.log('Clock-in success');
+      _logger.log('Submit absensi completed');
 
-      return AttendanceResponse.fromJson(response.data);
+      return SubmitAbsensiResponse.fromJson(response.data);
     } catch (e) {
       _logger.error('Unexpected error: $e');
       return null;
     }
   }
 
-  Future<AttendanceResponse?> clockOut({
-    required String latitude,
-    required String longitude,
-    required String imagePath,
-    required String deviceInfo,
-  }) async {
-    if (useMock) {
-      try {
-        _logger.log('Mock clock-out request');
-        final response = await AbsensiServiceMock.clockOut(
-          latitude: latitude,
-          longitude: longitude,
-          imagePath: imagePath,
-        );
-        _logger.log('Mock clock-out success: ${response.message}');
-        return response;
-      } catch (e) {
-        _logger.error('Mock error: $e');
-        return null;
-      }
-    }
-
-    try {
-      final token = await AuthService().getToken();
-
-      final formData = FormData.fromMap({
-        "latitude": latitude,
-        "longitude": longitude,
-        "device_info": deviceInfo,
-        "foto": await MultipartFile.fromFile(imagePath),
-      });
-
-      final response = await _dio.post(
-        "/absensi/clock-out",
-        data: formData,
-        options: Options(headers: {"Authorization": token}),
-      );
-
-      _logger.response(response);
-      _logger.log('Clock-out success');
-
-      return AttendanceResponse.fromJson(response.data);
-    } catch (e) {
-      _logger.error('Unexpected error: $e');
-      return null;
-    }
-  }
-
-  Future<TodayAbsensiResponse?> getTodayAbsensi() async {
+  Future<TodayAbsensiResponse?> fetchTodayAbsensi() async {
     if (useMock) {
       _logger.log('Mock get today absensi request');
-      final response = await AbsensiServiceMock.getTodayAbsensi();
+      final response = await AbsensiServiceMock.fetchTodayAbsensi();
       _logger.log('Mock today absensi response: ${response.data}');
       _logger.log('Mock today absensi success');
       return response;

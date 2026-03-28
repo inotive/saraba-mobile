@@ -58,7 +58,7 @@ class AbsensiToday {
     return AbsensiToday(
       id: json['id']?.toString() ?? '',
       jamMasuk: json['jam_masuk'] ?? '',
-      jamKeluar: json['jam_keluar'] ?? '',
+      jamKeluar: json['jam_pulang'] ?? '',
       durasiKerja: json['durasi_kerja'] ?? '',
       status: json['status'] ?? '',
     );
