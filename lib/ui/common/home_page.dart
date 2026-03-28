@@ -77,6 +77,10 @@ class _HomePageState extends State<HomePage> {
               create: (_) =>
                   ProfileBloc(ProfileService())..add(FetchProfileData()),
             ),
+            BlocProvider(
+              create: (_) =>
+                  PekerjaanBloc(PekerjaanService())..add(FetchProyeks()),
+            ),
           ],
           child: const DashboardPage(),
         );
