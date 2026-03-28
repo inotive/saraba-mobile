@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_bloc.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -98,11 +102,15 @@ class _AbsensiViewState extends State<_AbsensiView> {
               decoration: _cardDecoration(),
               child: Column(
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      CircleAvatar(radius: 20),
-                      SizedBox(width: 12),
-                      Column(
+                      BlocBuilder<ProfileBloc, ProfileState>(
+                        builder: (context, profile) {
+                          return _buildProfileAvatar(profile);
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Jadwal Kerja"),
@@ -131,6 +139,28 @@ class _AbsensiViewState extends State<_AbsensiView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProfileAvatar(ProfileState profile) {
+    if (profile.avatarPath != null && profile.avatarPath!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundImage: FileImage(File(profile.avatarPath!)),
+      );
+    }
+
+    if (profile.remoteAvatar.isNotEmpty) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundImage: NetworkImage(profile.remoteAvatar),
+      );
+    }
+
+    return const CircleAvatar(
+      radius: 20,
+      backgroundColor: Color(0xFFF1F3F5),
+      child: Icon(Icons.person, color: Color(0xFF9AA0A6), size: 20),
     );
   }
 
@@ -321,12 +351,13 @@ class _AbsensiViewState extends State<_AbsensiView> {
   String _extractDay(String tanggal) {
     if (tanggal.isEmpty) return "-";
 
-    final parts = tanggal.split('-');
+    final normalizedDate = tanggal.split('T').first.split(' ').first;
+    final parts = normalizedDate.split('-');
     if (parts.length == 3) {
       return parts[2];
     }
 
-    return tanggal;
+    return normalizedDate;
   }
 
   String _monthLabel(DateTime date) {
@@ -380,6 +411,8 @@ class AttendanceItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayNote = note.trim().isEmpty ? '-' : note;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -399,13 +432,12 @@ class AttendanceItem extends StatelessWidget {
                     children: [
                       const TextSpan(
                         text: "Tanggal ",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
                       ),
                       TextSpan(
                         text: day,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                           color: Colors.black,
                         ),
                       ),
@@ -413,7 +445,23 @@ class AttendanceItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text("Waktu $time"),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: "Waktu ",
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                      TextSpan(
+                        text: time,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -442,13 +490,13 @@ class AttendanceItem extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Text(note),
-                    if (note == "On Time")
+                    Text(displayNote, style: const TextStyle(fontSize: 12)),
+                    if (displayNote == "On Time")
                       const Padding(
                         padding: EdgeInsets.only(left: 4),
                         child: Icon(
                           Icons.check_circle,
-                          size: 14,
+                          size: 12,
                           color: Colors.green,
                         ),
                       ),
@@ -474,15 +522,17 @@ class AttendanceItem extends StatelessWidget {
   Widget _statusBadge(String status) {
     Color bg;
     Color text;
+    final normalizedStatus = status.toLowerCase();
 
-    switch (status) {
-      case "Masuk":
-        bg = Colors.green.shade100;
-        text = Colors.green;
+    switch (normalizedStatus) {
+      case "hadir":
+      case "telat":
+        bg = const Color(0xFFDCFCE7);
+        text = const Color(0xFF15803D);
         break;
-      case "Ijin":
-        bg = Colors.orange.shade100;
-        text = Colors.orange;
+      case "ijin":
+        bg = const Color(0xFFFEF9C3);
+        text = const Color(0xFFA16207);
         break;
       default:
         bg = Colors.grey.shade300;

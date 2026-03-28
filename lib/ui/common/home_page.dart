@@ -85,7 +85,11 @@ class _HomePageState extends State<HomePage> {
           child: const DashboardPage(),
         );
       case NavigationTab.absensi:
-        return AbsensiPage();
+        return BlocProvider(
+          create: (_) =>
+              ProfileBloc(ProfileService())..add(CheckLocalProfileData()),
+          child: const AbsensiPage(),
+        );
       case NavigationTab.pekerjaan:
         return BlocProvider(
           create: (_) => PekerjaanBloc(PekerjaanService())..add(FetchProyeks()),
