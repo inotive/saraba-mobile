@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
@@ -29,7 +30,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
-      child: MaterialApp(title: 'Saraba Mobile', home: const AuthWrapper()),
+      child: MaterialApp(
+        title: 'Saraba Mobile',
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+        home: const AuthWrapper(),
+      ),
     );
   }
 }

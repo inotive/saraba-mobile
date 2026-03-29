@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/progress_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
 
@@ -67,10 +71,29 @@ class ProjectProgressView extends StatelessWidget {
             height: 58,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
+                Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (_) => const TambahProgressPage()),
-                );
+                  MaterialPageRoute(
+                    builder: (_) => TambahProgressPage(
+                      projectId: overview.id.toString(),
+                    ),
+                  ),
+                ).then((message) {
+                  if (!context.mounted || message == null || message.isEmpty) {
+                    return;
+                  }
+
+                  context.read<ProjectDetailBloc>().add(
+                    FetchProjectDetail(overview.id.toString()),
+                  );
+
+                  StatusBanner.show(
+                    context,
+                    title: 'Progress Berhasil',
+                    message: message,
+                    type: StatusBannerType.success,
+                  );
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF7944D),

@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
@@ -44,6 +46,49 @@ class PekerjaanService {
       _logger.error('Project detail request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading proyek detail: $e');
+    }
+
+    return null;
+  }
+
+  Future<SubmitProgressResponse?> submitProgressLog({
+    required String projectId,
+    required String judul,
+    required int progressPersen,
+    required String tanggal,
+    required String catatan,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.post(
+        '/proyeks/$projectId/progress-logs',
+        data: {
+          'judul': judul,
+          'progress_persen': progressPersen,
+          'tanggal': tanggal,
+          'catatan': catatan,
+        },
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Submit progress request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while submitting progress: $e');
     }
 
     return null;
