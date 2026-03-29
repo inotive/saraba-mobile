@@ -507,7 +507,14 @@ class AttendanceItem extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      Text(displayNote, style: const TextStyle(fontSize: 12)),
+                      Expanded(
+                        child: Text(
+                          displayNote,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
                       if (displayNote == "On Time")
                         const Padding(
                           padding: EdgeInsets.only(left: 4),

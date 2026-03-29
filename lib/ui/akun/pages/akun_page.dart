@@ -203,7 +203,7 @@ class AkunPage extends StatelessWidget {
         children: [
           _menuItem(
             icon: Icons.person,
-            title: 'Personal',
+            title: 'Report Keuntungan',
             onTap: () {
               Navigator.push(
                 context,
