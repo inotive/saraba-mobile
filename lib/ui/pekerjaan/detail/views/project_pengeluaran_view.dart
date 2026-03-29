@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
@@ -69,12 +73,39 @@ class ProjectPengeluaranView extends StatelessWidget {
             height: 48,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
+                final projectId = context
+                    .read<ProjectDetailBloc>()
+                    .state
+                    .detail
+                    ?.overview
+                    .id
+                    .toString();
+
+                if (projectId == null || projectId.isEmpty) {
+                  return;
+                }
+
+                Navigator.push<String>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const TambahPengeluaranPage(),
+                    builder: (_) => TambahPengeluaranPage(projectId: projectId),
                   ),
-                );
+                ).then((message) {
+                  if (!context.mounted || message == null || message.isEmpty) {
+                    return;
+                  }
+
+                  context.read<ProjectDetailBloc>().add(
+                    FetchProjectDetail(projectId),
+                  );
+
+                  StatusBanner.show(
+                    context,
+                    title: 'Pengeluaran Berhasil',
+                    message: message,
+                    type: StatusBannerType.success,
+                  );
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF7944D),
