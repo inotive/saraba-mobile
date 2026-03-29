@@ -1,71 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/progress_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
 
 class ProjectProgressView extends StatelessWidget {
-  const ProjectProgressView({super.key});
+  final ProjectOverviewDetail overview;
+  final ProjectProgressSection progress;
+
+  const ProjectProgressView({
+    super.key,
+    required this.overview,
+    required this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final progressItems = [
-      {
-        "title": "Persiapan Lahan untuk Pembangunan",
-        "jumlahTukang": "10",
-        "volume": "100 m³",
-        "persentase": "50%",
-        "progress": 0.5,
-        "images": [
-          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-          "https://images.unsplash.com/photo-1497366754035-f200968a6e72",
-          "https://images.unsplash.com/photo-1494526585095-c41746248156",
-          "https://images.unsplash.com/photo-1500534623283-312aade485b7",
-        ],
-      },
-      {
-        "title": "Persiapan Lahan untuk Pembangunan",
-        "jumlahTukang": "10",
-        "volume": "100 m³",
-        "persentase": "50%",
-        "progress": 0.5,
-        "images": [
-          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-          "https://images.unsplash.com/photo-1497366754035-f200968a6e72",
-          "https://images.unsplash.com/photo-1494526585095-c41746248156",
-          "https://images.unsplash.com/photo-1500534623283-312aade485b7",
-        ],
-      },
-    ];
-
     return Stack(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 92),
           child: Column(
             children: [
-              const _DateFilterField(value: "11 Maret 2026"),
+              _DateFilterField(value: _formatLongDate(DateTime.now())),
               const SizedBox(height: 12),
-              const _ProjectDateSummaryCard(
-                mulaiProyek: "9 Maret 2026",
-                selesai: "9 Maret 2027",
+              _ProjectDateSummaryCard(
+                mulaiProyek: _formatLongDateFromRaw(overview.tanggalMulai),
+                selesai: _formatLongDateFromRaw(overview.tanggalSelesai),
               ),
               const SizedBox(height: 14),
               Expanded(
-                child: ListView.separated(
-                  itemCount: progressItems.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final item = progressItems[index];
-                    return ProgressItemCard(
-                      title: item["title"] as String,
-                      jumlahTukang: item["jumlahTukang"] as String,
-                      volume: item["volume"] as String,
-                      persentase: item["persentase"] as String,
-                      progress: item["progress"] as double,
-                      images: item["images"] as List<String>,
-                      onTapArrow: () {},
-                    );
-                  },
-                ),
+                child: progress.logs.isEmpty
+                    ? const _EmptyProgressState()
+                    : ListView.separated(
+                        itemCount: progress.logs.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final item = progress.logs[index];
+                          final progressValue = _normalizeProgress(
+                            item.progressPersen,
+                          );
+
+                          return ProgressItemCard(
+                            title: item.judul,
+                            primaryLabel: 'Dibuat Oleh',
+                            primaryValue: item.user.name,
+                            secondaryLabel: 'Tanggal',
+                            secondaryValue: _formatShortDate(item.tanggal),
+                            persentase: '${(progressValue * 100).round()}%',
+                            progress: progressValue,
+                            images: item.fotos,
+                            description: item.catatan,
+                            onTapArrow: () {},
+                          );
+                        },
+                      ),
               ),
             ],
           ),
@@ -78,10 +71,29 @@ class ProjectProgressView extends StatelessWidget {
             height: 58,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
+                Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (_) => const TambahProgressPage()),
-                );
+                  MaterialPageRoute(
+                    builder: (_) => TambahProgressPage(
+                      projectId: overview.id.toString(),
+                    ),
+                  ),
+                ).then((message) {
+                  if (!context.mounted || message == null || message.isEmpty) {
+                    return;
+                  }
+
+                  context.read<ProjectDetailBloc>().add(
+                    FetchProjectDetail(overview.id.toString()),
+                  );
+
+                  StatusBanner.show(
+                    context,
+                    title: 'Progress Berhasil',
+                    message: message,
+                    type: StatusBannerType.success,
+                  );
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF7944D),
@@ -104,6 +116,35 @@ class ProjectProgressView extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+double _normalizeProgress(String rawValue) {
+  final parsedValue = double.tryParse(rawValue) ?? 0;
+  if (parsedValue <= 1) {
+    return parsedValue.clamp(0.0, 1.0);
+  }
+
+  return (parsedValue / 100).clamp(0.0, 1.0);
+}
+
+String _formatLongDate(DateTime date) {
+  return DateFormat('dd MMMM yyyy', 'id_ID').format(date);
+}
+
+String _formatLongDateFromRaw(String rawDate) {
+  try {
+    return _formatLongDate(DateTime.parse(rawDate));
+  } catch (_) {
+    return rawDate;
+  }
+}
+
+String _formatShortDate(String rawDate) {
+  try {
+    return DateFormat('dd/MM/yyyy').format(DateTime.parse(rawDate));
+  } catch (_) {
+    return rawDate;
   }
 }
 
@@ -176,6 +217,24 @@ class _ProjectDateSummaryCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _EmptyProgressState extends StatelessWidget {
+  const _EmptyProgressState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Belum ada progress untuk ditampilkan',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.black54),
+        ),
+      ),
     );
   }
 }

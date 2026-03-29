@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:saraba_mobile/repository/model/project_model.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 
 class ProjectOverviewView extends StatelessWidget {
-  final ProjectModel project;
+  final ProjectOverviewDetail overview;
 
-  const ProjectOverviewView({super.key, required this.project});
+  const ProjectOverviewView({super.key, required this.overview});
 
   @override
   Widget build(BuildContext context) {
+    final progressValue = _normalizePercent(overview.progress);
+    final budgetValue = _normalizePercent(overview.budgetPercent);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Container(
@@ -22,7 +26,7 @@ class ProjectOverviewView extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              "${(project.progress * 100).toInt()}%",
+              "${(progressValue * 100).round()}%",
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -33,26 +37,26 @@ class ProjectOverviewView extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
-                value: project.progress,
+                value: progressValue,
                 minHeight: 8,
                 backgroundColor: const Color(0xFFE5E5E5),
                 valueColor: const AlwaysStoppedAnimation(Color(0xFFF7944D)),
               ),
             ),
             const SizedBox(height: 10),
-            const Row(
+            Row(
               children: [
                 Expanded(
                   child: _LabelValueColumn(
                     label: "Mulai",
-                    value: "01/01/2026",
+                    value: _formatShortDate(overview.tanggalMulai),
                     crossAxisAlignment: CrossAxisAlignment.start,
                   ),
                 ),
                 Expanded(
                   child: _LabelValueColumn(
                     label: "Selesai",
-                    value: "30/04/2026",
+                    value: _formatShortDate(overview.tanggalSelesai),
                     crossAxisAlignment: CrossAxisAlignment.end,
                   ),
                 ),
@@ -61,32 +65,50 @@ class ProjectOverviewView extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 16),
-            const _InfoRow(label: "Dinas", value: "Dinas PUPR"),
+            _InfoRow(label: "Dinas", value: overview.dinas),
             const SizedBox(height: 8),
-            const _InfoRow(label: "Lokasi", value: "Surabaya"),
+            _InfoRow(label: "Lokasi", value: overview.lokasi),
             const SizedBox(height: 8),
-            _InfoRow(label: "Nilai Proyek", value: project.nilai),
-            const SizedBox(height: 8),
-            const _StatusRow(label: "Status", value: "Aktif"),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            const _InfoRow(label: "Tanggal Mulai", value: "01 Januari 2026"),
-            const SizedBox(height: 8),
-            const _InfoRow(label: "Tanggal Berakhir", value: "30 April 2026"),
-            const SizedBox(height: 8),
-            const _InfoRow(label: "Durasi Pekerjaan", value: "120 Hari"),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            const _InfoRow(
-              label: "Estimasi Pengeluaran",
-              value: "Rp 200.000.000",
+            _InfoRow(
+              label: "Nilai Proyek",
+              value: _formatCurrency(overview.nilaiProyek),
             ),
             const SizedBox(height: 8),
-            _InfoRow(label: "Pengeluaran Saat Ini", value: project.pengeluaran),
+            _StatusRow(label: "Status", value: _formatStatus(overview.status)),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            _InfoRow(
+              label: "Tanggal Mulai",
+              value: _formatLongDate(overview.tanggalMulai),
+            ),
             const SizedBox(height: 8),
-            const _InfoRow(label: "Sisa Budget", value: "Rp 80.000.000"),
+            _InfoRow(
+              label: "Tanggal Berakhir",
+              value: _formatLongDate(overview.tanggalSelesai),
+            ),
+            const SizedBox(height: 8),
+            _InfoRow(
+              label: "Durasi Pekerjaan",
+              value: "${overview.durasiHari} Hari",
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            _InfoRow(
+              label: "Estimasi Pengeluaran",
+              value: _formatCurrency(overview.estimasiPengeluaran),
+            ),
+            const SizedBox(height: 8),
+            _InfoRow(
+              label: "Pengeluaran Saat Ini",
+              value: _formatCurrency(overview.nilaiPengeluaran),
+            ),
+            const SizedBox(height: 8),
+            _InfoRow(
+              label: "Sisa Budget",
+              value: _formatCurrency(overview.sisaBudget.toString()),
+            ),
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 16),
@@ -103,7 +125,7 @@ class ProjectOverviewView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "${(project.progress * 100).toInt()}% Dari Estimasi",
+                  "${(budgetValue * 100).round()}% Dari Estimasi",
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF6B7280),
@@ -111,7 +133,7 @@ class ProjectOverviewView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _BudgetBar(progress: project.progress),
+                _BudgetBar(progress: budgetValue),
               ],
             ),
           ],
@@ -127,6 +149,47 @@ class ProjectOverviewView extends StatelessWidget {
       border: Border.all(color: const Color(0xFFE5E7EB)),
     );
   }
+}
+
+double _normalizePercent(double value) {
+  if (value <= 1) {
+    return value.clamp(0.0, 1.0);
+  }
+
+  return (value / 100).clamp(0.0, 1.0);
+}
+
+String _formatCurrency(String rawValue) {
+  final parsedValue = double.tryParse(rawValue) ?? 0;
+  return NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  ).format(parsedValue);
+}
+
+String _formatShortDate(String rawDate) {
+  try {
+    return DateFormat('dd/MM/yyyy').format(DateTime.parse(rawDate));
+  } catch (_) {
+    return rawDate;
+  }
+}
+
+String _formatLongDate(String rawDate) {
+  try {
+    return DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(rawDate));
+  } catch (_) {
+    return rawDate;
+  }
+}
+
+String _formatStatus(String rawStatus) {
+  if (rawStatus.isEmpty) {
+    return '-';
+  }
+
+  return rawStatus[0].toUpperCase() + rawStatus.substring(1);
 }
 
 class _LabelValueColumn extends StatelessWidget {
@@ -197,6 +260,7 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isActive = value.toLowerCase() == 'aktif';
     return Row(
       children: [
         Expanded(
@@ -208,14 +272,14 @@ class _StatusRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7E9),
+            color: isActive ? const Color(0xFFE6F7E9) : const Color(0xFFFFF4E5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF2E7D32),
+              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFFB26A00),
               fontWeight: FontWeight.w600,
             ),
           ),

@@ -127,7 +127,7 @@ class _LoginViewState extends State<_LoginView> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                 ),
-                                child: _buildHero(
+                                child: _buildBackground(
                                   isKeyboardOpen: isKeyboardOpen,
                                 ),
                               ),
@@ -154,7 +154,7 @@ class _LoginViewState extends State<_LoginView> {
     );
   }
 
-  Widget _buildHero({required bool isKeyboardOpen}) {
+  Widget _buildBackground({required bool isKeyboardOpen}) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
@@ -162,7 +162,7 @@ class _LoginViewState extends State<_LoginView> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(height: isKeyboardOpen ? 40 : 150),
+          SizedBox(height: isKeyboardOpen ? 40 : 110),
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOut,

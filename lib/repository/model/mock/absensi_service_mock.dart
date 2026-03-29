@@ -1,68 +1,52 @@
-import 'package:saraba_mobile/repository/model/attendace_response_model.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_model.dart';
+import 'package:saraba_mobile/repository/model/submit_absensi_response_model.dart';
 import 'package:saraba_mobile/repository/model/today_absensi_model.dart';
 
 class AbsensiServiceMock {
   static const bool isSuccess = true; // Toggle this to simulate success/failure
 
-  static Future<AttendanceResponse> clockIn({
+  static Future<SubmitAbsensiResponse> submitAbsensi({
     required String latitude,
     required String longitude,
     required String imagePath,
+    required String keterangan,
   }) async {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!isSuccess) {
-      throw Exception("Clock in gagal (mock)");
+      throw Exception("Absensi gagal (mock)");
     }
 
-    return AttendanceResponse.fromJson({
-      "success": true,
-      "message": "Clock In berhasil",
+    return SubmitAbsensiResponse.fromJson({
+      "status": "success",
+      "message": "Check-in berhasil.",
       "data": {
-        "absensi": {
-          "id": 1,
-          "tanggal": "2026-03-20",
-          "jam_masuk": "08:30",
-          "latitude": latitude,
-          "longitude": longitude,
-          "foto_url": imagePath,
-        },
-        "karyawan": {"id": "1", "nama": "Rahmad Hidayat", "jabatan": "Manager"},
+        "id": 1,
+        "user_id": "1",
+        "proyek_id": null,
+        "tanggal": "2026-03-20T00:00:00.000000Z",
+        "jam_masuk": "08:30:00",
+        "jam_pulang": "",
+        "lat_masuk": latitude,
+        "long_masuk": longitude,
+        "lat_pulang": "",
+        "long_pulang": "",
+        "foto_masuk": imagePath,
+        "foto_pulang": "",
+        "status": "hadir",
+        "keterangan": keterangan,
+        "created_at": "2026-03-20T08:30:00.000000Z",
+        "updated_at": "2026-03-20T08:30:00.000000Z",
+        "latitude": "",
+        "longitude": "",
+        "foto_path": "",
+        "ip_address": "",
+        "device_info": "",
       },
     });
   }
 
-  static Future<AttendanceResponse> clockOut({
-    required String latitude,
-    required String longitude,
-    required String imagePath,
-  }) async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!isSuccess) {
-      throw Exception("Clock out gagal (mock)");
-    }
-
-    return AttendanceResponse.fromJson({
-      "success": true,
-      "message": "Clock Out berhasil",
-      "data": {
-        "absensi": {
-          "id": 1,
-          "tanggal": "2026-03-20",
-          "jam_masuk": "08:30",
-          "jam_keluar": "17:10",
-          "durasi_kerja": "8 jam",
-          "latitude": latitude,
-          "longitude": longitude,
-        },
-        "karyawan": {"id": "1", "nama": "Rahmad Hidayat", "jabatan": "Manager"},
-      },
-    });
-  }
-
-  static Future<TodayAbsensiResponse> getTodayAbsensi() async {
+  static Future<TodayAbsensiResponse> fetchTodayAbsensi() async {
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (!isSuccess) {

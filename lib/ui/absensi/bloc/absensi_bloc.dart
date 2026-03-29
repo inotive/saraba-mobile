@@ -28,7 +28,7 @@ class AbsensiBloc extends Bloc<AbsensiEvent, AbsensiState> {
     );
 
     try {
-      final todayResponse = await absensiService.getTodayAbsensi();
+      final todayResponse = await absensiService.fetchTodayAbsensi();
 
       if (todayResponse == null) {
         emit(

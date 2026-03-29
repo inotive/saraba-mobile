@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
@@ -14,6 +15,8 @@ import 'package:saraba_mobile/ui/absensi/bloc/absensi_event.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
 import 'package:saraba_mobile/ui/dashboard/dashboard_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/pekerjaan_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_event.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
 class HomePage extends StatefulWidget {
@@ -74,13 +77,24 @@ class _HomePageState extends State<HomePage> {
               create: (_) =>
                   ProfileBloc(ProfileService())..add(FetchProfileData()),
             ),
+            BlocProvider(
+              create: (_) =>
+                  PekerjaanBloc(PekerjaanService())..add(FetchProyeks()),
+            ),
           ],
           child: const DashboardPage(),
         );
       case NavigationTab.absensi:
-        return AbsensiPage();
+        return BlocProvider(
+          create: (_) =>
+              ProfileBloc(ProfileService())..add(CheckLocalProfileData()),
+          child: const AbsensiPage(),
+        );
       case NavigationTab.pekerjaan:
-        return PekerjaanPage();
+        return BlocProvider(
+          create: (_) => PekerjaanBloc(PekerjaanService())..add(FetchProyeks()),
+          child: const PekerjaanPage(),
+        );
       case NavigationTab.akun:
         return BlocProvider(
           create: (_) =>
