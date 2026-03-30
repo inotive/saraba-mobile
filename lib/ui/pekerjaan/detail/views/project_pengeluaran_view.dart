@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
@@ -52,6 +53,38 @@ class ProjectPengeluaranView extends StatelessWidget {
                               tanggal: _formatShortDate(item.tanggal),
                               pengeluaran: _formatCurrency(item.jumlah),
                               description: item.keterangan,
+                              onTap: item.kategori.toLowerCase().contains(
+                                        'material',
+                                      )
+                                  ? () async {
+                                      final result =
+                                          await Navigator.push<
+                                            PengeluaranMaterialFlowResult
+                                          >(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  DetailPengeluaranMaterialPage(
+                                                    draft:
+                                                        _buildMaterialDraft(
+                                                          item,
+                                                        ),
+                                                  ),
+                                            ),
+                                          );
+
+                                      if (!context.mounted || result == null) {
+                                        return;
+                                      }
+
+                                      StatusBanner.show(
+                                        context,
+                                        title: result.title,
+                                        message: result.message,
+                                        type: StatusBannerType.success,
+                                      );
+                                    }
+                                  : null,
                             ),
                           ),
                         ),
@@ -95,21 +128,21 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return;
                   }
 
-                  final message = await Navigator.push<String>(
+                  final result = await Navigator.push<PengeluaranMaterialFlowResult>(
                     context,
                     MaterialPageRoute(
                       builder: (_) => TambahPengeluaranPage(category: category),
                     ),
                   );
 
-                  if (!context.mounted || message == null || message.isEmpty) {
+                  if (!context.mounted || result == null) {
                     return;
                   }
 
                   StatusBanner.show(
                     context,
-                    title: 'Pengeluaran Berhasil',
-                    message: message,
+                    title: result.title,
+                    message: result.message,
                     type: StatusBannerType.success,
                   );
                 });
@@ -134,6 +167,35 @@ class ProjectPengeluaranView extends StatelessWidget {
       ],
     );
   }
+}
+
+MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
+  return MaterialPengeluaranDraft(
+    materialCode: 'MAT-${item.id.toString().padLeft(3, '0')}',
+    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
+    note: item.keterangan,
+    attachments: [
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+    ],
+    items: [
+      MaterialExpenseItem(
+        id: 'material-${item.id}',
+        name: item.namaItem,
+        quantity: 10,
+        total: double.tryParse(item.jumlah) ?? 0,
+        isSelected: true,
+      ),
+      const MaterialExpenseItem(
+        id: 'material-batu-gosok',
+        name: 'Batu Gosok',
+        quantity: 10,
+        total: 2000000,
+        isSelected: true,
+      ),
+    ],
+  );
 }
 
 String _formatCurrency(String rawValue) {

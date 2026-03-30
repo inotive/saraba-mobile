@@ -147,10 +147,66 @@ class MaterialExpenseItem {
   }
 }
 
+class MaterialAttachmentItem {
+  final String path;
+  final bool isFile;
+
+  const MaterialAttachmentItem({
+    required this.path,
+    required this.isFile,
+  });
+
+  factory MaterialAttachmentItem.file(String path) {
+    return MaterialAttachmentItem(path: path, isFile: true);
+  }
+
+  factory MaterialAttachmentItem.asset(String path) {
+    return MaterialAttachmentItem(path: path, isFile: false);
+  }
+}
+
+class MaterialPengeluaranDraft {
+  final String materialCode;
+  final DateTime date;
+  final String note;
+  final List<MaterialAttachmentItem> attachments;
+  final List<MaterialExpenseItem> items;
+
+  const MaterialPengeluaranDraft({
+    required this.materialCode,
+    required this.date,
+    required this.note,
+    required this.attachments,
+    required this.items,
+  });
+}
+
+class PengeluaranMaterialFlowResult {
+  final String title;
+  final String message;
+
+  const PengeluaranMaterialFlowResult({
+    required this.title,
+    required this.message,
+  });
+}
+
 class TambahPengeluaranPage extends StatefulWidget {
   final PengeluaranCategory category;
+  final String pageTitle;
+  final MaterialPengeluaranDraft? initialDraft;
+  final PengeluaranMaterialFlowResult successResult;
 
-  const TambahPengeluaranPage({super.key, required this.category});
+  const TambahPengeluaranPage({
+    super.key,
+    required this.category,
+    this.pageTitle = 'Tambah Pengeluaran',
+    this.initialDraft,
+    this.successResult = const PengeluaranMaterialFlowResult(
+      title: 'Berhasil Menyimpan',
+      message: 'Kamu berhasil menambahkan pengeluaran baru',
+    ),
+  });
 
   @override
   State<TambahPengeluaranPage> createState() => _TambahPengeluaranPageState();
@@ -159,14 +215,17 @@ class TambahPengeluaranPage extends StatefulWidget {
 class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   final _catatanController = TextEditingController();
   final _imagePicker = ImagePicker();
-  final List<XFile> _selectedImages = [];
+  final List<MaterialAttachmentItem> _selectedImages = [];
   late DateTime _selectedDate;
   List<MaterialExpenseItem> _selectedItems = const [];
 
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    _selectedDate = widget.initialDraft?.date ?? DateTime.now();
+    _catatanController.text = widget.initialDraft?.note ?? '';
+    _selectedImages.addAll(widget.initialDraft?.attachments ?? const []);
+    _selectedItems = widget.initialDraft?.items ?? const [];
   }
 
   @override
@@ -186,7 +245,11 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     setState(() {
-      _selectedImages.addAll(pickedImages.take(5 - _selectedImages.length));
+      _selectedImages.addAll(
+        pickedImages
+            .take(5 - _selectedImages.length)
+            .map((image) => MaterialAttachmentItem.file(image.path)),
+      );
     });
   }
 
@@ -233,7 +296,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       return;
     }
 
-    Navigator.pop(context, 'Kamu berhasil menambahkan pengeluaran baru');
+    Navigator.pop(context, widget.successResult);
   }
 
   @override
@@ -245,7 +308,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const _TambahPengeluaranHeader(),
+            _TambahPengeluaranHeader(title: widget.pageTitle),
             Expanded(
               child: isMaterial
                   ? SingleChildScrollView(
@@ -290,15 +353,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                 ..._selectedImages.map(
                                   (image) => Padding(
                                     padding: const EdgeInsets.only(left: 8),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        File(image.path),
-                                        width: 92,
-                                        height: 92,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
+                                    child: AttachmentThumbnail(image: image),
                                   ),
                                 ),
                               ],
@@ -1067,7 +1122,9 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
 }
 
 class _TambahPengeluaranHeader extends StatelessWidget {
-  const _TambahPengeluaranHeader();
+  final String title;
+
+  const _TambahPengeluaranHeader({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -1079,9 +1136,9 @@ class _TambahPengeluaranHeader extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Tambah Pengeluaran',
+              title,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -1310,6 +1367,39 @@ class _UploadBox extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class AttachmentThumbnail extends StatelessWidget {
+  final MaterialAttachmentItem image;
+  final double width;
+  final double height;
+
+  const AttachmentThumbnail({
+    super.key,
+    required this.image,
+    this.width = 92,
+    this.height = 92,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: image.isFile
+          ? Image.file(
+              File(image.path),
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+            )
+          : Image.asset(
+              image.path,
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+            ),
     );
   }
 }
