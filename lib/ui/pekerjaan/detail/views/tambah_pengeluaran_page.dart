@@ -166,7 +166,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime(2026, 3, 12);
+    _selectedDate = DateTime.now();
   }
 
   @override
@@ -339,7 +339,17 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                     ),
             ),
             Container(
-              color: Colors.white,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 14,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
@@ -348,6 +358,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                       const Text(
                         'Grand Total',
                         style: TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1F1F1F),
                         ),
@@ -356,6 +367,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                       Text(
                         _formatCurrency(_grandTotal),
                         style: const TextStyle(
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFF7944D),
                         ),
@@ -373,12 +385,15 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            minimumSize: const Size.fromHeight(50),
                           ),
                           icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
                           label: const Text(
                             'Pilih Item',
-                            style: TextStyle(color: Color(0xFFF7944D)),
+                            style: TextStyle(
+                              color: Color(0xFFF7944D),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -394,7 +409,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            minimumSize: const Size.fromHeight(50),
                             elevation: 0,
                           ),
                           child: const Text(
@@ -402,6 +417,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
+                              fontSize: 15,
                             ),
                           ),
                         ),
@@ -546,7 +562,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.75,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
           child: Column(
             children: [
               Row(
@@ -600,7 +616,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size.fromHeight(50),
                       ),
                       icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
                       label: const Text(
@@ -621,7 +637,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size.fromHeight(50),
                         elevation: 0,
                       ),
                       child: const Text(
@@ -756,6 +772,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
                       _CompactTextField(
                         controller: _totalController,
                         hintText: 'Rp',
+                        prefixText: 'Rp ',
                         keyboardType: TextInputType.number,
                       ),
                     ],
@@ -805,7 +822,7 @@ class SelectedMaterialItemCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
@@ -815,7 +832,7 @@ class SelectedMaterialItemCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF2FF),
+              color: const Color(0xFFF1F6FF),
               borderRadius: BorderRadius.circular(17),
             ),
             child: const Icon(
@@ -831,12 +848,13 @@ class SelectedMaterialItemCard extends StatelessWidget {
               children: [
                 const Text(
                   'Nama Material',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   item.name,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1F1F1F),
                   ),
@@ -880,12 +898,13 @@ class _MetaColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
         ),
+        const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             color: Color(0xFF1F1F1F),
           ),
@@ -937,10 +956,12 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
   void didUpdateWidget(covariant MaterialItemSelectionCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final nextQuantity =
-        widget.item.quantity == 0 ? '' : widget.item.quantity.toString();
-    final nextTotal =
-        widget.item.total == 0 ? '' : widget.item.total.toStringAsFixed(0);
+    final nextQuantity = widget.item.quantity == 0
+        ? ''
+        : widget.item.quantity.toString();
+    final nextTotal = widget.item.total == 0
+        ? ''
+        : widget.item.total.toStringAsFixed(0);
 
     if (!_quantityFocusNode.hasFocus &&
         _quantityController.text != nextQuantity) {
@@ -984,6 +1005,8 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
                 onChanged: (value) => widget.onChanged(value ?? false),
                 activeColor: const Color(0xFFF7944D),
                 side: const BorderSide(color: Color(0xFFD1D5DB)),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               Expanded(
                 child: Text(
@@ -1027,6 +1050,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
                       controller: _totalController,
                       focusNode: _totalFocusNode,
                       hintText: 'Rp',
+                      prefixText: 'Rp ',
                       keyboardType: TextInputType.number,
                       enabled: widget.item.isSelected,
                       onChanged: widget.onTotalChanged,
@@ -1197,6 +1221,7 @@ class _CompactTextField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
+  final String? prefixText;
   final TextInputType keyboardType;
   final bool enabled;
   final ValueChanged<String>? onChanged;
@@ -1205,6 +1230,7 @@ class _CompactTextField extends StatelessWidget {
     required this.controller,
     this.focusNode,
     required this.hintText,
+    this.prefixText,
     this.keyboardType = TextInputType.text,
     this.enabled = true,
     this.onChanged,
@@ -1221,6 +1247,11 @@ class _CompactTextField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Color(0xFFB0B0B0)),
+        prefixText: prefixText,
+        prefixStyle: const TextStyle(
+          color: Color(0xFF1F1F1F),
+          fontWeight: FontWeight.w500,
+        ),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
