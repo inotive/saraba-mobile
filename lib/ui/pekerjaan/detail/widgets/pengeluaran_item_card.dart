@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 
 class PengeluaranItemCard extends StatelessWidget {
+  final String code;
   final String title;
-  final String category;
-  final String userName;
   final String tanggal;
-  final String pengeluaran;
-  final String description;
+  final String summaryLabel;
+  final String summaryValue;
+  final String? secondaryLabel;
+  final String? secondaryValue;
+  final String iconAsset;
   final VoidCallback? onTap;
 
   const PengeluaranItemCard({
     super.key,
+    required this.code,
     required this.title,
-    required this.category,
-    required this.userName,
     required this.tanggal,
-    required this.pengeluaran,
-    required this.description,
+    required this.summaryLabel,
+    required this.summaryValue,
+    required this.iconAsset,
+    this.secondaryLabel,
+    this.secondaryValue,
     this.onTap,
   });
 
@@ -37,93 +41,86 @@ class PengeluaranItemCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
+                SizedBox(
                   width: 42,
                   height: 42,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDDEAFE),
-                    shape: BoxShape.circle,
+                  child: Center(
+                    child: Image.asset(iconAsset, width: 42, height: 42),
                   ),
-                  child: const Icon(Icons.work_outline, color: Color(0xFF5D93E8)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1B2A4A),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              code,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8C8C8C),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1B2A4A),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _TitleValueColumn(
-                              label: "Kategori",
-                              value: category,
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 126,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tanggal',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8C8C8C),
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            child: _TitleValueColumn(
-                              label: "Tanggal",
-                              value: tanggal,
+                            const SizedBox(height: 2),
+                            Text(
+                              tanggal,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1B2A4A),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-        
             const SizedBox(height: 12),
-        
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: _PriceRow(label: "Pengeluaran", value: pengeluaran),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F7),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _PriceRow(label: "Dicatat Oleh", value: userName),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Keterangan",
-                    style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF4B5563),
-                    ),
-                  ),
+                  _SummaryRow(label: summaryLabel, value: summaryValue),
+                  if (secondaryLabel != null && secondaryValue != null) ...[
+                    const SizedBox(height: 8),
+                    _SummaryRow(label: secondaryLabel!, value: secondaryValue!),
+                  ],
                 ],
               ),
             ),
@@ -134,43 +131,11 @@ class PengeluaranItemCard extends StatelessWidget {
   }
 }
 
-class _TitleValueColumn extends StatelessWidget {
+class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _TitleValueColumn({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1B2A4A),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PriceRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _PriceRow({
-    required this.label,
-    required this.value,
-  });
+  const _SummaryRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -182,12 +147,33 @@ class _PriceRow extends StatelessWidget {
             style: const TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1B2A4A),
+        SizedBox(
+          width: 126,
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 10,
+                child: Text(
+                  ':',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1B2A4A),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1B2A4A),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

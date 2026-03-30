@@ -19,14 +19,14 @@ extension PengeluaranCategoryX on PengeluaranCategory {
     }
   }
 
-  IconData get icon {
+  String get iconAsset {
     switch (this) {
       case PengeluaranCategory.operasional:
-        return Icons.business_center_outlined;
+        return 'assets/icons/ic_pengeluaran_operasional.png';
       case PengeluaranCategory.material:
-        return Icons.layers_outlined;
+        return 'assets/icons/ic_pengeluaran_material.png';
       case PengeluaranCategory.pettyCash:
-        return Icons.perm_media_outlined;
+        return 'assets/icons/ic_pengeluaran_petty_cash.png';
     }
   }
 }
@@ -90,10 +90,8 @@ class _CategoryOptionTile extends StatelessWidget {
                 color: const Color(0xFFEAF2FF),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(
-                category.icon,
-                color: const Color(0xFF5D93E8),
-                size: 18,
+              child: Center(
+                child: Image.asset(category.iconAsset, width: 18, height: 18),
               ),
             ),
             const SizedBox(width: 14),

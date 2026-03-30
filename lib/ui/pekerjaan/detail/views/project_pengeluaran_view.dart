@@ -35,25 +35,42 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _formatLongDate(date),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F1F1F),
-                          ),
+                        Row(
+                          children: [
+                            Image.asset(
+                              'assets/icons/ic_pengeluaran_calendar.png',
+                              width: 16,
+                              height: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatLongDate(date),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F1F1F),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         ...items.map(
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: PengeluaranItemCard(
-                              title: item.namaItem,
-                              category: item.kategori,
-                              userName: item.user.name,
+                              code: _buildCardCode(item.kategori),
+                              title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
-                              pengeluaran: _formatCurrency(item.jumlah),
-                              description: item.keterangan,
+                              summaryLabel: _buildPrimaryLabel(item.kategori),
+                              summaryValue: _buildPrimaryValue(item),
+                              secondaryLabel: _buildSecondaryLabel(
+                                item.kategori,
+                              ),
+                              secondaryValue: _buildSecondaryValue(
+                                item.kategori,
+                                item,
+                              ),
+                              iconAsset: _buildCardIconAsset(item.kategori),
                               onTap: _buildOnTap(context, item),
                             ),
                           ),
@@ -87,12 +104,14 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return;
                   }
 
-                  final result = await Navigator.push<PengeluaranMaterialFlowResult>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TambahPengeluaranPage(category: category),
-                    ),
-                  );
+                  final result =
+                      await Navigator.push<PengeluaranMaterialFlowResult>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              TambahPengeluaranPage(category: category),
+                        ),
+                      );
 
                   if (!context.mounted || result == null) {
                     return;
@@ -126,6 +145,67 @@ class ProjectPengeluaranView extends StatelessWidget {
       ],
     );
   }
+}
+
+String _buildCardCode(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'MAT-001';
+  }
+  if (normalized.contains('petty')) {
+    return 'PC-001';
+  }
+  return 'OPR-001';
+}
+
+String _buildCardTitle(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'Material';
+  }
+  if (normalized.contains('petty')) {
+    return 'Petty Cash';
+  }
+  return 'Operasional';
+}
+
+String _buildCardIconAsset(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'assets/icons/ic_pengeluaran_material.png';
+  }
+  if (normalized.contains('petty')) {
+    return 'assets/icons/ic_pengeluaran_petty_cash.png';
+  }
+  return 'assets/icons/ic_pengeluaran_operasional.png';
+}
+
+String _buildPrimaryLabel(String kategori) {
+  final normalized = kategori.toLowerCase();
+  return normalized.contains('material') ? 'Total Item' : 'Jumlah Biaya';
+}
+
+String _buildPrimaryValue(ProjectPengeluaranItem item) {
+  final normalized = item.kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return '5';
+  }
+
+  return _formatCurrency(item.jumlah);
+}
+
+String? _buildSecondaryLabel(String kategori) {
+  final normalized = kategori.toLowerCase();
+  return normalized.contains('material') ? 'Jumlah Harga' : null;
+}
+
+String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return _formatCurrency(item.jumlah);
+  }
+
+  return null;
 }
 
 Future<void> Function()? _buildOnTap(
@@ -257,8 +337,12 @@ OperasionalPengeluaranDraft _buildOperasionalDraft(
         amount: double.tryParse(item.jumlah) ?? 0,
         note: item.keterangan,
         attachments: [
-          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
-          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
         ],
       ),
       OperasionalExpenseItem(
@@ -266,15 +350,20 @@ OperasionalPengeluaranDraft _buildOperasionalDraft(
         amount: 2000000,
         note: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
         attachments: [
-          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
         ],
       ),
       OperasionalExpenseItem(
         id: 'operasional-3',
         amount: 2000000,
-        note: 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        note:
+            'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         attachments: [
-          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
         ],
       ),
     ],
@@ -300,7 +389,7 @@ String _formatLongDate(String rawDate) {
 
 String _formatShortDate(String rawDate) {
   try {
-    return DateFormat('dd/MM/yyyy').format(DateTime.parse(rawDate));
+    return DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(rawDate));
   } catch (_) {
     return rawDate;
   }
