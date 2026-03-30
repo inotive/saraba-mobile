@@ -92,7 +92,7 @@ class ProjectPengeluaranView extends StatelessWidget {
               onPressed: () {
                 showModalBottomSheet<PengeluaranCategory>(
                   context: context,
-                  backgroundColor: Colors.white,
+                  backgroundColor: const Color(0xFFFAFAFA),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(24),

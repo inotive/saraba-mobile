@@ -10,7 +10,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
   Future<void> _openOptions(BuildContext context) async {
     final action = await showModalBottomSheet<_OperasionalDetailAction>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -36,7 +36,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       final note = draft.items.isNotEmpty ? draft.items.first.note : '-';
       await showModalBottomSheet<void>(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFAFAFA),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -76,7 +76,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
     final categoryLabel = draft.category.label;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: Column(
           children: [

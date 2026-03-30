@@ -10,7 +10,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
   Future<void> _openOptions(BuildContext context) async {
     final action = await showModalBottomSheet<_PengeluaranMaterialAction>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -62,7 +62,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: Column(
           children: [

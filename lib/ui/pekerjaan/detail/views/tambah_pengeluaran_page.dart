@@ -326,7 +326,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     final result = await showModalBottomSheet<List<MaterialExpenseItem>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -357,7 +357,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     final result = await showModalBottomSheet<OperasionalExpenseItem>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -392,7 +392,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   ) async {
     final action = await showModalBottomSheet<_OperasionalAction>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -411,7 +411,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     if (action == _OperasionalAction.viewNote) {
       await showModalBottomSheet<void>(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFAFAFA),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -436,7 +436,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         widget.category == PengeluaranCategory.pettyCash;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: Column(
           children: [
@@ -745,7 +745,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
     final result = await showModalBottomSheet<MaterialExpenseItem>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1375,7 +1375,7 @@ class OperasionalExpenseCard extends StatelessWidget {
             onPressed: () {
               showModalBottomSheet<void>(
                 context: context,
-                backgroundColor: Colors.white,
+                backgroundColor: const Color(0xFFFAFAFA),
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
