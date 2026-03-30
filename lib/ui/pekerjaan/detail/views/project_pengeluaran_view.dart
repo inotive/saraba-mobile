@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_operasional_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
@@ -53,38 +54,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                               tanggal: _formatShortDate(item.tanggal),
                               pengeluaran: _formatCurrency(item.jumlah),
                               description: item.keterangan,
-                              onTap: item.kategori.toLowerCase().contains(
-                                        'material',
-                                      )
-                                  ? () async {
-                                      final result =
-                                          await Navigator.push<
-                                            PengeluaranMaterialFlowResult
-                                          >(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  DetailPengeluaranMaterialPage(
-                                                    draft:
-                                                        _buildMaterialDraft(
-                                                          item,
-                                                        ),
-                                                  ),
-                                            ),
-                                          );
-
-                                      if (!context.mounted || result == null) {
-                                        return;
-                                      }
-
-                                      StatusBanner.show(
-                                        context,
-                                        title: result.title,
-                                        message: result.message,
-                                        type: StatusBannerType.success,
-                                      );
-                                    }
-                                  : null,
+                              onTap: _buildOnTap(context, item),
                             ),
                           ),
                         ),
@@ -117,7 +87,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return;
                   }
 
-                  if (category != PengeluaranCategory.material) {
+                  if (category == PengeluaranCategory.pettyCash) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -169,6 +139,62 @@ class ProjectPengeluaranView extends StatelessWidget {
   }
 }
 
+Future<void> Function()? _buildOnTap(
+  BuildContext context,
+  ProjectPengeluaranItem item,
+) {
+  final category = item.kategori.toLowerCase();
+
+  if (category.contains('material')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              DetailPengeluaranMaterialPage(draft: _buildMaterialDraft(item)),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
+  if (category.contains('operasional')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPengeluaranOperasionalPage(
+            draft: _buildOperasionalDraft(item),
+          ),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
+  return null;
+}
+
 MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
   return MaterialPengeluaranDraft(
     materialCode: 'MAT-${item.id.toString().padLeft(3, '0')}',
@@ -193,6 +219,41 @@ MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
         quantity: 10,
         total: 2000000,
         isSelected: true,
+      ),
+    ],
+  );
+}
+
+OperasionalPengeluaranDraft _buildOperasionalDraft(ProjectPengeluaranItem item) {
+  return OperasionalPengeluaranDraft(
+    operasionalName: 'Persiapan Lahan',
+    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
+    createdBy: item.user.name,
+    items: [
+      OperasionalExpenseItem(
+        id: 'operasional-${item.id}-1',
+        amount: double.tryParse(item.jumlah) ?? 0,
+        note: item.keterangan,
+        attachments: [
+          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+        ],
+      ),
+      OperasionalExpenseItem(
+        id: 'operasional-2',
+        amount: 2000000,
+        note: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        attachments: [
+          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+        ],
+      ),
+      OperasionalExpenseItem(
+        id: 'operasional-3',
+        amount: 2000000,
+        note: 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        attachments: [
+          MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+        ],
       ),
     ],
   );
