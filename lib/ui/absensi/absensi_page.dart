@@ -9,7 +9,6 @@ import 'package:saraba_mobile/ui/absensi/bloc/absensi_state.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
 import 'package:saraba_mobile/ui/absensi/detail/absensi_history_detail_page.dart';
-import 'package:saraba_mobile/ui/absensi/detail/absensi_history_detail_page.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 import 'package:shimmer/shimmer.dart';
 

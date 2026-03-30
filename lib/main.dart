@@ -32,6 +32,10 @@ class MyApp extends StatelessWidget {
       providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
       child: MaterialApp(
         title: 'Saraba Mobile',
+        theme: ThemeData(
+          scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF7944D)),
+        ),
         localizationsDelegates: [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

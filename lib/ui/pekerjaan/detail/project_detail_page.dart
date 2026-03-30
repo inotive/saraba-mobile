@@ -30,7 +30,7 @@ class ProjectDetailPage extends StatelessWidget {
       child: DefaultTabController(
         length: 5,
         child: Scaffold(
-          backgroundColor: const Color(0xFFF5F5F5),
+          backgroundColor: const Color(0xFFFAFAFA),
           body: SafeArea(
             child: BlocBuilder<ProjectDetailBloc, ProjectDetailState>(
               builder: (context, state) {

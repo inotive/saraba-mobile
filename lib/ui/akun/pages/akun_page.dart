@@ -99,7 +99,13 @@ class AkunPage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Akun')),
+        backgroundColor: const Color(0xFFFAFAFA),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFAFAFA),
+          surfaceTintColor: const Color(0xFFFAFAFA),
+          elevation: 0,
+          title: const Text('Akun'),
+        ),
         body: BlocConsumer<ProfileBloc, ProfileState>(
           listener: (context, state) {
             if (state.isError && state.errorMessage != null) {

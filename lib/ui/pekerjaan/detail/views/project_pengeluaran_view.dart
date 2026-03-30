@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_operasional_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
@@ -36,25 +35,43 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _formatLongDate(date),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F1F1F),
-                          ),
+                        Row(
+                          children: [
+                            Image.asset(
+                              'assets/icons/ic_pengeluaran_calendar.png',
+                              width: 16,
+                              height: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatLongDate(date),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F1F1F),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         ...items.map(
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: PengeluaranItemCard(
-                              title: item.namaItem,
-                              category: item.kategori,
-                              userName: item.user.name,
+                              code: _buildCardCode(item.kategori),
+                              title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
-                              pengeluaran: _formatCurrency(item.jumlah),
-                              description: item.keterangan,
+                              summaryLabel: _buildPrimaryLabel(item.kategori),
+                              summaryValue: _buildPrimaryValue(item),
+                              secondaryLabel: _buildSecondaryLabel(
+                                item.kategori,
+                              ),
+                              secondaryValue: _buildSecondaryValue(
+                                item.kategori,
+                                item,
+                              ),
+                              iconAsset: _buildCardIconAsset(item.kategori),
+                              onTap: _buildOnTap(context, item),
                             ),
                           ),
                         ),
@@ -73,36 +90,37 @@ class ProjectPengeluaranView extends StatelessWidget {
             height: 48,
             child: ElevatedButton.icon(
               onPressed: () {
-                final projectId = context
-                    .read<ProjectDetailBloc>()
-                    .state
-                    .detail
-                    ?.overview
-                    .id
-                    .toString();
-
-                if (projectId == null || projectId.isEmpty) {
-                  return;
-                }
-
-                Navigator.push<String>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TambahPengeluaranPage(projectId: projectId),
+                showModalBottomSheet<PengeluaranCategory>(
+                  context: context,
+                  backgroundColor: const Color(0xFFFAFAFA),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
-                ).then((message) {
-                  if (!context.mounted || message == null || message.isEmpty) {
+                  builder: (_) => const PengeluaranCategorySheet(),
+                ).then((category) async {
+                  if (!context.mounted || category == null) {
                     return;
                   }
 
-                  context.read<ProjectDetailBloc>().add(
-                    FetchProjectDetail(projectId),
-                  );
+                  final result =
+                      await Navigator.push<PengeluaranMaterialFlowResult>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              TambahPengeluaranPage(category: category),
+                        ),
+                      );
+
+                  if (!context.mounted || result == null) {
+                    return;
+                  }
 
                   StatusBanner.show(
                     context,
-                    title: 'Pengeluaran Berhasil',
-                    message: message,
+                    title: result.title,
+                    message: result.message,
                     type: StatusBannerType.success,
                   );
                 });
@@ -129,6 +147,229 @@ class ProjectPengeluaranView extends StatelessWidget {
   }
 }
 
+String _buildCardCode(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'MAT-001';
+  }
+  if (normalized.contains('petty')) {
+    return 'PC-001';
+  }
+  return 'OPR-001';
+}
+
+String _buildCardTitle(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'Material';
+  }
+  if (normalized.contains('petty')) {
+    return 'Petty Cash';
+  }
+  return 'Operasional';
+}
+
+String _buildCardIconAsset(String kategori) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return 'assets/icons/ic_pengeluaran_material.png';
+  }
+  if (normalized.contains('petty')) {
+    return 'assets/icons/ic_pengeluaran_petty_cash.png';
+  }
+  return 'assets/icons/ic_pengeluaran_operasional.png';
+}
+
+String _buildPrimaryLabel(String kategori) {
+  final normalized = kategori.toLowerCase();
+  return normalized.contains('material') ? 'Total Item' : 'Jumlah Biaya';
+}
+
+String _buildPrimaryValue(ProjectPengeluaranItem item) {
+  final normalized = item.kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return '5';
+  }
+
+  return _formatCurrency(item.jumlah);
+}
+
+String? _buildSecondaryLabel(String kategori) {
+  final normalized = kategori.toLowerCase();
+  return normalized.contains('material') ? 'Jumlah Harga' : null;
+}
+
+String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
+  final normalized = kategori.toLowerCase();
+  if (normalized.contains('material')) {
+    return _formatCurrency(item.jumlah);
+  }
+
+  return null;
+}
+
+Future<void> Function()? _buildOnTap(
+  BuildContext context,
+  ProjectPengeluaranItem item,
+) {
+  final category = item.kategori.toLowerCase();
+
+  if (category.contains('material')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              DetailPengeluaranMaterialPage(draft: _buildMaterialDraft(item)),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
+  if (category.contains('operasional')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPengeluaranOperasionalPage(
+            draft: _buildOperasionalDraft(item),
+          ),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
+  if (category.contains('petty')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPengeluaranOperasionalPage(
+            draft: _buildOperasionalDraft(
+              item,
+              category: PengeluaranCategory.pettyCash,
+            ),
+          ),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
+  return null;
+}
+
+MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
+  return MaterialPengeluaranDraft(
+    materialCode: 'MAT-${item.id.toString().padLeft(3, '0')}',
+    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
+    note: item.keterangan,
+    attachments: [
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
+    ],
+    items: [
+      MaterialExpenseItem(
+        id: 'material-${item.id}',
+        name: item.namaItem,
+        quantity: 10,
+        total: double.tryParse(item.jumlah) ?? 0,
+        isSelected: true,
+      ),
+      const MaterialExpenseItem(
+        id: 'material-batu-gosok',
+        name: 'Batu Gosok',
+        quantity: 10,
+        total: 2000000,
+        isSelected: true,
+      ),
+    ],
+  );
+}
+
+OperasionalPengeluaranDraft _buildOperasionalDraft(
+  ProjectPengeluaranItem item, {
+  PengeluaranCategory category = PengeluaranCategory.operasional,
+}) {
+  return OperasionalPengeluaranDraft(
+    category: category,
+    operasionalName: category == PengeluaranCategory.pettyCash
+        ? 'Kas Lapangan'
+        : 'Persiapan Lahan',
+    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
+    createdBy: item.user.name,
+    items: [
+      OperasionalExpenseItem(
+        id: 'operasional-${item.id}-1',
+        amount: double.tryParse(item.jumlah) ?? 0,
+        note: item.keterangan,
+        attachments: [
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
+        ],
+      ),
+      OperasionalExpenseItem(
+        id: 'operasional-2',
+        amount: 2000000,
+        note: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        attachments: [
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
+        ],
+      ),
+      OperasionalExpenseItem(
+        id: 'operasional-3',
+        amount: 2000000,
+        note:
+            'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        attachments: [
+          MaterialAttachmentItem.asset(
+            'assets/images/no_material_background.png',
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 String _formatCurrency(String rawValue) {
   final parsedValue = double.tryParse(rawValue) ?? 0;
   return NumberFormat.currency(
@@ -148,7 +389,7 @@ String _formatLongDate(String rawDate) {
 
 String _formatShortDate(String rawDate) {
   try {
-    return DateFormat('dd/MM/yyyy').format(DateTime.parse(rawDate));
+    return DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(rawDate));
   } catch (_) {
     return rawDate;
   }
