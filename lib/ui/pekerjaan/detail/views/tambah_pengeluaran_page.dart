@@ -208,12 +208,14 @@ class MaterialPengeluaranDraft {
 }
 
 class OperasionalPengeluaranDraft {
+  final PengeluaranCategory category;
   final String operasionalName;
   final DateTime date;
   final String createdBy;
   final List<OperasionalExpenseItem> items;
 
   const OperasionalPengeluaranDraft({
+    required this.category,
     required this.operasionalName,
     required this.date,
     required this.createdBy,
@@ -431,7 +433,9 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   @override
   Widget build(BuildContext context) {
     final isMaterial = widget.category == PengeluaranCategory.material;
-    final isOperasional = widget.category == PengeluaranCategory.operasional;
+    final isSimpleExpense =
+        widget.category == PengeluaranCategory.operasional ||
+        widget.category == PengeluaranCategory.pettyCash;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -512,7 +516,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                         ],
                       ),
                     )
-                  : isOperasional
+                  : isSimpleExpense
                   ? SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       child: Column(
@@ -620,7 +624,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                         child: OutlinedButton.icon(
                           onPressed: isMaterial
                               ? _openItemPicker
-                              : isOperasional
+                              : isSimpleExpense
                               ? () => _openOperasionalItemSheet()
                               : null,
                           style: OutlinedButton.styleFrom(
@@ -647,7 +651,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                               ? (_selectedItems.isEmpty
                                     ? null
                                     : _saveMaterialFlow)
-                              : isOperasional
+                              : isSimpleExpense
                               ? (_operasionalItems.isEmpty
                                     ? null
                                     : _saveOperasionalFlow)

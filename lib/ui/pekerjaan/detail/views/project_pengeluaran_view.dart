@@ -87,17 +87,6 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return;
                   }
 
-                  if (category == PengeluaranCategory.pettyCash) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Kategori ${category.label} akan tersedia segera',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-
                   final result = await Navigator.push<PengeluaranMaterialFlowResult>(
                     context,
                     MaterialPageRoute(
@@ -192,6 +181,33 @@ Future<void> Function()? _buildOnTap(
     };
   }
 
+  if (category.contains('petty')) {
+    return () async {
+      final result = await Navigator.push<PengeluaranMaterialFlowResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPengeluaranOperasionalPage(
+            draft: _buildOperasionalDraft(
+              item,
+              category: PengeluaranCategory.pettyCash,
+            ),
+          ),
+        ),
+      );
+
+      if (!context.mounted || result == null) {
+        return;
+      }
+
+      StatusBanner.show(
+        context,
+        title: result.title,
+        message: result.message,
+        type: StatusBannerType.success,
+      );
+    };
+  }
+
   return null;
 }
 
@@ -224,9 +240,15 @@ MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
   );
 }
 
-OperasionalPengeluaranDraft _buildOperasionalDraft(ProjectPengeluaranItem item) {
+OperasionalPengeluaranDraft _buildOperasionalDraft(
+  ProjectPengeluaranItem item, {
+  PengeluaranCategory category = PengeluaranCategory.operasional,
+}) {
   return OperasionalPengeluaranDraft(
-    operasionalName: 'Persiapan Lahan',
+    category: category,
+    operasionalName: category == PengeluaranCategory.pettyCash
+        ? 'Kas Lapangan'
+        : 'Persiapan Lahan',
     date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
     createdBy: item.user.name,
     items: [

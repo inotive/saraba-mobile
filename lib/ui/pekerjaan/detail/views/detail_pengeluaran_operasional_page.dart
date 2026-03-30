@@ -49,7 +49,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => TambahPengeluaranPage(
-          category: PengeluaranCategory.operasional,
+          category: draft.category,
           pageTitle: 'Edit Pengeluaran',
           initialOperasionalDraft: draft,
           successResult: const PengeluaranMaterialFlowResult(
@@ -73,20 +73,21 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       0,
       (sum, item) => sum + item.amount,
     );
+    final categoryLabel = draft.category.label;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Column(
           children: [
-            const _DetailOperasionalHeader(),
+            _DetailOperasionalHeader(categoryLabel: categoryLabel),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _DetailLabel('Nama Operasional'),
+                    _DetailLabel('Nama $categoryLabel'),
                     const SizedBox(height: 4),
                     _DetailValue(draft.operasionalName),
                     const SizedBox(height: 18),
@@ -100,9 +101,9 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                     const SizedBox(height: 4),
                     _DetailValue(draft.createdBy),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Item Operasional',
-                      style: TextStyle(
+                    Text(
+                      'Item $categoryLabel',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1F1F1F),
@@ -288,7 +289,9 @@ class _DetailOptionRow extends StatelessWidget {
 }
 
 class _DetailOperasionalHeader extends StatelessWidget {
-  const _DetailOperasionalHeader();
+  final String categoryLabel;
+
+  const _DetailOperasionalHeader({required this.categoryLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -300,9 +303,9 @@ class _DetailOperasionalHeader extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Detail Pengeluaran Operasional',
+              'Detail Pengeluaran $categoryLabel',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
