@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
@@ -73,31 +70,41 @@ class ProjectPengeluaranView extends StatelessWidget {
             height: 48,
             child: ElevatedButton.icon(
               onPressed: () {
-                final projectId = context
-                    .read<ProjectDetailBloc>()
-                    .state
-                    .detail
-                    ?.overview
-                    .id
-                    .toString();
-
-                if (projectId == null || projectId.isEmpty) {
-                  return;
-                }
-
-                Navigator.push<String>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TambahPengeluaranPage(projectId: projectId),
+                showModalBottomSheet<PengeluaranCategory>(
+                  context: context,
+                  backgroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
-                ).then((message) {
-                  if (!context.mounted || message == null || message.isEmpty) {
+                  builder: (_) => const PengeluaranCategorySheet(),
+                ).then((category) async {
+                  if (!context.mounted || category == null) {
                     return;
                   }
 
-                  context.read<ProjectDetailBloc>().add(
-                    FetchProjectDetail(projectId),
+                  if (category != PengeluaranCategory.material) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Kategori ${category.label} akan tersedia segera',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final message = await Navigator.push<String>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TambahPengeluaranPage(category: category),
+                    ),
                   );
+
+                  if (!context.mounted || message == null || message.isEmpty) {
+                    return;
+                  }
 
                   StatusBanner.show(
                     context,
