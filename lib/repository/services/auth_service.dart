@@ -11,12 +11,35 @@ class AuthService {
       false; // For development, delete this when backend is ready
   static const AppLogger _logger = AppLogger('AuthService');
 
-  final Dio _dio = Dio(
+  late final Dio _dio = _buildDio(
     BaseOptions(
       baseUrl: "https://saraba.inotivedev.com/api/v1",
       headers: {"Accept": "application/json"},
     ),
   );
+
+  Dio _buildDio(BaseOptions options) {
+    final dio = Dio(options);
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _logger.request(options);
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          _logger.response(response);
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          _logger.dioError(error);
+          handler.next(error);
+        },
+      ),
+    );
+
+    return dio;
+  }
 
   Future<LoginResponse?> login({
     required String email,
@@ -50,8 +73,6 @@ class AuthService {
           "device_name": "saraba_app",
         },
       );
-
-      _logger.response(response);
 
       if (response.statusCode == 200) {
         final loginResponse = LoginResponse.fromJson(response.data);
@@ -146,7 +167,7 @@ class AuthService {
   Future<Dio> getAuthDio() async {
     final token = await getToken();
 
-    return Dio(
+    return _buildDio(
       BaseOptions(
         baseUrl: "https://saraba.inotivedev.com/api/v1",
         headers: {"Authorization": token ?? "", "Accept": "application/json"},

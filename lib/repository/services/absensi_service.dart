@@ -12,12 +12,35 @@ class AbsensiService {
       false; // For development, delete this when backend is ready
   static const AppLogger _logger = AppLogger('AbsensiService');
 
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: "https://saraba.inotivedev.com/api/v1",
-      headers: {"Accept": "application/json"},
-    ),
-  );
+  late final Dio _dio = _buildDio();
+
+  Dio _buildDio() {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: "https://saraba.inotivedev.com/api/v1",
+        headers: {"Accept": "application/json"},
+      ),
+    );
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _logger.request(options);
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          _logger.response(response);
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          _logger.dioError(error);
+          handler.next(error);
+        },
+      ),
+    );
+
+    return dio;
+  }
 
   Future<SubmitAbsensiResponse?> submitAbsensi({
     required String latitude,
@@ -59,7 +82,6 @@ class AbsensiService {
         options: Options(headers: {"Authorization": token}),
       );
 
-      _logger.response(response);
       _logger.log('Submit absensi completed');
 
       return SubmitAbsensiResponse.fromJson(response.data);
@@ -86,8 +108,6 @@ class AbsensiService {
         options: Options(headers: {"Authorization": token}),
       );
 
-      _logger.response(response);
-
       if (response.statusCode == 200 && response.data["success"] == true) {
         _logger.log('Today absensi success');
         return TodayAbsensiResponse.fromJson(response.data);
@@ -107,8 +127,6 @@ class AbsensiService {
         "/absensi/$absensiId",
         options: Options(headers: {"Authorization": token}),
       );
-
-      _logger.response(response);
 
       if (response.statusCode == 200 && response.data["success"] == true) {
         _logger.log('Absensi detail success');
@@ -154,8 +172,6 @@ class AbsensiService {
         },
         options: Options(headers: {"Authorization": token}),
       );
-
-      _logger.response(response);
 
       if (response.statusCode == 200 && response.data["success"] == true) {
         _logger.log('History absensi success');

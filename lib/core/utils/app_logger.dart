@@ -12,6 +12,13 @@ class AppLogger {
     debugPrint('[$filterTag][$tag] $message');
   }
 
+  void request(RequestOptions options) {
+    debugPrint('[$filterTag][$tag] ${options.method} ${options.uri}');
+    debugPrint('[$filterTag][$tag] Query: ${options.queryParameters}');
+    debugPrint('[$filterTag][$tag] Headers: ${options.headers}');
+    debugPrint('[$filterTag][$tag] Data: ${options.data}');
+  }
+
   void response(Response<dynamic> response) {
     debugPrint(
       '[$filterTag][$tag] ${response.requestOptions.method} ${response.requestOptions.uri}',
