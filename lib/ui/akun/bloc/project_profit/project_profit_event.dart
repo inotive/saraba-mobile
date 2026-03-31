@@ -5,3 +5,9 @@ class FetchProjectProfits extends ProjectProfitEvent {
 
   FetchProjectProfits({this.page = 1});
 }
+
+class FetchGuaranteeProfits extends ProjectProfitEvent {
+  final int page;
+
+  FetchGuaranteeProfits({this.page = 1});
+}

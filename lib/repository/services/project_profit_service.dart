@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
+import 'package:saraba_mobile/repository/model/project_profit/guarantee_profit_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_profit/project_profit_response_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
@@ -30,6 +31,34 @@ class ProjectProfitService {
       return null;
     } catch (e) {
       _logger.error('Unexpected error while loading project profits: $e');
+      return null;
+    }
+  }
+
+  Future<GuaranteeProfitResponse?> fetchGuaranteeProfits({int page = 1}) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/jaminan',
+        queryParameters: {'page': page},
+      );
+      _logger.response(response);
+
+      final guaranteeProfitResponse = GuaranteeProfitResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      if (guaranteeProfitResponse.success) {
+        return guaranteeProfitResponse;
+      }
+
+      _logger.error('Guarantee profit request was not successful');
+      return guaranteeProfitResponse;
+    } on DioException catch (e) {
+      _logger.dioError(e);
+      return null;
+    } catch (e) {
+      _logger.error('Unexpected error while loading guarantee profits: $e');
       return null;
     }
   }

@@ -225,7 +225,8 @@ class AkunPage extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => BlocProvider(
                     create: (_) => ProjectProfitBloc(ProjectProfitService())
-                      ..add(FetchProjectProfits()),
+                      ..add(FetchProjectProfits())
+                      ..add(FetchGuaranteeProfits()),
                     child: const ProjectProfitPage(),
                   ),
                 ),

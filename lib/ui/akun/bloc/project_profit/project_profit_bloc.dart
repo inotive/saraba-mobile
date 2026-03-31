@@ -9,6 +9,7 @@ class ProjectProfitBloc extends Bloc<ProjectProfitEvent, ProjectProfitState> {
   ProjectProfitBloc(this.projectProfitService)
       : super(const ProjectProfitState()) {
     on<FetchProjectProfits>(_onFetchProjectProfits);
+    on<FetchGuaranteeProfits>(_onFetchGuaranteeProfits);
   }
 
   Future<void> _onFetchProjectProfits(
@@ -32,6 +33,32 @@ class ProjectProfitBloc extends Bloc<ProjectProfitEvent, ProjectProfitState> {
         errorMessage: response == null ? 'Gagal memuat keuntungan proyek' : null,
         summary: response?.summary,
         items: response?.data ?? const [],
+      ),
+    );
+  }
+
+  Future<void> _onFetchGuaranteeProfits(
+    FetchGuaranteeProfits event,
+    Emitter<ProjectProfitState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isGuaranteeLoading: true,
+        clearGuaranteeErrorMessage: true,
+      ),
+    );
+
+    final response = await projectProfitService.fetchGuaranteeProfits(
+      page: event.page,
+    );
+
+    emit(
+      state.copyWith(
+        isGuaranteeLoading: false,
+        guaranteeErrorMessage: response == null
+            ? 'Gagal memuat keuntungan jaminan'
+            : null,
+        guaranteeItems: response?.data.jaminans ?? const [],
       ),
     );
   }
