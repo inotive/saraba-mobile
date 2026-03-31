@@ -48,7 +48,7 @@ class AkunPage extends StatelessWidget {
     ProfileState profile,
   ) async {
     final profileBloc = context.read<ProfileBloc>();
-    final isUpdated = await Navigator.push<bool>(
+    final result = await Navigator.push<EditProfileResult>(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
@@ -63,14 +63,20 @@ class AkunPage extends StatelessWidget {
       ),
     );
 
-    if (isUpdated != true || !context.mounted) {
+    if (result == null || !context.mounted) {
       return;
     }
 
-    context.read<ProfileBloc>().add(FetchProfileData());
-    ScaffoldMessenger.of(
+    if (result.success) {
+      context.read<ProfileBloc>().add(FetchProfileData());
+    }
+
+    StatusBanner.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
+      title: result.title,
+      message: result.message,
+      type: result.bannerType,
+    );
   }
 
   @override

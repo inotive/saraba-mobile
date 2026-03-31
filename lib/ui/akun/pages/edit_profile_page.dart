@@ -1,8 +1,26 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:saraba_mobile/repository/services/profile_service.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+
+class EditProfileResult {
+  final bool success;
+  final String title;
+  final String message;
+  final StatusBannerType bannerType;
+
+  const EditProfileResult({
+    required this.success,
+    required this.title,
+    required this.message,
+    required this.bannerType,
+  });
+}
 
 class EditProfilePage extends StatefulWidget {
   final String? name;
@@ -34,12 +52,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _profileService = ProfileService();
   final _picker = ImagePicker();
 
   late String _selectedRole;
   String? _selectedImagePath;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -84,25 +100,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
-
-    await _profileService.updateProfile(
-      name: _nameController.text.trim(),
-      role: _selectedRole,
+    context.read<ProfileBloc>().add(
+      UpdateProfileSubmitted(
+        name: _nameController.text.trim(),
+        role: _selectedRole,
+        telepon: '',
+        alamat: '',
+        avatarPath: _selectedImagePath != widget.avatarPath
+            ? _selectedImagePath
+            : null,
+      ),
     );
-    await _profileService.saveAvatarPath(_selectedImagePath);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isSaving = false;
-    });
-
-    Navigator.pop(context, true);
   }
 
   ImageProvider? _buildAvatarImage() {
@@ -137,158 +145,190 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (_selectedRole.isNotEmpty) _selectedRole,
     }.toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F7F7),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        titleSpacing: 0,
-        title: const Text(
-          'Ubah Profil',
-          style: TextStyle(
-            color: Color(0xFF1F1F1F),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE9E9E9)),
+    return BlocConsumer<ProfileBloc, ProfileState>(
+      listener: (context, state) {
+        if (state.updateProfileErrorMessage != null) {
+          final result = EditProfileResult(
+            success: false,
+            title: 'Profil Gagal Diperbarui',
+            message: state.updateProfileErrorMessage!,
+            bannerType: StatusBannerType.error,
+          );
+          context.read<ProfileBloc>().add(UpdateProfileFeedbackCleared());
+          Navigator.pop(context, result);
+          return;
+        }
+
+        if (state.updateProfileSuccessMessage != null) {
+          context.read<ProfileBloc>().add(UpdateProfileFeedbackCleared());
+          Navigator.pop(
+            context,
+            EditProfileResult(
+              success: true,
+              title: 'Profil Berhasil Diperbarui',
+              message: state.updateProfileSuccessMessage!,
+              bannerType: StatusBannerType.success,
             ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: _buildAvatar()),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickImage,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFF8A42),
-                        side: const BorderSide(color: Color(0xFFFFB382)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                      ),
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text(
-                        'Ganti Foto',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Nama',
-                    style: TextStyle(
-                      color: Color(0xFF1F1F1F),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: _inputDecoration(),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Nama wajib diisi';
-                      }
-
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Jabatan',
-                    style: TextStyle(
-                      color: Color(0xFF1F1F1F),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRole,
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Color(0xFFB8B8B8),
-                    ),
-                    decoration: _inputDecoration(),
-                    items: roleItems
-                        .map(
-                          (role) => DropdownMenuItem<String>(
-                            value: role,
-                            child: Text(role),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      setState(() {
-                        _selectedRole = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _saveProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF934D),
-                        disabledBackgroundColor: const Color(0xFFFFC299),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              'Simpan',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF7F7F7),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFF7F7F7),
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            titleSpacing: 0,
+            title: const Text(
+              'Ubah Profil',
+              style: TextStyle(
+                color: Color(0xFF1F1F1F),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-        ),
-      ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE9E9E9)),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(child: _buildAvatar()),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickImage,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFF8A42),
+                            side: const BorderSide(color: Color(0xFFFFB382)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                          ),
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          label: const Text(
+                            'Ganti Foto',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Nama',
+                        style: TextStyle(
+                          color: Color(0xFF1F1F1F),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: _inputDecoration(),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Nama wajib diisi';
+                          }
+
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Jabatan',
+                        style: TextStyle(
+                          color: Color(0xFF1F1F1F),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedRole,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Color(0xFFB8B8B8),
+                        ),
+                        decoration: _inputDecoration(),
+                        items: roleItems
+                            .map(
+                              (role) => DropdownMenuItem<String>(
+                                value: role,
+                                child: Text(role),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+
+                          setState(() {
+                            _selectedRole = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: state.isUpdatingProfile
+                              ? null
+                              : _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF934D),
+                            disabledBackgroundColor: const Color(0xFFFFC299),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: state.isUpdatingProfile
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Simpan',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

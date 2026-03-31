@@ -4,6 +4,22 @@ class CheckLocalProfileData extends ProfileEvent {}
 
 class FetchProfileData extends ProfileEvent {}
 
+class UpdateProfileSubmitted extends ProfileEvent {
+  final String name;
+  final String role;
+  final String telepon;
+  final String alamat;
+  final String? avatarPath;
+
+  UpdateProfileSubmitted({
+    required this.name,
+    required this.role,
+    required this.telepon,
+    required this.alamat,
+    this.avatarPath,
+  });
+}
+
 class ChangePasswordSubmitted extends ProfileEvent {
   final String currentPassword;
   final String newPassword;
@@ -17,3 +33,5 @@ class ChangePasswordSubmitted extends ProfileEvent {
 }
 
 class ChangePasswordFeedbackCleared extends ProfileEvent {}
+
+class UpdateProfileFeedbackCleared extends ProfileEvent {}
