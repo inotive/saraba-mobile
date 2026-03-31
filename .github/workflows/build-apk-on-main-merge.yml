@@ -32,7 +32,7 @@ jobs:
         run: flutter pub get
 
       - name: Build app-test release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=ENABLE_SHAKE_LOGS=${{ vars.ENABLE_SHAKE_LOGS }}
 
       - name: Prepare semantic version tag
         id: release_meta

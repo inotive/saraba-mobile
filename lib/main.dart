@@ -15,6 +15,11 @@ import 'package:saraba_mobile/ui/common/debug/debug_log_page.dart';
 import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
+const bool _enableShakeLogsInRelease = bool.fromEnvironment(
+  'ENABLE_SHAKE_LOGS',
+  defaultValue: false,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -55,7 +60,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _startShakeListener() {
-    if (kReleaseMode) {
+    if (!_isShakeLoggingEnabled) {
       return;
     }
 
@@ -78,6 +83,8 @@ class _MyAppState extends State<MyApp> {
       _openDebugLogs();
     });
   }
+
+  bool get _isShakeLoggingEnabled => !kReleaseMode || _enableShakeLogsInRelease;
 
   void _openDebugLogs() {
     if (_isLogPageOpen) {
