@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project_profit/project_profit_response_model.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_state.dart';
 
 class ProjectProfitPage extends StatefulWidget {
   const ProjectProfitPage({super.key});
@@ -23,33 +28,6 @@ class _ProjectProfitPageState extends State<ProjectProfitPage>
   late final TabController _tabController;
   String _selectedProjectFilter = 'Terbaru';
   String _selectedGuaranteeFilter = '6 Bulan Terakhir';
-
-  final List<_ProjectProfitItem> _projectItems = const [
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan A',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan B',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan C',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan D',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-  ];
 
   final List<_GuaranteeProfitItem> _guaranteeItems = const [
     _GuaranteeProfitItem(
@@ -159,61 +137,108 @@ class _ProjectProfitPageState extends State<ProjectProfitPage>
   }
 
   Widget _buildProjectTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
-      children: [
-        _FilterDropdown(
-          value: _selectedProjectFilter,
-          items: _projectFilterOptions,
-          onChanged: (value) {
-            if (value == null) {
-              return;
-            }
+    return BlocBuilder<ProjectProfitBloc, ProjectProfitState>(
+      builder: (context, state) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+          children: [
+            _FilterDropdown(
+              value: _selectedProjectFilter,
+              items: _projectFilterOptions,
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
 
-            setState(() {
-              _selectedProjectFilter = value;
-            });
-          },
-        ),
-        const SizedBox(height: 12),
-        const SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _SummaryCard(
-                icon: Icons.receipt_long,
-                iconBackground: Color(0xFFE9EBEE),
-                iconColor: Color(0xFF70757E),
-                title: 'Total Proyek',
-                value: '55',
+                setState(() {
+                  _selectedProjectFilter = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            if (state.isLoading && state.summary == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.errorMessage != null && state.items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  state.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF7B8090)),
+                ),
+              )
+            else ...[
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _SummaryCard(
+                      icon: Icons.receipt_long,
+                      iconBackground: const Color(0xFFE9EBEE),
+                      iconColor: const Color(0xFF70757E),
+                      title: 'Total Proyek',
+                      value: '${state.summary?.totalProyek ?? 0}',
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.attach_money,
+                      iconBackground: const Color(0xFFFCEFD8),
+                      iconColor: const Color(0xFFD49B21),
+                      title: 'Total Nilai Proyek',
+                      value: _formatCurrency(
+                        state.summary?.totalNilaiProyek ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconBackground: const Color(0xFFFDE8E8),
+                      iconColor: const Color(0xFFE25555),
+                      title: 'Total Pengeluaran',
+                      value: _formatCurrency(
+                        state.summary?.totalPengeluaran ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.trending_up,
+                      iconBackground: const Color(0xFFE4F7EA),
+                      iconColor: const Color(0xFF21A366),
+                      title: 'Total Profit',
+                      value: _formatCurrency(state.summary?.totalProfit ?? 0),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(width: 8),
-              _SummaryCard(
-                icon: Icons.attach_money,
-                iconBackground: Color(0xFFFCEFD8),
-                iconColor: Color(0xFFD49B21),
-                title: 'Total Nilai Proyek',
-                value: 'Rp505.000.000',
-              ),
-              SizedBox(width: 8),
-              _SummaryCard(
-                icon: Icons.account_balance_wallet_outlined,
-                iconBackground: Color(0xFFE4F7EA),
-                iconColor: Color(0xFF21A366),
-                title: 'Total Profit',
-                value: 'Rp505.000.000',
-              ),
+              const SizedBox(height: 14),
+              if (state.isLoading && state.items.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: LinearProgressIndicator(),
+                ),
+              if (state.items.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    'Belum ada data keuntungan proyek',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF7B8090)),
+                  ),
+                )
+              else
+                ...state.items.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _ProjectProfitCard(item: item),
+                  );
+                }),
             ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        ..._projectItems.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _ProjectProfitCard(item: item),
-          );
-        }),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -381,7 +406,7 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _ProjectProfitCard extends StatelessWidget {
-  final _ProjectProfitItem item;
+  final ProjectProfitItem item;
 
   const _ProjectProfitCard({required this.item});
 
@@ -398,7 +423,7 @@ class _ProjectProfitCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            item.title,
+            item.namaProyek,
             style: const TextStyle(
               color: Color(0xFF202124),
               fontSize: 16,
@@ -430,7 +455,7 @@ class _ProjectProfitCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  item.nilai,
+                  _formatCurrency(item.nilaiProyek),
                   style: const TextStyle(
                     color: Color(0xFF202124),
                     fontSize: 14,
@@ -445,7 +470,7 @@ class _ProjectProfitCard extends StatelessWidget {
                     border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
                   ),
                   child: Text(
-                    item.pengeluaran,
+                    _formatCurrency(item.nilaiPengeluaran),
                     style: const TextStyle(
                       color: Color(0xFF202124),
                       fontSize: 14,
@@ -477,7 +502,7 @@ class _ProjectProfitCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Keuntungan : ${item.keuntungan}',
+                  'Keuntungan : ${_formatCurrency(item.keuntungan)}',
                   style: const TextStyle(
                     color: Color(0xFF56777A),
                     fontSize: 14,
@@ -697,20 +722,6 @@ class _LabelValueBlock extends StatelessWidget {
   }
 }
 
-class _ProjectProfitItem {
-  final String title;
-  final String nilai;
-  final String pengeluaran;
-  final String keuntungan;
-
-  const _ProjectProfitItem({
-    required this.title,
-    required this.nilai,
-    required this.pengeluaran,
-    required this.keuntungan,
-  });
-}
-
 class _GuaranteeProfitItem {
   final String name;
   final String hargaModal;
@@ -723,6 +734,14 @@ class _GuaranteeProfitItem {
     required this.hargaJual,
     required this.keuntungan,
   });
+}
+
+String _formatCurrency(double value) {
+  return NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  ).format(value);
 }
 
 class _ChartBarItem {

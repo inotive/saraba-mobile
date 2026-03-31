@@ -2,9 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/repository/services/project_profit_service.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_event.dart';
 import 'package:saraba_mobile/ui/akun/pages/change_password_page.dart';
 import 'package:saraba_mobile/ui/akun/pages/edit_profile_page.dart';
 import 'package:saraba_mobile/ui/akun/pages/project_profit_page.dart';
@@ -219,7 +222,13 @@ class AkunPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProjectProfitPage()),
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider(
+                    create: (_) => ProjectProfitBloc(ProjectProfitService())
+                      ..add(FetchProjectProfits()),
+                    child: const ProjectProfitPage(),
+                  ),
+                ),
               );
             },
           ),
