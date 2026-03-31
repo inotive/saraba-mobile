@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project_profit/guarantee_profit_response_model.dart';
+import 'package:saraba_mobile/repository/model/project_profit/project_profit_response_model.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_state.dart';
 
 class ProjectProfitPage extends StatefulWidget {
   const ProjectProfitPage({super.key});
@@ -14,78 +20,11 @@ class _ProjectProfitPageState extends State<ProjectProfitPage>
     'Minggu Ini',
     'Bulan Ini',
   ];
-  final List<String> _guaranteeFilterOptions = [
-    '6 Bulan Terakhir',
-    '3 Bulan Terakhir',
-    '12 Bulan Terakhir',
-  ];
+  final List<String> _guaranteeFilterOptions = ['Terbaru', '6 Bulan Terakhir'];
 
   late final TabController _tabController;
   String _selectedProjectFilter = 'Terbaru';
-  String _selectedGuaranteeFilter = '6 Bulan Terakhir';
-
-  final List<_ProjectProfitItem> _projectItems = const [
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan A',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan B',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan C',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-    _ProjectProfitItem(
-      title: 'Pembangunan Jembatan D',
-      nilai: 'Rp 500.000.000',
-      pengeluaran: 'Rp 120.000.000',
-      keuntungan: 'Rp240.000.000',
-    ),
-  ];
-
-  final List<_GuaranteeProfitItem> _guaranteeItems = const [
-    _GuaranteeProfitItem(
-      name: 'Jordyn Donin',
-      hargaModal: 'Rp 120.000.000',
-      hargaJual: 'Rp10.000.000',
-      keuntungan: 'Rp 120.000.000',
-    ),
-    _GuaranteeProfitItem(
-      name: 'Jordyn Donin',
-      hargaModal: 'Rp 120.000.000',
-      hargaJual: 'Rp10.000.000',
-      keuntungan: 'Rp 120.000.000',
-    ),
-    _GuaranteeProfitItem(
-      name: 'Jordyn Donin',
-      hargaModal: 'Rp 120.000.000',
-      hargaJual: 'Rp10.000.000',
-      keuntungan: 'Rp 120.000.000',
-    ),
-    _GuaranteeProfitItem(
-      name: 'Jordyn Donin',
-      hargaModal: 'Rp 120.000.000',
-      hargaJual: 'Rp10.000.000',
-      keuntungan: 'Rp 120.000.000',
-    ),
-  ];
-
-  final List<_ChartBarItem> _chartItems = const [
-    _ChartBarItem(month: 'Jan', heightFactor: 0.26),
-    _ChartBarItem(month: 'Feb', heightFactor: 0.38),
-    _ChartBarItem(month: 'Mar', heightFactor: 0.56),
-    _ChartBarItem(month: 'Apr', heightFactor: 0.26),
-    _ChartBarItem(month: 'May', heightFactor: 0.64),
-    _ChartBarItem(month: 'Jun', heightFactor: 0.80),
-  ];
+  String _selectedGuaranteeFilter = 'Terbaru';
 
   @override
   void initState() {
@@ -159,115 +98,207 @@ class _ProjectProfitPageState extends State<ProjectProfitPage>
   }
 
   Widget _buildProjectTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
-      children: [
-        _FilterDropdown(
-          value: _selectedProjectFilter,
-          items: _projectFilterOptions,
-          onChanged: (value) {
-            if (value == null) {
-              return;
-            }
+    return BlocBuilder<ProjectProfitBloc, ProjectProfitState>(
+      builder: (context, state) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+          children: [
+            _FilterDropdown(
+              value: _selectedProjectFilter,
+              items: _projectFilterOptions,
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
 
-            setState(() {
-              _selectedProjectFilter = value;
-            });
-          },
-        ),
-        const SizedBox(height: 12),
-        const SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _SummaryCard(
-                icon: Icons.receipt_long,
-                iconBackground: Color(0xFFE9EBEE),
-                iconColor: Color(0xFF70757E),
-                title: 'Total Proyek',
-                value: '55',
+                setState(() {
+                  _selectedProjectFilter = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            if (state.isLoading && state.summary == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.errorMessage != null && state.items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  state.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF7B8090)),
+                ),
+              )
+            else ...[
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _SummaryCard(
+                      icon: Icons.receipt_long,
+                      iconBackground: const Color(0xFFE9EBEE),
+                      iconColor: const Color(0xFF70757E),
+                      title: 'Total Proyek',
+                      value: '${state.summary?.totalProyek ?? 0}',
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.attach_money,
+                      iconBackground: const Color(0xFFFCEFD8),
+                      iconColor: const Color(0xFFD49B21),
+                      title: 'Total Nilai Proyek',
+                      value: _formatCurrency(
+                        state.summary?.totalNilaiProyek ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconBackground: const Color(0xFFFDE8E8),
+                      iconColor: const Color(0xFFE25555),
+                      title: 'Total Pengeluaran',
+                      value: _formatCurrency(
+                        state.summary?.totalPengeluaran ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SummaryCard(
+                      icon: Icons.trending_up,
+                      iconBackground: const Color(0xFFE4F7EA),
+                      iconColor: const Color(0xFF21A366),
+                      title: 'Total Profit',
+                      value: _formatCurrency(state.summary?.totalProfit ?? 0),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(width: 8),
-              _SummaryCard(
-                icon: Icons.attach_money,
-                iconBackground: Color(0xFFFCEFD8),
-                iconColor: Color(0xFFD49B21),
-                title: 'Total Nilai Proyek',
-                value: 'Rp505.000.000',
-              ),
-              SizedBox(width: 8),
-              _SummaryCard(
-                icon: Icons.account_balance_wallet_outlined,
-                iconBackground: Color(0xFFE4F7EA),
-                iconColor: Color(0xFF21A366),
-                title: 'Total Profit',
-                value: 'Rp505.000.000',
-              ),
+              const SizedBox(height: 14),
+              if (state.isLoading && state.items.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: LinearProgressIndicator(),
+                ),
+              if (state.items.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    'Belum ada data keuntungan proyek',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF7B8090)),
+                  ),
+                )
+              else
+                ...state.items.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _ProjectProfitCard(item: item),
+                  );
+                }),
             ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        ..._projectItems.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _ProjectProfitCard(item: item),
-          );
-        }),
-      ],
+          ],
+        );
+      },
     );
   }
 
   Widget _buildGuaranteeTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
-      children: [
-        _FilterDropdown(
-          value: _selectedGuaranteeFilter,
-          items: _guaranteeFilterOptions,
-          onChanged: (value) {
-            if (value == null) {
-              return;
-            }
+    return BlocBuilder<ProjectProfitBloc, ProjectProfitState>(
+      builder: (context, state) {
+        final chartItems = _buildGuaranteeChartItems(
+          state.guaranteeItems,
+          monthCount: _selectedGuaranteeFilter == '6 Bulan Terakhir' ? 6 : 3,
+        );
+        final totalNilaiJaminan = state.guaranteeItems.fold<double>(
+          0,
+          (sum, item) => sum + item.nilaiJaminan,
+        );
 
-            setState(() {
-              _selectedGuaranteeFilter = value;
-            });
-          },
-        ),
-        const SizedBox(height: 12),
-        _GuaranteeChart(items: _chartItems),
-        const SizedBox(height: 12),
-        const Row(
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
           children: [
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.person_outline,
-                iconBackground: Color(0xFFF1F1F1),
-                iconColor: Color(0xFF8D8D8D),
-                title: 'Total Nasabah',
-                value: '55',
-              ),
+            _FilterDropdown(
+              value: _selectedGuaranteeFilter,
+              items: _guaranteeFilterOptions,
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+
+                setState(() {
+                  _selectedGuaranteeFilter = value;
+                });
+              },
             ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.bar_chart,
-                iconBackground: Color(0xFFF1F1F1),
-                iconColor: Color(0xFF2F7DFF),
-                title: 'Total Profit',
-                value: 'Rp505.000.000',
+            const SizedBox(height: 12),
+            if (state.isGuaranteeLoading && state.guaranteeItems.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.guaranteeErrorMessage != null &&
+                state.guaranteeItems.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  state.guaranteeErrorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF7B8090)),
+                ),
+              )
+            else ...[
+              _GuaranteeChart(items: chartItems),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.receipt_long,
+                      iconBackground: const Color(0xFFF1F1F1),
+                      iconColor: const Color(0xFF8D8D8D),
+                      title: 'Total Jaminan',
+                      value: '${state.guaranteeItems.length}',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.bar_chart,
+                      iconBackground: const Color(0xFFF1F1F1),
+                      iconColor: const Color(0xFF2F7DFF),
+                      title: 'Total Nilai Jaminan',
+                      value: _formatCurrency(totalNilaiJaminan),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 12),
+              if (state.isGuaranteeLoading && state.guaranteeItems.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: LinearProgressIndicator(),
+                ),
+              if (state.guaranteeItems.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    'Belum ada data jaminan',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF7B8090)),
+                  ),
+                )
+              else
+                ...state.guaranteeItems.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _GuaranteeProfitCard(item: item),
+                  );
+                }),
+            ],
           ],
-        ),
-        const SizedBox(height: 12),
-        ..._guaranteeItems.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _GuaranteeProfitCard(item: item),
-          );
-        }),
-      ],
+        );
+      },
     );
   }
 }
@@ -381,7 +412,7 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _ProjectProfitCard extends StatelessWidget {
-  final _ProjectProfitItem item;
+  final ProjectProfitItem item;
 
   const _ProjectProfitCard({required this.item});
 
@@ -398,7 +429,7 @@ class _ProjectProfitCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            item.title,
+            item.namaProyek,
             style: const TextStyle(
               color: Color(0xFF202124),
               fontSize: 16,
@@ -430,7 +461,7 @@ class _ProjectProfitCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  item.nilai,
+                  _formatCurrency(item.nilaiProyek),
                   style: const TextStyle(
                     color: Color(0xFF202124),
                     fontSize: 14,
@@ -445,7 +476,7 @@ class _ProjectProfitCard extends StatelessWidget {
                     border: Border(left: BorderSide(color: Color(0xFFE5E7EB))),
                   ),
                   child: Text(
-                    item.pengeluaran,
+                    _formatCurrency(item.nilaiPengeluaran),
                     style: const TextStyle(
                       color: Color(0xFF202124),
                       fontSize: 14,
@@ -477,7 +508,7 @@ class _ProjectProfitCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Keuntungan : ${item.keuntungan}',
+                  'Keuntungan : ${_formatCurrency(item.keuntungan)}',
                   style: const TextStyle(
                     color: Color(0xFF56777A),
                     fontSize: 14,
@@ -500,6 +531,8 @@ class _GuaranteeChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentMonthLabel = DateFormat('MMM', 'id_ID').format(DateTime.now());
+
     return Container(
       height: 336,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
@@ -545,11 +578,11 @@ class _GuaranteeChart extends StatelessWidget {
                   Text(
                     item.month,
                     style: TextStyle(
-                      color: item.month == 'Jun'
+                      color: item.month == currentMonthLabel
                           ? const Color(0xFF202124)
                           : const Color(0xFF8B92A5),
                       fontSize: 13,
-                      fontWeight: item.month == 'Jun'
+                      fontWeight: item.month == currentMonthLabel
                           ? FontWeight.w700
                           : FontWeight.w500,
                     ),
@@ -565,7 +598,7 @@ class _GuaranteeChart extends StatelessWidget {
 }
 
 class _GuaranteeProfitCard extends StatelessWidget {
-  final _GuaranteeProfitItem item;
+  final GuaranteeProfitItem item;
 
   const _GuaranteeProfitCard({required this.item});
 
@@ -584,9 +617,9 @@ class _GuaranteeProfitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoItem(label: 'Nama', value: item.name),
+                _InfoItem(label: 'Nasabah', value: item.namaNasabah),
                 const SizedBox(height: 10),
-                _InfoItem(label: 'Harga Jual', value: item.hargaJual),
+                _InfoItem(label: 'Jenis', value: item.jenisJaminan),
               ],
             ),
           ),
@@ -600,9 +633,12 @@ class _GuaranteeProfitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoItem(label: 'Harga Modal', value: item.hargaModal),
+                _InfoItem(
+                  label: 'Nilai Jaminan',
+                  value: _formatCurrency(item.nilaiJaminan),
+                ),
                 const SizedBox(height: 10),
-                _InfoItem(label: 'Keuntungan', value: item.keuntungan),
+                _InfoItem(label: 'Status', value: item.statusText),
               ],
             ),
           ),
@@ -697,32 +733,12 @@ class _LabelValueBlock extends StatelessWidget {
   }
 }
 
-class _ProjectProfitItem {
-  final String title;
-  final String nilai;
-  final String pengeluaran;
-  final String keuntungan;
-
-  const _ProjectProfitItem({
-    required this.title,
-    required this.nilai,
-    required this.pengeluaran,
-    required this.keuntungan,
-  });
-}
-
-class _GuaranteeProfitItem {
-  final String name;
-  final String hargaModal;
-  final String hargaJual;
-  final String keuntungan;
-
-  const _GuaranteeProfitItem({
-    required this.name,
-    required this.hargaModal,
-    required this.hargaJual,
-    required this.keuntungan,
-  });
+String _formatCurrency(double value) {
+  return NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  ).format(value);
 }
 
 class _ChartBarItem {
@@ -730,4 +746,48 @@ class _ChartBarItem {
   final double heightFactor;
 
   const _ChartBarItem({required this.month, required this.heightFactor});
+}
+
+List<_ChartBarItem> _buildGuaranteeChartItems(
+  List<GuaranteeProfitItem> items, {
+  int monthCount = 12,
+}) {
+  final monthlyTotals = <String, double>{};
+  for (final item in items) {
+    final date = DateTime.tryParse(item.tglTerbit);
+    if (date == null) {
+      continue;
+    }
+    final key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+    monthlyTotals.update(
+      key,
+      (value) => value + item.nilaiJaminan,
+      ifAbsent: () => item.nilaiJaminan,
+    );
+  }
+
+  final maxValue = monthlyTotals.values.fold<double>(
+    0,
+    (max, value) => value > max ? value : max,
+  );
+
+  final availableMonths = monthlyTotals.keys.toList()..sort();
+  final monthsToShow = availableMonths.length <= monthCount
+      ? availableMonths
+      : availableMonths.sublist(availableMonths.length - monthCount);
+
+  return monthsToShow.map((key) {
+    final parts = key.split('-');
+    final date = DateTime(
+      int.tryParse(parts[0]) ?? DateTime.now().year,
+      int.tryParse(parts[1]) ?? 1,
+    );
+    final total = monthlyTotals[key] ?? 0;
+    final factor = maxValue <= 0 ? 0.08 : (total / maxValue).clamp(0.08, 1.0);
+
+    return _ChartBarItem(
+      month: DateFormat('MMM', 'id_ID').format(date),
+      heightFactor: factor,
+    );
+  }).toList();
 }

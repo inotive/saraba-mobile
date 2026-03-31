@@ -111,6 +111,63 @@ class ProfileService {
   Future<void> updateProfile({
     required String name,
     required String role,
+    String telepon = '',
+    String alamat = '',
+    String? avatarPath,
+  }) async {
+    final currentUser = await getCurrentUser();
+
+    try {
+      final dio = await AuthService().getAuthDio();
+      final formData = FormData.fromMap({
+        'name': name,
+        'telepon': telepon,
+        'alamat': alamat,
+        if (avatarPath != null && avatarPath.isNotEmpty)
+          'avatar': await MultipartFile.fromFile(avatarPath),
+      });
+
+      final response = await dio.post('/profile', data: formData);
+      _logger.response(response);
+
+      final profileResponse = ProfileResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      if (!profileResponse.success) {
+        _logger.error('Profile update request was not successful');
+        return;
+      }
+
+      await saveCurrentUser(
+        User(
+          id: profileResponse.data.user.id,
+          name: profileResponse.data.karyawan?.nama.isNotEmpty == true
+              ? profileResponse.data.karyawan!.nama
+              : profileResponse.data.user.name,
+          email: profileResponse.data.user.email,
+          role: currentUser?.role ?? role,
+        ),
+      );
+
+      if (avatarPath != null && avatarPath.isNotEmpty) {
+        await saveAvatarPath(null);
+      }
+
+      _logger.log('Profile updated successfully');
+      return;
+    } on DioException catch (e) {
+      _logger.dioError(e);
+      rethrow;
+    } catch (e) {
+      _logger.error('Unexpected error while updating profile: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateProfileLocally({
+    required String name,
+    required String role,
   }) async {
     final currentUser = await getCurrentUser();
 

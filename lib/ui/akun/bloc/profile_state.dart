@@ -9,6 +9,9 @@ class ProfileState {
   final String? fallbackName;
   final String? fallbackRole;
   final String? fallbackEmail;
+  final bool isUpdatingProfile;
+  final String? updateProfileSuccessMessage;
+  final String? updateProfileErrorMessage;
   final bool isChangingPassword;
   final String? changePasswordSuccessMessage;
   final String? changePasswordErrorMessage;
@@ -22,6 +25,9 @@ class ProfileState {
     this.fallbackName,
     this.fallbackRole,
     this.fallbackEmail,
+    this.isUpdatingProfile = false,
+    this.updateProfileSuccessMessage,
+    this.updateProfileErrorMessage,
     this.isChangingPassword = false,
     this.changePasswordSuccessMessage,
     this.changePasswordErrorMessage,
@@ -37,6 +43,10 @@ class ProfileState {
     String? fallbackName,
     String? fallbackRole,
     String? fallbackEmail,
+    bool? isUpdatingProfile,
+    String? updateProfileSuccessMessage,
+    String? updateProfileErrorMessage,
+    bool clearUpdateProfileFeedback = false,
     bool? isChangingPassword,
     String? changePasswordSuccessMessage,
     String? changePasswordErrorMessage,
@@ -51,6 +61,13 @@ class ProfileState {
       fallbackName: fallbackName ?? this.fallbackName,
       fallbackRole: fallbackRole ?? this.fallbackRole,
       fallbackEmail: fallbackEmail ?? this.fallbackEmail,
+      isUpdatingProfile: isUpdatingProfile ?? this.isUpdatingProfile,
+      updateProfileSuccessMessage: clearUpdateProfileFeedback
+          ? null
+          : updateProfileSuccessMessage ?? this.updateProfileSuccessMessage,
+      updateProfileErrorMessage: clearUpdateProfileFeedback
+          ? null
+          : updateProfileErrorMessage ?? this.updateProfileErrorMessage,
       isChangingPassword: isChangingPassword ?? this.isChangingPassword,
       changePasswordSuccessMessage: clearChangePasswordFeedback
           ? null

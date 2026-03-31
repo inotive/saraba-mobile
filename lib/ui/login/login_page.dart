@@ -209,7 +209,7 @@ class _LoginViewState extends State<_LoginView> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'SARABA',
+                  'SARABA KAWA',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
