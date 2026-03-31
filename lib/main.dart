@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,6 +10,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:saraba_mobile/ui/common/debug/debug_log_page.dart';
 import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
@@ -23,14 +29,84 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<AccelerometerEvent>? _shakeSubscription;
+  DateTime? _lastShakeAt;
+  bool _isLogPageOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startShakeListener();
+  }
+
+  @override
+  void dispose() {
+    _shakeSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _startShakeListener() {
+    if (kReleaseMode) {
+      return;
+    }
+
+    _shakeSubscription = accelerometerEventStream().listen((event) {
+      final totalForce = math.sqrt(
+        (event.x * event.x) + (event.y * event.y) + (event.z * event.z),
+      );
+
+      if (totalForce < 22) {
+        return;
+      }
+
+      final now = DateTime.now();
+      if (_lastShakeAt != null &&
+          now.difference(_lastShakeAt!) < const Duration(seconds: 1)) {
+        return;
+      }
+
+      _lastShakeAt = now;
+      _openDebugLogs();
+    });
+  }
+
+  void _openDebugLogs() {
+    if (_isLogPageOpen) {
+      return;
+    }
+
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    _isLogPageOpen = true;
+    navigator
+        .push(
+          MaterialPageRoute<void>(
+            builder: (_) => const DebugLogPage(),
+          ),
+        )
+        .whenComplete(() {
+          _isLogPageOpen = false;
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
       child: MaterialApp(
+        navigatorKey: _navigatorKey,
         title: 'Saraba Mobile',
         theme: ThemeData(
           scaffoldBackgroundColor: const Color(0xFFFAFAFA),
