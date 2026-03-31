@@ -354,6 +354,13 @@ class _AbsensiViewState extends State<_AbsensiView> {
     if (tanggal.isEmpty) return "-";
 
     final normalizedDate = tanggal.split('T').first.split(' ').first;
+    if (normalizedDate.contains('/')) {
+      final parts = normalizedDate.split('/');
+      if (parts.length == 3) {
+        return parts[0];
+      }
+    }
+
     final parts = normalizedDate.split('-');
     if (parts.length == 3) {
       return parts[2];

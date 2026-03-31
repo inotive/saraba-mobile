@@ -2,10 +2,7 @@ class AbsensiDetailResponse {
   final bool success;
   final AbsensiDetailData data;
 
-  AbsensiDetailResponse({
-    required this.success,
-    required this.data,
-  });
+  AbsensiDetailResponse({required this.success, required this.data});
 
   factory AbsensiDetailResponse.fromJson(Map<String, dynamic> json) {
     return AbsensiDetailResponse(
@@ -21,12 +18,16 @@ class AbsensiDetailData {
   final String jamMasuk;
   final String jamPulang;
   final String durasiKerja;
-  final String latitude;
-  final String longitude;
-  final String fotoUrl;
+  final String latMasuk;
+  final String longMasuk;
+  final String latPulang;
+  final String longPulang;
+  final String fotoMasuk;
+  final String fotoPulang;
+  final String fotoMasukUrl;
+  final String fotoPulangUrl;
   final String status;
   final String keterangan;
-  final String deviceInfo;
 
   AbsensiDetailData({
     required this.id,
@@ -34,12 +35,16 @@ class AbsensiDetailData {
     required this.jamMasuk,
     required this.jamPulang,
     required this.durasiKerja,
-    required this.latitude,
-    required this.longitude,
-    required this.fotoUrl,
+    required this.latMasuk,
+    required this.longMasuk,
+    required this.latPulang,
+    required this.longPulang,
+    required this.fotoMasuk,
+    required this.fotoPulang,
+    required this.fotoMasukUrl,
+    required this.fotoPulangUrl,
     required this.status,
     required this.keterangan,
-    required this.deviceInfo,
   });
 
   factory AbsensiDetailData.fromJson(Map<String, dynamic> json) {
@@ -49,12 +54,16 @@ class AbsensiDetailData {
       jamMasuk: json['jam_masuk']?.toString() ?? '',
       jamPulang: json['jam_pulang']?.toString() ?? '',
       durasiKerja: json['durasi_kerja']?.toString() ?? '',
-      latitude: json['latitude']?.toString() ?? '',
-      longitude: json['longitude']?.toString() ?? '',
-      fotoUrl: json['foto_url']?.toString() ?? '',
+      latMasuk: json['lat_masuk']?.toString() ?? '',
+      longMasuk: json['long_masuk']?.toString() ?? '',
+      latPulang: json['lat_pulang']?.toString() ?? '',
+      longPulang: json['long_pulang']?.toString() ?? '',
+      fotoMasuk: json['foto_masuk']?.toString() ?? '',
+      fotoPulang: json['foto_pulang']?.toString() ?? '',
+      fotoMasukUrl: json['foto_masuk_url']?.toString() ?? '',
+      fotoPulangUrl: json['foto_pulang_url']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       keterangan: json['keterangan']?.toString() ?? '',
-      deviceInfo: json['device_info']?.toString() ?? '',
     );
   }
 }

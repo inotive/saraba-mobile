@@ -119,7 +119,18 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
             final displayTime = isCheckOutTab
                 ? detail.jamPulang
                 : detail.jamMasuk;
-            final coordinate = _buildLatLng(detail.latitude, detail.longitude);
+            final coordinate = isCheckOutTab
+                ? _buildLatLng(detail.latPulang, detail.longPulang)
+                : _buildLatLng(detail.latMasuk, detail.longMasuk);
+            final attendanceImageUrl = isCheckOutTab
+                ? _resolveAttendanceImageUrl(
+                    primary: detail.fotoPulangUrl,
+                    fallback: detail.fotoPulang,
+                  )
+                : _resolveAttendanceImageUrl(
+                    primary: detail.fotoMasukUrl,
+                    fallback: detail.fotoMasuk,
+                  );
 
             return Column(
               children: [
@@ -187,7 +198,7 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            _buildAttendanceImage(detail.fotoUrl),
+                            _buildAttendanceImage(attendanceImageUrl),
                             const SizedBox(height: 16),
                             Text(
                               _selectedTab,
@@ -379,6 +390,17 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
     );
   }
 
+  String _resolveAttendanceImageUrl({
+    required String primary,
+    required String fallback,
+  }) {
+    if (primary.trim().isNotEmpty) {
+      return primary.trim();
+    }
+
+    return fallback.trim();
+  }
+
   Widget _buildStatusBadge(String status) {
     final normalized = status.toLowerCase();
     final isPositive = normalized == 'hadir' || normalized == 'telat';
@@ -433,11 +455,21 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
   }
 
   String _formatLongDate(String rawDate) {
+    final normalized = rawDate.trim();
+    if (normalized.isEmpty) {
+      return '-';
+    }
+
     try {
-      final date = DateTime.parse(rawDate);
+      if (normalized.contains('/')) {
+        final date = DateFormat('dd/MM/yyyy').parseStrict(normalized);
+        return DateFormat('dd MMMM yyyy', 'id_ID').format(date);
+      }
+
+      final date = DateTime.parse(normalized);
       return DateFormat('dd MMMM yyyy', 'id_ID').format(date);
     } catch (_) {
-      return rawDate.split('T').first;
+      return normalized.split('T').first;
     }
   }
 }
