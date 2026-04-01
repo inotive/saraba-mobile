@@ -39,11 +39,15 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
     }
 
     if (action == _OperasionalDetailAction.delete) {
-      Navigator.pop(
-        context,
-        const PengeluaranMaterialFlowResult(
-          title: 'Berhasil Menghapus',
-          message: 'Pengeluaran berhasil dihapus',
+      final shouldDelete = await _showDeleteConfirmation(context);
+      if (shouldDelete != true || !context.mounted) {
+        return;
+      }
+
+      context.read<PengeluaranDetailBloc>().add(
+        DeletePengeluaran(
+          projectId: projectId,
+          pengeluaranId: pengeluaranId,
         ),
       );
       return;
@@ -83,6 +87,36 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
     Navigator.pop(context, result);
   }
 
+  Future<bool?> _showDeleteConfirmation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Hapus Pengeluaran'),
+          content: const Text(
+            'Apakah kamu yakin ingin menghapus pengeluaran ini?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC52222),
+              ),
+              child: const Text(
+                'Hapus',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -93,7 +127,26 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
             pengeluaranId: pengeluaranId,
           ),
         ),
-      child: BlocBuilder<PengeluaranDetailBloc, PengeluaranDetailState>(
+      child: BlocConsumer<PengeluaranDetailBloc, PengeluaranDetailState>(
+        listener: (context, state) {
+          if (state.deleteErrorMessage != null &&
+              state.deleteErrorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.deleteErrorMessage!)),
+            );
+          }
+
+          if (state.deleteSuccessMessage != null &&
+              state.deleteSuccessMessage!.isNotEmpty) {
+            Navigator.pop(
+              context,
+              PengeluaranMaterialFlowResult(
+                title: 'Berhasil Menghapus',
+                message: state.deleteSuccessMessage!,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
           if (state.isLoading && state.detail == null) {
             return const Scaffold(
@@ -239,7 +292,9 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: () =>
-                                _openOptions(context, draft, detail.catatan),
+                                state.isDeleting
+                                ? null
+                                : _openOptions(context, draft, detail.catatan),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFFF7944D)),
                               shape: RoundedRectangleBorder(
@@ -247,13 +302,22 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               ),
                               minimumSize: const Size.fromHeight(50),
                             ),
-                            icon: const Icon(
-                              Icons.more_horiz,
-                              color: Color(0xFFF7944D),
-                            ),
-                            label: const Text(
-                              'Pilihan',
-                              style: TextStyle(
+                            icon: state.isDeleting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFFF7944D),
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0xFFF7944D),
+                                  ),
+                            label: Text(
+                              state.isDeleting ? 'Menghapus...' : 'Pilihan',
+                              style: const TextStyle(
                                 color: Color(0xFFF7944D),
                                 fontWeight: FontWeight.w600,
                               ),

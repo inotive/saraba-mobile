@@ -9,3 +9,13 @@ class FetchPengeluaranDetail extends PengeluaranDetailEvent {
     required this.pengeluaranId,
   });
 }
+
+class DeletePengeluaran extends PengeluaranDetailEvent {
+  final String projectId;
+  final String pengeluaranId;
+
+  DeletePengeluaran({
+    required this.projectId,
+    required this.pengeluaranId,
+  });
+}

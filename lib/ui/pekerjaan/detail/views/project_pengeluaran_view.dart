@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_operasional_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
@@ -238,6 +241,7 @@ Future<void> Function()? _buildOnTap(
         return;
       }
 
+      context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
       StatusBanner.show(
         context,
         title: result.title,
@@ -264,6 +268,7 @@ Future<void> Function()? _buildOnTap(
         return;
       }
 
+      context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
       StatusBanner.show(
         context,
         title: result.title,
@@ -290,6 +295,7 @@ Future<void> Function()? _buildOnTap(
         return;
       }
 
+      context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
       StatusBanner.show(
         context,
         title: result.title,

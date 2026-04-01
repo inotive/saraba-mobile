@@ -10,6 +10,7 @@ class PengeluaranDetailBloc
   PengeluaranDetailBloc(this.pekerjaanService)
     : super(const PengeluaranDetailState()) {
     on<FetchPengeluaranDetail>(_onFetchPengeluaranDetail);
+    on<DeletePengeluaran>(_onDeletePengeluaran);
   }
 
   Future<void> _onFetchPengeluaranDetail(
@@ -40,6 +41,46 @@ class PengeluaranDetailBloc
         isLoading: false,
         detail: response.data,
         clearError: true,
+      ),
+    );
+  }
+
+  Future<void> _onDeletePengeluaran(
+    DeletePengeluaran event,
+    Emitter<PengeluaranDetailState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isDeleting: true,
+        clearDeleteError: true,
+        clearDeleteSuccess: true,
+      ),
+    );
+
+    final response = await pekerjaanService.deletePengeluaran(
+      projectId: event.projectId,
+      pengeluaranId: event.pengeluaranId,
+    );
+
+    if (response == null || !response.success) {
+      emit(
+        state.copyWith(
+          isDeleting: false,
+          deleteErrorMessage: response?.message.isNotEmpty == true
+              ? response!.message
+              : 'Gagal menghapus pengeluaran',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isDeleting: false,
+        deleteSuccessMessage: response.message.isNotEmpty
+            ? response.message
+            : 'Pengeluaran berhasil dihapus',
+        clearDeleteError: true,
       ),
     );
   }
