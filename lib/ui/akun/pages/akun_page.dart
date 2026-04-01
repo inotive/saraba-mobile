@@ -132,7 +132,7 @@ class AkunPage extends StatelessWidget {
                   if (state.isLoading) const SizedBox(height: 16),
                   _profileCard(context, state),
                   const SizedBox(height: 16),
-                  _menuCard(context),
+                  _menuCard(context, state),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -211,46 +211,53 @@ class AkunPage extends StatelessWidget {
     );
   }
 
-  Widget _menuCard(BuildContext context) {
+  Widget _menuCard(BuildContext context, ProfileState profile) {
+    final normalizedRole = profile.userRoleOnly.trim().toLowerCase().replaceAll(
+      ' ',
+      '',
+    );
+    final canViewProjectProfit = normalizedRole == 'superadmin';
+
+    final items = <Widget>[
+      if (canViewProjectProfit)
+        _menuItem(
+          icon: Icons.person,
+          title: 'Report Keuntungan',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider(
+                  create: (_) => ProjectProfitBloc(ProjectProfitService())
+                    ..add(FetchProjectProfits())
+                    ..add(FetchGuaranteeProfits()),
+                  child: const ProjectProfitPage(),
+                ),
+              ),
+            );
+          },
+        ),
+      _menuItem(
+        icon: Icons.build,
+        title: 'General',
+        onTap: () {
+          final profileBloc = context.read<ProfileBloc>();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider.value(
+                value: profileBloc,
+                child: const ChangePasswordPage(),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
     return Container(
       decoration: _cardDecoration(),
-      child: Column(
-        children: [
-          _menuItem(
-            icon: Icons.person,
-            title: 'Report Keuntungan',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider(
-                    create: (_) => ProjectProfitBloc(ProjectProfitService())
-                      ..add(FetchProjectProfits())
-                      ..add(FetchGuaranteeProfits()),
-                    child: const ProjectProfitPage(),
-                  ),
-                ),
-              );
-            },
-          ),
-          _menuItem(
-            icon: Icons.build,
-            title: 'General',
-            onTap: () {
-              final profileBloc = context.read<ProfileBloc>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: profileBloc,
-                    child: const ChangePasswordPage(),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      child: Column(children: items),
     );
   }
 

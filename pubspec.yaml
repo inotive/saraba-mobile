@@ -1,7 +1,7 @@
 name: saraba_mobile
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.5.1+1
+version: 0.6.0+1
 
 environment:
   sdk: ^3.10.4
@@ -57,9 +57,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/saraba_logo.png
+  image_path: assets/images/splash_logo.png
   adaptive_icon_background: "#F5F5F5"
-  adaptive_icon_foreground: assets/images/saraba_logo.png
+  adaptive_icon_foreground: assets/images/splash_logo.png
 
 flutter_native_splash:
   color: "#F5F5F5"

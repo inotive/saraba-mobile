@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/rab_item_card.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/rab_segmented_tab.dart';
 
 class ProjectRabView extends StatefulWidget {
   final ProjectRabSection rab;
@@ -14,66 +13,135 @@ class ProjectRabView extends StatefulWidget {
 }
 
 class _ProjectRabViewState extends State<ProjectRabView> {
-  String selectedTab = 'Pekerjaan';
+  final Set<int> _expandedIds = <int>{};
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.rab.items.where((item) => item.tipe == 'header').toList();
+    final items = widget.rab.items
+        .where((item) => item.tipe.trim().toLowerCase() == 'header')
+        .toList();
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: RabSegmentedTab(
-              selectedValue: selectedTab,
-              onChanged: (value) {
-                setState(() {
-                  selectedTab = value;
-                });
-              },
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              selectedTab == 'Pekerjaan'
-                  ? 'Pekerjaan (${items.length})'
-                  : selectedTab,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F1F1F),
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: selectedTab == 'Material'
-              ? const _EmptyRabState()
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return RabItemCard(
-                      titleLabel: 'Nama Pekerjaan',
-                      title: item.uraian,
-                      volume: '${_formatNumber(item.volume)} ${item.satuan}'.trim(),
-                      hargaSatuan: _formatCurrency(item.hargaSatuan),
-                      jumlahHarga: _formatCurrency(item.jumlah),
-                      type: 'pekerjaan',
-                    );
-                  },
+    if (items.isEmpty) {
+      return const _EmptyRabState();
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        final detailItems = _collectVisibleItems(item);
+        final isExpanded = _expandedIds.contains(item.id);
+
+        return RabItemCard(
+          title: item.uraian,
+          totalItem: detailItems.length,
+          totalHarga: _buildTotalHarga(item, detailItems),
+          isExpanded: isExpanded,
+          iconAsset: _buildHeaderIconAsset(detailItems),
+          detailRows: detailItems
+              .map(
+                (detail) => RabDetailRowData(
+                  title: detail.uraian,
+                  subtitle: _buildSubtitle(detail),
+                  category: _buildCategoryLabel(detail.kategori),
+                  amount: _formatCurrency(detail.jumlah),
                 ),
-        ),
-      ],
+              )
+              .toList(),
+          onToggle: () => _toggleExpanded(item.id),
+        );
+      },
     );
+  }
+
+  void _toggleExpanded(int id) {
+    setState(() {
+      if (_expandedIds.contains(id)) {
+        _expandedIds.remove(id);
+      } else {
+        _expandedIds.add(id);
+      }
+    });
+  }
+
+  List<ProjectRabItem> _collectVisibleItems(ProjectRabItem parent) {
+    final result = <ProjectRabItem>[];
+
+    void visit(ProjectRabItem item) {
+      final isLeafItem = item.tipe.trim().toLowerCase() == 'item';
+      final hasMeaningfulName = item.uraian.trim().isNotEmpty;
+
+      if (isLeafItem && hasMeaningfulName) {
+        result.add(item);
+      }
+
+      for (final child in item.children) {
+        visit(child);
+      }
+    }
+
+    for (final child in parent.children) {
+      visit(child);
+    }
+
+    return result;
+  }
+
+  String _buildTotalHarga(
+    ProjectRabItem header,
+    List<ProjectRabItem> detailItems,
+  ) {
+    final headerTotal = double.tryParse(header.jumlah) ?? 0;
+    if (headerTotal > 0) {
+      return _formatCurrency(header.jumlah);
+    }
+
+    final childTotal = detailItems.fold<double>(
+      0,
+      (sum, item) => sum + (double.tryParse(item.jumlah) ?? 0),
+    );
+    return _formatCurrency(childTotal.toString());
+  }
+
+  String _buildSubtitle(ProjectRabItem item) {
+    final volume = _formatNumber(item.volume);
+    final satuan = item.satuan.trim();
+    final value = '$volume $satuan'.trim();
+    return value.isEmpty ? '-' : value;
+  }
+
+  String _buildCategoryLabel(String kategori) {
+    final normalized = kategori.trim().toLowerCase();
+    switch (normalized) {
+      case 'material':
+        return 'Material';
+      case 'operasional':
+        return 'Operasional';
+      default:
+        return kategori.isEmpty
+            ? '-'
+            : toBeginningOfSentenceCase(kategori) ?? kategori;
+    }
+  }
+
+  String _buildHeaderIconAsset(List<ProjectRabItem> detailItems) {
+    final firstCategory = detailItems.isEmpty
+        ? ''
+        : detailItems.first.kategori.trim().toLowerCase();
+
+    switch (firstCategory) {
+      case 'material':
+        return 'assets/icons/ic_pengeluaran_material.png';
+      case 'operasional':
+        return 'assets/icons/ic_pengeluaran_operasional.png';
+      case 'petty_cash':
+      case 'petty cash':
+        return 'assets/icons/ic_pengeluaran_petty_cash.png';
+      default:
+        return 'assets/icons/ic_pengeluaran_material.png';
+    }
   }
 }
 

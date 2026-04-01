@@ -55,7 +55,9 @@ class ProfileState {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
       isError: isError ?? this.isError,
-      errorMessage: clearErrorMessage ? null : errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage
+          ? null
+          : errorMessage ?? this.errorMessage,
       profile: profile ?? this.profile,
       avatarPath: avatarPath ?? this.avatarPath,
       fallbackName: fallbackName ?? this.fallbackName,
@@ -104,6 +106,15 @@ class ProfileState {
     }
 
     return fallbackRole ?? 'Admin';
+  }
+
+  String get userRoleOnly {
+    final userRole = profile?.data.user.role ?? '';
+    if (userRole.isNotEmpty) {
+      return userRole;
+    }
+
+    return fallbackRole ?? '';
   }
 
   String get remoteAvatar {

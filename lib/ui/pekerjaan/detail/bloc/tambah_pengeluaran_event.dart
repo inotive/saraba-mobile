@@ -1,19 +1,31 @@
 abstract class TambahPengeluaranEvent {}
 
+class PengeluaranSubmissionPayload {
+  final String nama;
+  final int jumlah;
+  final double nominal;
+
+  const PengeluaranSubmissionPayload({
+    required this.nama,
+    required this.jumlah,
+    required this.nominal,
+  });
+}
+
 class SubmitPengeluaranRequested extends TambahPengeluaranEvent {
   final String projectId;
-  final String namaItem;
   final String kategori;
-  final double jumlah;
   final String tanggal;
-  final String keterangan;
+  final String catatan;
+  final List<String> lampiranPaths;
+  final List<PengeluaranSubmissionPayload> items;
 
   SubmitPengeluaranRequested({
     required this.projectId,
-    required this.namaItem,
     required this.kategori,
-    required this.jumlah,
     required this.tanggal,
-    required this.keterangan,
+    required this.catatan,
+    required this.lampiranPaths,
+    required this.items,
   });
 }

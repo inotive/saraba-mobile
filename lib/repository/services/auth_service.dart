@@ -110,9 +110,7 @@ class AuthService {
       id: data.user.id,
       name: karyawan?.nama.isNotEmpty == true ? karyawan!.nama : data.user.name,
       email: data.user.email,
-      role: karyawan?.jabatan.isNotEmpty == true
-          ? karyawan!.jabatan
-          : data.user.role,
+      role: data.user.role,
     );
   }
 

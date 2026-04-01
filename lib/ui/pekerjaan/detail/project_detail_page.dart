@@ -87,6 +87,7 @@ class ProjectDetailPage extends StatelessWidget {
                                 progress: detail.progress,
                               ),
                               ProjectPengeluaranView(
+                                projectId: projectId,
                                 pengeluaran: detail.pengeluaran,
                               ),
                               const ProjectFotoView(),

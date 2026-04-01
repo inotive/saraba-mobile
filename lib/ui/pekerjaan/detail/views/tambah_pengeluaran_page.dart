@@ -1,9 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_event.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_state.dart';
 
 enum PengeluaranCategory { operasional, material, pettyCash }
 
@@ -27,6 +33,17 @@ extension PengeluaranCategoryX on PengeluaranCategory {
         return 'assets/icons/ic_pengeluaran_material.png';
       case PengeluaranCategory.pettyCash:
         return 'assets/icons/ic_pengeluaran_petty_cash.png';
+    }
+  }
+
+  String get categorySheetIconAsset {
+    switch (this) {
+      case PengeluaranCategory.operasional:
+        return 'assets/icons/ic_kategori_operasional.png';
+      case PengeluaranCategory.material:
+        return 'assets/icons/ic_kategori_material.png';
+      case PengeluaranCategory.pettyCash:
+        return 'assets/icons/ic_kategori_petty_cash.png';
     }
   }
 }
@@ -83,15 +100,16 @@ class _CategoryOptionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
           children: [
-            Container(
+            SizedBox(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
-                borderRadius: BorderRadius.circular(18),
-              ),
               child: Center(
-                child: Image.asset(category.iconAsset, width: 18, height: 18),
+                child: Image.asset(
+                  category.categorySheetIconAsset,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(width: 14),
@@ -149,8 +167,13 @@ class MaterialExpenseItem {
 class MaterialAttachmentItem {
   final String path;
   final bool isFile;
+  final bool isNetwork;
 
-  const MaterialAttachmentItem({required this.path, required this.isFile});
+  const MaterialAttachmentItem({
+    required this.path,
+    required this.isFile,
+    this.isNetwork = false,
+  });
 
   factory MaterialAttachmentItem.file(String path) {
     return MaterialAttachmentItem(path: path, isFile: true);
@@ -158,6 +181,10 @@ class MaterialAttachmentItem {
 
   factory MaterialAttachmentItem.asset(String path) {
     return MaterialAttachmentItem(path: path, isFile: false);
+  }
+
+  factory MaterialAttachmentItem.network(String path) {
+    return MaterialAttachmentItem(path: path, isFile: false, isNetwork: true);
   }
 }
 
@@ -232,6 +259,7 @@ class PengeluaranMaterialFlowResult {
 }
 
 class TambahPengeluaranPage extends StatefulWidget {
+  final String? projectId;
   final PengeluaranCategory category;
   final String pageTitle;
   final MaterialPengeluaranDraft? initialDraft;
@@ -240,6 +268,7 @@ class TambahPengeluaranPage extends StatefulWidget {
 
   const TambahPengeluaranPage({
     super.key,
+    this.projectId,
     required this.category,
     this.pageTitle = 'Tambah Pengeluaran',
     this.initialDraft,
@@ -257,14 +286,19 @@ class TambahPengeluaranPage extends StatefulWidget {
 class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   final _catatanController = TextEditingController();
   final _imagePicker = ImagePicker();
+  late final TambahPengeluaranBloc _submitBloc;
   final List<MaterialAttachmentItem> _selectedImages = [];
   late DateTime _selectedDate;
   List<MaterialExpenseItem> _selectedItems = const [];
   List<OperasionalExpenseItem> _operasionalItems = const [];
 
+  bool get _isEditMode =>
+      widget.initialDraft != null || widget.initialOperasionalDraft != null;
+
   @override
   void initState() {
     super.initState();
+    _submitBloc = TambahPengeluaranBloc(PekerjaanService());
     _selectedDate =
         widget.initialDraft?.date ??
         widget.initialOperasionalDraft?.date ??
@@ -277,6 +311,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
 
   @override
   void dispose() {
+    _submitBloc.close();
     _catatanController.dispose();
     super.dispose();
   }
@@ -330,7 +365,10 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => MaterialItemPickerSheet(initialItems: _selectedItems),
+      builder: (_) => MaterialItemPickerSheet(
+        projectId: widget.projectId,
+        initialItems: _selectedItems,
+      ),
     );
 
     if (result == null) {
@@ -347,7 +385,40 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       return;
     }
 
-    Navigator.pop(context, widget.successResult);
+    if (_isEditMode || widget.projectId == null) {
+      Navigator.pop(context, widget.successResult);
+      return;
+    }
+
+    _submitBloc.add(
+      SubmitPengeluaranRequested(
+        projectId: widget.projectId!,
+        kategori: 'material',
+        tanggal: _buildSubmitDate(_selectedDate),
+        catatan: _catatanController.text.trim(),
+        lampiranPaths: _collectUploadPaths(_selectedImages),
+        items: _selectedItems
+            .map(
+              (item) => PengeluaranSubmissionPayload(
+                nama: item.name,
+                jumlah: item.quantity,
+                nominal: item.total,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  String _buildSubmitDate(DateTime date) {
+    return DateFormat("yyyy-MM-dd'T'00:00:00'Z'").format(date);
+  }
+
+  List<String> _collectUploadPaths(List<MaterialAttachmentItem> attachments) {
+    return attachments
+        .where((attachment) => attachment.isFile)
+        .map((attachment) => attachment.path)
+        .toList();
   }
 
   Future<void> _openOperasionalItemSheet({
@@ -425,7 +496,83 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       return;
     }
 
-    Navigator.pop(context, widget.successResult);
+    if (_isEditMode || widget.projectId == null) {
+      Navigator.pop(context, widget.successResult);
+      return;
+    }
+
+    _submitBloc.add(
+      SubmitPengeluaranRequested(
+        projectId: widget.projectId!,
+        kategori: _buildSubmitCategory(),
+        tanggal: _buildSubmitDate(_selectedDate),
+        catatan: _buildSimpleExpenseCatatan(),
+        lampiranPaths: _collectOperasionalAttachmentPaths(),
+        items: _operasionalItems.asMap().entries.map((entry) {
+          final item = entry.value;
+          return PengeluaranSubmissionPayload(
+            nama: '${_buildSimpleExpenseName()} ${entry.key + 1}',
+            jumlah: 1,
+            nominal: item.amount,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _buildSimpleExpenseName() {
+    return widget.category == PengeluaranCategory.pettyCash
+        ? 'Petty Cash'
+        : 'Operasional';
+  }
+
+  String _buildSubmitCategory() {
+    switch (widget.category) {
+      case PengeluaranCategory.operasional:
+        return 'operasional';
+      case PengeluaranCategory.material:
+        return 'material';
+      case PengeluaranCategory.pettyCash:
+        return 'petty_cash';
+    }
+  }
+
+  String _buildSimpleExpenseCatatan() {
+    return _operasionalItems
+        .map((item) => item.note.trim())
+        .where((note) => note.isNotEmpty)
+        .join('\n');
+  }
+
+  List<String> _collectOperasionalAttachmentPaths() {
+    return _operasionalItems
+        .expand((item) => item.attachments)
+        .where((attachment) => attachment.isFile)
+        .map((attachment) => attachment.path)
+        .toSet()
+        .toList();
+  }
+
+  void _handleSubmitState(BuildContext context, TambahPengeluaranState state) {
+    if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+      StatusBanner.show(
+        context,
+        title: 'Gagal Menyimpan',
+        message: state.errorMessage!,
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    if (state.isSuccess) {
+      Navigator.pop(
+        context,
+        PengeluaranMaterialFlowResult(
+          title: widget.successResult.title,
+          message: state.successMessage ?? widget.successResult.message,
+        ),
+      );
+    }
   }
 
   @override
@@ -435,250 +582,309 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         widget.category == PengeluaranCategory.operasional ||
         widget.category == PengeluaranCategory.pettyCash;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _TambahPengeluaranHeader(title: widget.pageTitle),
-            Expanded(
-              child: isMaterial
-                  ? SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pengeluaran ${widget.category.label}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F1F1F),
+    return BlocProvider.value(
+      value: _submitBloc,
+      child: BlocListener<TambahPengeluaranBloc, TambahPengeluaranState>(
+        listener: _handleSubmitState,
+        child: Builder(
+          builder: (context) {
+            final submitState = context.watch<TambahPengeluaranBloc>().state;
+
+            return Scaffold(
+              backgroundColor: const Color(0xFFFAFAFA),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    _TambahPengeluaranHeader(title: widget.pageTitle),
+                    Expanded(
+                      child: isMaterial
+                          ? SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pengeluaran ${widget.category.label}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F1F1F),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const _FieldLabel('Masukkan Tanggal'),
+                                  const SizedBox(height: 8),
+                                  _DateField(
+                                    value: DateFormat(
+                                      'dd MMMM yyyy',
+                                      'id_ID',
+                                    ).format(_selectedDate),
+                                    onTap: _pickDate,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Catatan'),
+                                  const SizedBox(height: 8),
+                                  _NotesField(
+                                    controller: _catatanController,
+                                    hintText: 'Ketik Disini',
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Lampiran'),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 92,
+                                    child: ListView(
+                                      scrollDirection: Axis.horizontal,
+                                      children: [
+                                        _UploadBox(onTap: _pickImages),
+                                        ..._selectedImages.map(
+                                          (image) => Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8,
+                                            ),
+                                            child: AttachmentThumbnail(
+                                              image: image,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Item Material'),
+                                  const SizedBox(height: 8),
+                                  if (_selectedItems.isEmpty)
+                                    const _EmptyMaterialState()
+                                  else
+                                    Column(
+                                      children: _selectedItems
+                                          .map(
+                                            (item) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              child: SelectedMaterialItemCard(
+                                                item: item,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                ],
+                              ),
+                            )
+                          : isSimpleExpense
+                          ? SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pengeluaran ${widget.category.label}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F1F1F),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const _FieldLabel('Masukkan Tanggal'),
+                                  const SizedBox(height: 8),
+                                  _DateField(
+                                    value: DateFormat(
+                                      'dd MMMM yyyy',
+                                      'id_ID',
+                                    ).format(_selectedDate),
+                                    onTap: _pickDate,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Item Pengeluaran'),
+                                  const SizedBox(height: 8),
+                                  if (_operasionalItems.isEmpty)
+                                    _EmptyOperasionalState(
+                                      minHeight:
+                                          MediaQuery.of(context).size.height *
+                                          0.38,
+                                    )
+                                  else
+                                    Column(
+                                      children: _operasionalItems
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              child: OperasionalExpenseCard(
+                                                item: entry.value,
+                                                onTapOptions: () =>
+                                                    _openOperasionalOptions(
+                                                      entry.value,
+                                                      entry.key,
+                                                    ),
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
+                                    ),
+                                ],
+                              ),
+                            )
+                          : Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  'Kategori ${widget.category.label} akan menyusul.',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ),
                             ),
+                    ),
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFF1F3F5)),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 14,
+                            offset: Offset(0, -4),
                           ),
-                          const SizedBox(height: 20),
-                          const _FieldLabel('Masukkan Tanggal'),
-                          const SizedBox(height: 8),
-                          _DateField(
-                            value: DateFormat(
-                              'dd MMMM yyyy',
-                              'id_ID',
-                            ).format(_selectedDate),
-                            onTap: _pickDate,
+                        ],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Grand Total',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F1F1F),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                _formatCurrency(
+                                  isMaterial
+                                      ? _grandTotal
+                                      : _operasionalGrandTotal,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFF7944D),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Catatan'),
-                          const SizedBox(height: 8),
-                          _NotesField(
-                            controller: _catatanController,
-                            hintText: 'Ketik Disini',
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Lampiran'),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 92,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                _UploadBox(onTap: _pickImages),
-                                ..._selectedImages.map(
-                                  (image) => Padding(
-                                    padding: const EdgeInsets.only(left: 8),
-                                    child: AttachmentThumbnail(image: image),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: submitState.isSubmitting
+                                      ? null
+                                      : isMaterial
+                                      ? _openItemPicker
+                                      : isSimpleExpense
+                                      ? () => _openOperasionalItemSheet()
+                                      : null,
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: Color(0xFFF7944D),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    minimumSize: const Size.fromHeight(50),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.add,
+                                    color: Color(0xFFF7944D),
+                                  ),
+                                  label: Text(
+                                    isMaterial ? 'Pilih Item' : 'Tambah',
+                                    style: const TextStyle(
+                                      color: Color(0xFFF7944D),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Item Material'),
-                          const SizedBox(height: 8),
-                          if (_selectedItems.isEmpty)
-                            const _EmptyMaterialState()
-                          else
-                            Column(
-                              children: _selectedItems
-                                  .map(
-                                    (item) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: SelectedMaterialItemCard(
-                                        item: item,
-                                      ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: submitState.isSubmitting
+                                      ? null
+                                      : isMaterial
+                                      ? (_selectedItems.isEmpty
+                                            ? null
+                                            : _saveMaterialFlow)
+                                      : isSimpleExpense
+                                      ? (_operasionalItems.isEmpty
+                                            ? null
+                                            : _saveOperasionalFlow)
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFF7944D),
+                                    disabledBackgroundColor: const Color(
+                                      0xFFFAD1B7,
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                        ],
-                      ),
-                    )
-                  : isSimpleExpense
-                  ? SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pengeluaran ${widget.category.label}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F1F1F),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const _FieldLabel('Masukkan Tanggal'),
-                          const SizedBox(height: 8),
-                          _DateField(
-                            value: DateFormat(
-                              'dd MMMM yyyy',
-                              'id_ID',
-                            ).format(_selectedDate),
-                            onTap: _pickDate,
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Item Pengeluaran'),
-                          const SizedBox(height: 8),
-                          if (_operasionalItems.isEmpty)
-                            _EmptyOperasionalState(
-                              minHeight:
-                                  MediaQuery.of(context).size.height * 0.38,
-                            )
-                          else
-                            Column(
-                              children: _operasionalItems.asMap().entries.map((
-                                entry,
-                              ) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: OperasionalExpenseCard(
-                                    item: entry.value,
-                                    onTapOptions: () => _openOperasionalOptions(
-                                      entry.value,
-                                      entry.key,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
+                                    minimumSize: const Size.fromHeight(50),
+                                    elevation: 0,
                                   ),
-                                );
-                              }).toList(),
-                            ),
+                                  child: submitState.isSubmitting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Simpan',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    )
-                  : Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Kategori ${widget.category.label} akan menyusul.',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.black54),
-                        ),
                       ),
                     ),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 14,
-                    offset: Offset(0, -4),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Grand Total',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1F1F1F),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        _formatCurrency(
-                          isMaterial ? _grandTotal : _operasionalGrandTotal,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFF7944D),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: isMaterial
-                              ? _openItemPicker
-                              : isSimpleExpense
-                              ? () => _openOperasionalItemSheet()
-                              : null,
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFF7944D)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: const Size.fromHeight(50),
-                          ),
-                          icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
-                          label: Text(
-                            isMaterial ? 'Pilih Item' : 'Tambah',
-                            style: const TextStyle(
-                              color: Color(0xFFF7944D),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isMaterial
-                              ? (_selectedItems.isEmpty
-                                    ? null
-                                    : _saveMaterialFlow)
-                              : isSimpleExpense
-                              ? (_operasionalItems.isEmpty
-                                    ? null
-                                    : _saveOperasionalFlow)
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF7944D),
-                            disabledBackgroundColor: const Color(0xFFFAD1B7),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: const Size.fromHeight(50),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Simpan',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -686,9 +892,14 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
 }
 
 class MaterialItemPickerSheet extends StatefulWidget {
+  final String? projectId;
   final List<MaterialExpenseItem> initialItems;
 
-  const MaterialItemPickerSheet({super.key, required this.initialItems});
+  const MaterialItemPickerSheet({
+    super.key,
+    required this.initialItems,
+    this.projectId,
+  });
 
   @override
   State<MaterialItemPickerSheet> createState() =>
@@ -697,13 +908,15 @@ class MaterialItemPickerSheet extends StatefulWidget {
 
 class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
   final _searchController = TextEditingController();
-  late List<MaterialExpenseItem> _items;
+  final _service = PekerjaanService();
+  List<MaterialExpenseItem> _items = const [];
+  bool _isLoadingItems = true;
 
   @override
   void initState() {
     super.initState();
-    _items = _mergeWithDefaults(widget.initialItems);
     _searchController.addListener(() => setState(() {}));
+    _loadItems();
   }
 
   @override
@@ -712,22 +925,75 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
     super.dispose();
   }
 
-  List<MaterialExpenseItem> _mergeWithDefaults(
-    List<MaterialExpenseItem> selected,
-  ) {
-    final defaults = [
-      const MaterialExpenseItem(id: 'item-1', name: 'Item 1'),
-      const MaterialExpenseItem(id: 'item-2', name: 'Item 2'),
-      const MaterialExpenseItem(id: 'item-3', name: 'Item 3'),
-      const MaterialExpenseItem(id: 'item-4', name: 'Item 4'),
-    ];
+  Future<void> _loadItems() async {
+    if (widget.projectId == null || widget.projectId!.isEmpty) {
+      setState(() {
+        _items = _mergeWithRabItems(widget.initialItems, const []);
+        _isLoadingItems = false;
+      });
+      return;
+    }
 
-    final mapped = <String, MaterialExpenseItem>{
-      for (final item in defaults) item.id: item,
-      for (final item in selected) item.id: item,
-    };
+    final response = await _service.fetchProyekDetail(widget.projectId!);
+    final rabItems = response?.data.rab.items ?? const <ProjectRabItem>[];
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _items = _mergeWithRabItems(widget.initialItems, rabItems);
+      _isLoadingItems = false;
+    });
+  }
+
+  List<MaterialExpenseItem> _mergeWithRabItems(
+    List<MaterialExpenseItem> selected,
+    List<ProjectRabItem> rabItems,
+  ) {
+    final mapped = <String, MaterialExpenseItem>{};
+
+    void addItem(MaterialExpenseItem item) {
+      mapped[_itemKey(item.name)] = item;
+    }
+
+    for (final item in _flattenRabItems(rabItems)) {
+      addItem(MaterialExpenseItem(id: 'rab-${item.id}', name: item.uraian));
+    }
+
+    for (final item in selected) {
+      addItem(item);
+    }
 
     return mapped.values.toList();
+  }
+
+  List<ProjectRabItem> _flattenRabItems(List<ProjectRabItem> items) {
+    final result = <ProjectRabItem>[];
+
+    void visit(ProjectRabItem item) {
+      final isMaterial = item.kategori.trim().toLowerCase() == 'material';
+      final isLeafItem = item.tipe.trim().toLowerCase() == 'item';
+      final hasName = item.uraian.trim().isNotEmpty;
+
+      if (isMaterial && isLeafItem && hasName) {
+        result.add(item);
+      }
+
+      for (final child in item.children) {
+        visit(child);
+      }
+    }
+
+    for (final item in items) {
+      visit(item);
+    }
+
+    return result;
+  }
+
+  String _itemKey(String value) {
+    return value.trim().toLowerCase();
   }
 
   List<MaterialExpenseItem> get _filteredItems {
@@ -840,21 +1106,35 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: ListView.separated(
-                  itemCount: _filteredItems.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = _filteredItems[index];
-                    return MaterialItemSelectionCard(
-                      key: ValueKey(item.id),
-                      item: item,
-                      onChanged: (value) => _toggleItem(item, value),
-                      onQuantityChanged: (value) =>
-                          _updateQuantity(item, value),
-                      onTotalChanged: (value) => _updateTotal(item, value),
-                    );
-                  },
-                ),
+                child: _isLoadingItems
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFF7944D),
+                        ),
+                      )
+                    : _filteredItems.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Belum ada item material',
+                          style: TextStyle(color: Color(0xFF6B7280)),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _filteredItems.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = _filteredItems[index];
+                          return MaterialItemSelectionCard(
+                            key: ValueKey(item.id),
+                            item: item,
+                            onChanged: (value) => _toggleItem(item, value),
+                            onQuantityChanged: (value) =>
+                                _updateQuantity(item, value),
+                            onTotalChanged: (value) =>
+                                _updateTotal(item, value),
+                          );
+                        },
+                      ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -2048,21 +2328,111 @@ class AttachmentThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: image.isFile
-          ? Image.file(
-              File(image.path),
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-            )
-          : Image.asset(
-              image.path,
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-            ),
+    return GestureDetector(
+      onTap: () => _openPreview(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: image.isFile
+            ? Image.file(
+                File(image.path),
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+              )
+            : image.isNetwork
+            ? Image.network(
+                image.path,
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  }
+
+                  return Container(
+                    width: width,
+                    height: height,
+                    color: const Color(0xFFF1F3F5),
+                    alignment: Alignment.center,
+                    child: const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
+                errorBuilder: (_, _, _) => Container(
+                  width: width,
+                  height: height,
+                  color: const Color(0xFFF1F3F5),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Color(0xFF9AA0A6),
+                  ),
+                ),
+              )
+            : Image.asset(
+                image.path,
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+              ),
+      ),
+    );
+  }
+
+  void _openPreview(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => _AttachmentPreviewPage(image: image)),
+    );
+  }
+}
+
+class _AttachmentPreviewPage extends StatelessWidget {
+  final MaterialAttachmentItem image;
+
+  const _AttachmentPreviewPage({required this.image});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.8,
+          maxScale: 4,
+          child: image.isFile
+              ? Image.file(File(image.path), fit: BoxFit.contain)
+              : image.isNetwork
+              ? Image.network(
+                  image.path,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) {
+                      return child;
+                    }
+
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.white70,
+                    size: 48,
+                  ),
+                )
+              : Image.asset(image.path, fit: BoxFit.contain),
+        ),
+      ),
     );
   }
 }
