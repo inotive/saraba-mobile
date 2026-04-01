@@ -25,13 +25,24 @@ class TambahPengeluaranBloc
       ),
     );
 
+    if (event.items.isEmpty) {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          isSuccess: false,
+          errorMessage: 'Data pengeluaran belum tersedia',
+        ),
+      );
+      return;
+    }
+
     final response = await pekerjaanService.submitPengeluaran(
       projectId: event.projectId,
-      namaItem: event.namaItem,
       kategori: event.kategori,
-      jumlah: event.jumlah,
       tanggal: event.tanggal,
-      keterangan: event.keterangan,
+      catatan: event.catatan,
+      lampiranPaths: event.lampiranPaths,
+      items: event.items,
     );
 
     if (response == null || !response.success) {

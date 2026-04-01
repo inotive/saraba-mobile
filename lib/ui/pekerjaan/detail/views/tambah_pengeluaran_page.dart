@@ -1,9 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_bloc.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_event.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_state.dart';
 
 enum PengeluaranCategory { operasional, material, pettyCash }
 
@@ -232,6 +237,7 @@ class PengeluaranMaterialFlowResult {
 }
 
 class TambahPengeluaranPage extends StatefulWidget {
+  final String? projectId;
   final PengeluaranCategory category;
   final String pageTitle;
   final MaterialPengeluaranDraft? initialDraft;
@@ -240,6 +246,7 @@ class TambahPengeluaranPage extends StatefulWidget {
 
   const TambahPengeluaranPage({
     super.key,
+    this.projectId,
     required this.category,
     this.pageTitle = 'Tambah Pengeluaran',
     this.initialDraft,
@@ -257,14 +264,19 @@ class TambahPengeluaranPage extends StatefulWidget {
 class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   final _catatanController = TextEditingController();
   final _imagePicker = ImagePicker();
+  late final TambahPengeluaranBloc _submitBloc;
   final List<MaterialAttachmentItem> _selectedImages = [];
   late DateTime _selectedDate;
   List<MaterialExpenseItem> _selectedItems = const [];
   List<OperasionalExpenseItem> _operasionalItems = const [];
 
+  bool get _isEditMode =>
+      widget.initialDraft != null || widget.initialOperasionalDraft != null;
+
   @override
   void initState() {
     super.initState();
+    _submitBloc = TambahPengeluaranBloc(PekerjaanService());
     _selectedDate =
         widget.initialDraft?.date ??
         widget.initialOperasionalDraft?.date ??
@@ -277,6 +289,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
 
   @override
   void dispose() {
+    _submitBloc.close();
     _catatanController.dispose();
     super.dispose();
   }
@@ -347,7 +360,40 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       return;
     }
 
-    Navigator.pop(context, widget.successResult);
+    if (_isEditMode || widget.projectId == null) {
+      Navigator.pop(context, widget.successResult);
+      return;
+    }
+
+    _submitBloc.add(
+      SubmitPengeluaranRequested(
+        projectId: widget.projectId!,
+        kategori: 'material',
+        tanggal: _buildSubmitDate(_selectedDate),
+        catatan: _catatanController.text.trim(),
+        lampiranPaths: _collectUploadPaths(_selectedImages),
+        items: _selectedItems
+            .map(
+              (item) => PengeluaranSubmissionPayload(
+                nama: item.name,
+                jumlah: item.quantity,
+                nominal: item.total,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  String _buildSubmitDate(DateTime date) {
+    return DateFormat("yyyy-MM-dd'T'00:00:00'Z'").format(date);
+  }
+
+  List<String> _collectUploadPaths(List<MaterialAttachmentItem> attachments) {
+    return attachments
+        .where((attachment) => attachment.isFile)
+        .map((attachment) => attachment.path)
+        .toList();
   }
 
   Future<void> _openOperasionalItemSheet({
@@ -425,7 +471,83 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       return;
     }
 
-    Navigator.pop(context, widget.successResult);
+    if (_isEditMode || widget.projectId == null) {
+      Navigator.pop(context, widget.successResult);
+      return;
+    }
+
+    _submitBloc.add(
+      SubmitPengeluaranRequested(
+        projectId: widget.projectId!,
+        kategori: _buildSubmitCategory(),
+        tanggal: _buildSubmitDate(_selectedDate),
+        catatan: _buildSimpleExpenseCatatan(),
+        lampiranPaths: _collectOperasionalAttachmentPaths(),
+        items: _operasionalItems.asMap().entries.map((entry) {
+          final item = entry.value;
+          return PengeluaranSubmissionPayload(
+            nama: '${_buildSimpleExpenseName()} ${entry.key + 1}',
+            jumlah: 1,
+            nominal: item.amount,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _buildSimpleExpenseName() {
+    return widget.category == PengeluaranCategory.pettyCash
+        ? 'Petty Cash'
+        : 'Operasional';
+  }
+
+  String _buildSubmitCategory() {
+    switch (widget.category) {
+      case PengeluaranCategory.operasional:
+        return 'operasional';
+      case PengeluaranCategory.material:
+        return 'material';
+      case PengeluaranCategory.pettyCash:
+        return 'petty_cash';
+    }
+  }
+
+  String _buildSimpleExpenseCatatan() {
+    return _operasionalItems
+        .map((item) => item.note.trim())
+        .where((note) => note.isNotEmpty)
+        .join('\n');
+  }
+
+  List<String> _collectOperasionalAttachmentPaths() {
+    return _operasionalItems
+        .expand((item) => item.attachments)
+        .where((attachment) => attachment.isFile)
+        .map((attachment) => attachment.path)
+        .toSet()
+        .toList();
+  }
+
+  void _handleSubmitState(BuildContext context, TambahPengeluaranState state) {
+    if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+      StatusBanner.show(
+        context,
+        title: 'Gagal Menyimpan',
+        message: state.errorMessage!,
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    if (state.isSuccess) {
+      Navigator.pop(
+        context,
+        PengeluaranMaterialFlowResult(
+          title: widget.successResult.title,
+          message: state.successMessage ?? widget.successResult.message,
+        ),
+      );
+    }
   }
 
   @override
@@ -435,15 +557,23 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         widget.category == PengeluaranCategory.operasional ||
         widget.category == PengeluaranCategory.pettyCash;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _TambahPengeluaranHeader(title: widget.pageTitle),
-            Expanded(
-              child: isMaterial
-                  ? SingleChildScrollView(
+    return BlocProvider.value(
+      value: _submitBloc,
+      child: BlocListener<TambahPengeluaranBloc, TambahPengeluaranState>(
+        listener: _handleSubmitState,
+        child: Builder(
+          builder: (context) {
+            final submitState = context.watch<TambahPengeluaranBloc>().state;
+
+            return Scaffold(
+              backgroundColor: const Color(0xFFFAFAFA),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    _TambahPengeluaranHeader(title: widget.pageTitle),
+                    Expanded(
+                      child: isMaterial
+                          ? SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,8 +644,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                         ],
                       ),
                     )
-                  : isSimpleExpense
-                  ? SingleChildScrollView(
+                          : isSimpleExpense
+                          ? SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,7 +696,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                         ],
                       ),
                     )
-                  : Center(
+                          : Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
@@ -576,8 +706,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                         ),
                       ),
                     ),
-            ),
-            Container(
+                    ),
+                    Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
@@ -590,7 +720,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                 ],
               ),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
+                      child: Column(
                 children: [
                   Row(
                     children: [
@@ -620,7 +750,9 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: isMaterial
+                          onPressed: submitState.isSubmitting
+                              ? null
+                              : isMaterial
                               ? _openItemPicker
                               : isSimpleExpense
                               ? () => _openOperasionalItemSheet()
@@ -645,7 +777,9 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: isMaterial
+                          onPressed: submitState.isSubmitting
+                              ? null
+                              : isMaterial
                               ? (_selectedItems.isEmpty
                                     ? null
                                     : _saveMaterialFlow)
@@ -663,14 +797,26 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                             minimumSize: const Size.fromHeight(50),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Simpan',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
+                          child: submitState.isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Simpan',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -678,7 +824,11 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                 ],
               ),
             ),
-          ],
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

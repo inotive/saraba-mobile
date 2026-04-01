@@ -8,9 +8,14 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
 class ProjectPengeluaranView extends StatelessWidget {
+  final String projectId;
   final ProjectPengeluaranSection pengeluaran;
 
-  const ProjectPengeluaranView({super.key, required this.pengeluaran});
+  const ProjectPengeluaranView({
+    super.key,
+    required this.projectId,
+    required this.pengeluaran,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +113,10 @@ class ProjectPengeluaranView extends StatelessWidget {
                       await Navigator.push<PengeluaranMaterialFlowResult>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              TambahPengeluaranPage(category: category),
+                          builder: (_) => TambahPengeluaranPage(
+                            projectId: projectId,
+                            category: category,
+                          ),
                         ),
                       );
 

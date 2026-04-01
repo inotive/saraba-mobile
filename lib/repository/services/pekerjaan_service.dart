@@ -7,6 +7,7 @@ import 'package:saraba_mobile/repository/model/project/submit_pengeluaran_respon
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_event.dart';
 
 class PekerjaanService {
   static const AppLogger _logger = AppLogger('PekerjaanService');
@@ -97,23 +98,39 @@ class PekerjaanService {
 
   Future<SubmitPengeluaranResponse?> submitPengeluaran({
     required String projectId,
-    required String namaItem,
     required String kategori,
-    required double jumlah,
     required String tanggal,
-    required String keterangan,
+    required String catatan,
+    required List<String> lampiranPaths,
+    required List<PengeluaranSubmissionPayload> items,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
+      final formData = FormData();
+      formData.fields.addAll([
+        MapEntry('tanggal', tanggal),
+        MapEntry('kategori', kategori),
+        MapEntry('catatan', catatan),
+      ]);
+
+      for (var index = 0; index < items.length; index++) {
+        final item = items[index];
+        formData.fields.addAll([
+          MapEntry('items[$index][name]', item.nama),
+          MapEntry('items[$index][jumlah]', item.jumlah.toString()),
+          MapEntry('items[$index][nominal]', item.nominal.toString()),
+        ]);
+      }
+
+      for (final path in lampiranPaths) {
+        formData.files.add(
+          MapEntry('lampiran[]', await MultipartFile.fromFile(path)),
+        );
+      }
+
       final response = await dio.post(
         '/proyeks/$projectId/pengeluaran',
-        data: {
-          'nama_item': namaItem,
-          'kategori': kategori,
-          'jumlah': jumlah,
-          'tanggal': tanggal,
-          'keterangan': keterangan,
-        },
+        data: formData,
       );
 
       _logger.response(response);
