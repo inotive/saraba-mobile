@@ -154,8 +154,13 @@ class MaterialExpenseItem {
 class MaterialAttachmentItem {
   final String path;
   final bool isFile;
+  final bool isNetwork;
 
-  const MaterialAttachmentItem({required this.path, required this.isFile});
+  const MaterialAttachmentItem({
+    required this.path,
+    required this.isFile,
+    this.isNetwork = false,
+  });
 
   factory MaterialAttachmentItem.file(String path) {
     return MaterialAttachmentItem(path: path, isFile: true);
@@ -163,6 +168,10 @@ class MaterialAttachmentItem {
 
   factory MaterialAttachmentItem.asset(String path) {
     return MaterialAttachmentItem(path: path, isFile: false);
+  }
+
+  factory MaterialAttachmentItem.network(String path) {
+    return MaterialAttachmentItem(path: path, isFile: false, isNetwork: true);
   }
 }
 
@@ -574,256 +583,287 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                     Expanded(
                       child: isMaterial
                           ? SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pengeluaran ${widget.category.label}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F1F1F),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const _FieldLabel('Masukkan Tanggal'),
-                          const SizedBox(height: 8),
-                          _DateField(
-                            value: DateFormat(
-                              'dd MMMM yyyy',
-                              'id_ID',
-                            ).format(_selectedDate),
-                            onTap: _pickDate,
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Catatan'),
-                          const SizedBox(height: 8),
-                          _NotesField(
-                            controller: _catatanController,
-                            hintText: 'Ketik Disini',
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Lampiran'),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 92,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                _UploadBox(onTap: _pickImages),
-                                ..._selectedImages.map(
-                                  (image) => Padding(
-                                    padding: const EdgeInsets.only(left: 8),
-                                    child: AttachmentThumbnail(image: image),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Item Material'),
-                          const SizedBox(height: 8),
-                          if (_selectedItems.isEmpty)
-                            const _EmptyMaterialState()
-                          else
-                            Column(
-                              children: _selectedItems
-                                  .map(
-                                    (item) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: SelectedMaterialItemCard(
-                                        item: item,
-                                      ),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pengeluaran ${widget.category.label}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F1F1F),
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                        ],
-                      ),
-                    )
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const _FieldLabel('Masukkan Tanggal'),
+                                  const SizedBox(height: 8),
+                                  _DateField(
+                                    value: DateFormat(
+                                      'dd MMMM yyyy',
+                                      'id_ID',
+                                    ).format(_selectedDate),
+                                    onTap: _pickDate,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Catatan'),
+                                  const SizedBox(height: 8),
+                                  _NotesField(
+                                    controller: _catatanController,
+                                    hintText: 'Ketik Disini',
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Lampiran'),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 92,
+                                    child: ListView(
+                                      scrollDirection: Axis.horizontal,
+                                      children: [
+                                        _UploadBox(onTap: _pickImages),
+                                        ..._selectedImages.map(
+                                          (image) => Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8,
+                                            ),
+                                            child: AttachmentThumbnail(
+                                              image: image,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Item Material'),
+                                  const SizedBox(height: 8),
+                                  if (_selectedItems.isEmpty)
+                                    const _EmptyMaterialState()
+                                  else
+                                    Column(
+                                      children: _selectedItems
+                                          .map(
+                                            (item) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              child: SelectedMaterialItemCard(
+                                                item: item,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                ],
+                              ),
+                            )
                           : isSimpleExpense
                           ? SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pengeluaran ${widget.category.label}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F1F1F),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const _FieldLabel('Masukkan Tanggal'),
-                          const SizedBox(height: 8),
-                          _DateField(
-                            value: DateFormat(
-                              'dd MMMM yyyy',
-                              'id_ID',
-                            ).format(_selectedDate),
-                            onTap: _pickDate,
-                          ),
-                          const SizedBox(height: 16),
-                          const _FieldLabel('Item Pengeluaran'),
-                          const SizedBox(height: 8),
-                          if (_operasionalItems.isEmpty)
-                            _EmptyOperasionalState(
-                              minHeight:
-                                  MediaQuery.of(context).size.height * 0.38,
-                            )
-                          else
-                            Column(
-                              children: _operasionalItems.asMap().entries.map((
-                                entry,
-                              ) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: OperasionalExpenseCard(
-                                    item: entry.value,
-                                    onTapOptions: () => _openOperasionalOptions(
-                                      entry.value,
-                                      entry.key,
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pengeluaran ${widget.category.label}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F1F1F),
                                     ),
                                   ),
-                                );
-                              }).toList(),
-                            ),
-                        ],
-                      ),
-                    )
+                                  const SizedBox(height: 20),
+                                  const _FieldLabel('Masukkan Tanggal'),
+                                  const SizedBox(height: 8),
+                                  _DateField(
+                                    value: DateFormat(
+                                      'dd MMMM yyyy',
+                                      'id_ID',
+                                    ).format(_selectedDate),
+                                    onTap: _pickDate,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Item Pengeluaran'),
+                                  const SizedBox(height: 8),
+                                  if (_operasionalItems.isEmpty)
+                                    _EmptyOperasionalState(
+                                      minHeight:
+                                          MediaQuery.of(context).size.height *
+                                          0.38,
+                                    )
+                                  else
+                                    Column(
+                                      children: _operasionalItems
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              child: OperasionalExpenseCard(
+                                                item: entry.value,
+                                                onTapOptions: () =>
+                                                    _openOperasionalOptions(
+                                                      entry.value,
+                                                      entry.key,
+                                                    ),
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
+                                    ),
+                                ],
+                              ),
+                            )
                           : Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Kategori ${widget.category.label} akan menyusul.',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                      ),
-                    ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  'Kategori ${widget.category.label} akan menyusul.',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ),
+                            ),
                     ),
                     Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 14,
-                    offset: Offset(0, -4),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFF1F3F5)),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 14,
+                            offset: Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                       child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Grand Total',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1F1F1F),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        _formatCurrency(
-                          isMaterial ? _grandTotal : _operasionalGrandTotal,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFF7944D),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: submitState.isSubmitting
-                              ? null
-                              : isMaterial
-                              ? _openItemPicker
-                              : isSimpleExpense
-                              ? () => _openOperasionalItemSheet()
-                              : null,
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFF7944D)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: const Size.fromHeight(50),
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Grand Total',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F1F1F),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                _formatCurrency(
+                                  isMaterial
+                                      ? _grandTotal
+                                      : _operasionalGrandTotal,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFF7944D),
+                                ),
+                              ),
+                            ],
                           ),
-                          icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
-                          label: Text(
-                            isMaterial ? 'Pilih Item' : 'Tambah',
-                            style: const TextStyle(
-                              color: Color(0xFFF7944D),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: submitState.isSubmitting
-                              ? null
-                              : isMaterial
-                              ? (_selectedItems.isEmpty
-                                    ? null
-                                    : _saveMaterialFlow)
-                              : isSimpleExpense
-                              ? (_operasionalItems.isEmpty
-                                    ? null
-                                    : _saveOperasionalFlow)
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF7944D),
-                            disabledBackgroundColor: const Color(0xFFFAD1B7),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: const Size.fromHeight(50),
-                            elevation: 0,
-                          ),
-                          child: submitState.isSubmitting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
-                                        ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: submitState.isSubmitting
+                                      ? null
+                                      : isMaterial
+                                      ? _openItemPicker
+                                      : isSimpleExpense
+                                      ? () => _openOperasionalItemSheet()
+                                      : null,
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: Color(0xFFF7944D),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    minimumSize: const Size.fromHeight(50),
                                   ),
-                                )
-                              : const Text(
-                                  'Simpan',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
+                                  icon: const Icon(
+                                    Icons.add,
+                                    color: Color(0xFFF7944D),
+                                  ),
+                                  label: Text(
+                                    isMaterial ? 'Pilih Item' : 'Tambah',
+                                    style: const TextStyle(
+                                      color: Color(0xFFF7944D),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                        ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: submitState.isSubmitting
+                                      ? null
+                                      : isMaterial
+                                      ? (_selectedItems.isEmpty
+                                            ? null
+                                            : _saveMaterialFlow)
+                                      : isSimpleExpense
+                                      ? (_operasionalItems.isEmpty
+                                            ? null
+                                            : _saveOperasionalFlow)
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFF7944D),
+                                    disabledBackgroundColor: const Color(
+                                      0xFFFAD1B7,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    minimumSize: const Size.fromHeight(50),
+                                    elevation: 0,
+                                  ),
+                                  child: submitState.isSubmitting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Simpan',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                    ),
                   ],
                 ),
               ),
@@ -2198,21 +2238,113 @@ class AttachmentThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: image.isFile
-          ? Image.file(
-              File(image.path),
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-            )
-          : Image.asset(
-              image.path,
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-            ),
+    return GestureDetector(
+      onTap: () => _openPreview(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: image.isFile
+            ? Image.file(
+                File(image.path),
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+              )
+            : image.isNetwork
+            ? Image.network(
+                image.path,
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  }
+
+                  return Container(
+                    width: width,
+                    height: height,
+                    color: const Color(0xFFF1F3F5),
+                    alignment: Alignment.center,
+                    child: const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
+                errorBuilder: (_, _, _) => Container(
+                  width: width,
+                  height: height,
+                  color: const Color(0xFFF1F3F5),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Color(0xFF9AA0A6),
+                  ),
+                ),
+              )
+            : Image.asset(
+                image.path,
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+              ),
+      ),
+    );
+  }
+
+  void _openPreview(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _AttachmentPreviewPage(image: image),
+      ),
+    );
+  }
+}
+
+class _AttachmentPreviewPage extends StatelessWidget {
+  final MaterialAttachmentItem image;
+
+  const _AttachmentPreviewPage({required this.image});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.8,
+          maxScale: 4,
+          child: image.isFile
+              ? Image.file(File(image.path), fit: BoxFit.contain)
+              : image.isNetwork
+              ? Image.network(
+                  image.path,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) {
+                      return child;
+                    }
+
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.white70,
+                    size: 48,
+                  ),
+                )
+              : Image.asset(image.path, fit: BoxFit.contain),
+        ),
+      ),
     );
   }
 }

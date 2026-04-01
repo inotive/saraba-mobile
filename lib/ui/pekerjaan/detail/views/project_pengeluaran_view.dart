@@ -76,7 +76,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                                 item,
                               ),
                               iconAsset: _buildCardIconAsset(item.kategori),
-                              onTap: _buildOnTap(context, item),
+                              onTap: _buildOnTap(context, projectId, item),
                             ),
                           ),
                         ),
@@ -217,6 +217,7 @@ String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
 
 Future<void> Function()? _buildOnTap(
   BuildContext context,
+  String projectId,
   ProjectPengeluaranItem item,
 ) {
   final category = item.kategori.toLowerCase();
@@ -226,8 +227,10 @@ Future<void> Function()? _buildOnTap(
       final result = await Navigator.push<PengeluaranMaterialFlowResult>(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              DetailPengeluaranMaterialPage(draft: _buildMaterialDraft(item)),
+          builder: (_) => DetailPengeluaranMaterialPage(
+            projectId: projectId,
+            pengeluaranId: item.id.toString(),
+          ),
         ),
       );
 
@@ -250,7 +253,9 @@ Future<void> Function()? _buildOnTap(
         context,
         MaterialPageRoute(
           builder: (_) => DetailPengeluaranOperasionalPage(
-            draft: _buildOperasionalDraft(item),
+            projectId: projectId,
+            pengeluaranId: item.id.toString(),
+            category: PengeluaranCategory.operasional,
           ),
         ),
       );
@@ -274,10 +279,9 @@ Future<void> Function()? _buildOnTap(
         context,
         MaterialPageRoute(
           builder: (_) => DetailPengeluaranOperasionalPage(
-            draft: _buildOperasionalDraft(
-              item,
-              category: PengeluaranCategory.pettyCash,
-            ),
+            projectId: projectId,
+            pengeluaranId: item.id.toString(),
+            category: PengeluaranCategory.pettyCash,
           ),
         ),
       );
@@ -297,86 +301,6 @@ Future<void> Function()? _buildOnTap(
 
   return null;
 }
-
-MaterialPengeluaranDraft _buildMaterialDraft(ProjectPengeluaranItem item) {
-  return MaterialPengeluaranDraft(
-    materialCode: 'MAT-${item.id.toString().padLeft(3, '0')}',
-    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
-    note: item.keterangan,
-    attachments: [
-      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
-      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
-      MaterialAttachmentItem.asset('assets/images/no_material_background.png'),
-    ],
-    items: [
-      MaterialExpenseItem(
-        id: 'material-${item.id}',
-        name: item.namaItem,
-        quantity: 10,
-        total: double.tryParse(item.jumlah) ?? 0,
-        isSelected: true,
-      ),
-      const MaterialExpenseItem(
-        id: 'material-batu-gosok',
-        name: 'Batu Gosok',
-        quantity: 10,
-        total: 2000000,
-        isSelected: true,
-      ),
-    ],
-  );
-}
-
-OperasionalPengeluaranDraft _buildOperasionalDraft(
-  ProjectPengeluaranItem item, {
-  PengeluaranCategory category = PengeluaranCategory.operasional,
-}) {
-  return OperasionalPengeluaranDraft(
-    category: category,
-    operasionalName: category == PengeluaranCategory.pettyCash
-        ? 'Kas Lapangan'
-        : 'Persiapan Lahan',
-    date: DateTime.tryParse(item.tanggal) ?? DateTime.now(),
-    createdBy: item.user.name,
-    items: [
-      OperasionalExpenseItem(
-        id: 'operasional-${item.id}-1',
-        amount: double.tryParse(item.jumlah) ?? 0,
-        note: item.keterangan,
-        attachments: [
-          MaterialAttachmentItem.asset(
-            'assets/images/no_material_background.png',
-          ),
-          MaterialAttachmentItem.asset(
-            'assets/images/no_material_background.png',
-          ),
-        ],
-      ),
-      OperasionalExpenseItem(
-        id: 'operasional-2',
-        amount: 2000000,
-        note: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-        attachments: [
-          MaterialAttachmentItem.asset(
-            'assets/images/no_material_background.png',
-          ),
-        ],
-      ),
-      OperasionalExpenseItem(
-        id: 'operasional-3',
-        amount: 2000000,
-        note:
-            'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        attachments: [
-          MaterialAttachmentItem.asset(
-            'assets/images/no_material_background.png',
-          ),
-        ],
-      ),
-    ],
-  );
-}
-
 String _formatCurrency(String rawValue) {
   final parsedValue = double.tryParse(rawValue) ?? 0;
   return NumberFormat.currency(
