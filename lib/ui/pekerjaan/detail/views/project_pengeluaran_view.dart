@@ -127,6 +127,9 @@ class ProjectPengeluaranView extends StatelessWidget {
                     return;
                   }
 
+                  context.read<ProjectDetailBloc>().add(
+                    FetchProjectDetail(projectId),
+                  );
                   StatusBanner.show(
                     context,
                     title: result.title,
@@ -191,30 +194,18 @@ String _buildCardIconAsset(String kategori) {
 }
 
 String _buildPrimaryLabel(String kategori) {
-  final normalized = kategori.toLowerCase();
-  return normalized.contains('material') ? 'Total Item' : 'Jumlah Biaya';
+  return 'Jumlah Biaya';
 }
 
 String _buildPrimaryValue(ProjectPengeluaranItem item) {
-  final normalized = item.kategori.toLowerCase();
-  if (normalized.contains('material')) {
-    return '5';
-  }
-
   return _formatCurrency(item.jumlah);
 }
 
 String? _buildSecondaryLabel(String kategori) {
-  final normalized = kategori.toLowerCase();
-  return normalized.contains('material') ? 'Jumlah Harga' : null;
+  return null;
 }
 
 String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
-  final normalized = kategori.toLowerCase();
-  if (normalized.contains('material')) {
-    return _formatCurrency(item.jumlah);
-  }
-
   return null;
 }
 
@@ -307,6 +298,7 @@ Future<void> Function()? _buildOnTap(
 
   return null;
 }
+
 String _formatCurrency(String rawValue) {
   final parsedValue = double.tryParse(rawValue) ?? 0;
   return NumberFormat.currency(
