@@ -35,6 +35,17 @@ extension PengeluaranCategoryX on PengeluaranCategory {
         return 'assets/icons/ic_pengeluaran_petty_cash.png';
     }
   }
+
+  String get categorySheetIconAsset {
+    switch (this) {
+      case PengeluaranCategory.operasional:
+        return 'assets/icons/ic_kategori_operasional.png';
+      case PengeluaranCategory.material:
+        return 'assets/icons/ic_kategori_material.png';
+      case PengeluaranCategory.pettyCash:
+        return 'assets/icons/ic_kategori_petty_cash.png';
+    }
+  }
 }
 
 class PengeluaranCategorySheet extends StatelessWidget {
@@ -89,15 +100,16 @@ class _CategoryOptionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
           children: [
-            Container(
+            SizedBox(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
-                borderRadius: BorderRadius.circular(18),
-              ),
               child: Center(
-                child: Image.asset(category.iconAsset, width: 18, height: 18),
+                child: Image.asset(
+                  category.categorySheetIconAsset,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(width: 14),
@@ -946,12 +958,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
     }
 
     for (final item in _flattenRabItems(rabItems)) {
-      addItem(
-        MaterialExpenseItem(
-          id: 'rab-${item.id}',
-          name: item.uraian,
-        ),
-      );
+      addItem(MaterialExpenseItem(id: 'rab-${item.id}', name: item.uraian));
     }
 
     for (final item in selected) {
@@ -965,8 +972,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
     final result = <ProjectRabItem>[];
 
     void visit(ProjectRabItem item) {
-      final isMaterial =
-          item.kategori.trim().toLowerCase() == 'material';
+      final isMaterial = item.kategori.trim().toLowerCase() == 'material';
       final isLeafItem = item.tipe.trim().toLowerCase() == 'item';
       final hasName = item.uraian.trim().isNotEmpty;
 
@@ -1124,7 +1130,8 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
                             onChanged: (value) => _toggleItem(item, value),
                             onQuantityChanged: (value) =>
                                 _updateQuantity(item, value),
-                            onTotalChanged: (value) => _updateTotal(item, value),
+                            onTotalChanged: (value) =>
+                                _updateTotal(item, value),
                           );
                         },
                       ),
@@ -2379,9 +2386,7 @@ class AttachmentThumbnail extends StatelessWidget {
   void _openPreview(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => _AttachmentPreviewPage(image: image),
-      ),
+      MaterialPageRoute(builder: (_) => _AttachmentPreviewPage(image: image)),
     );
   }
 }

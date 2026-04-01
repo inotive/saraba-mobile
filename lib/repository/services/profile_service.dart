@@ -31,7 +31,7 @@ class ProfileService {
             email: profileResponse.data.karyawan?.email.isNotEmpty == true
                 ? profileResponse.data.karyawan!.email
                 : profileResponse.data.user.email,
-            role: _resolveRole(profileResponse),
+            role: profileResponse.data.user.role ?? '',
           ),
         );
 
@@ -146,7 +146,10 @@ class ProfileService {
               ? profileResponse.data.karyawan!.nama
               : profileResponse.data.user.name,
           email: profileResponse.data.user.email,
-          role: currentUser?.role ?? role,
+          role:
+              profileResponse.data.user.role ??
+              currentUser?.role ??
+              role,
         ),
       );
 
@@ -195,14 +198,5 @@ class ProfileService {
     }
 
     await prefs.setString(_avatarPathKey, path);
-  }
-
-  String _resolveRole(ProfileResponse profileResponse) {
-    final jabatan = profileResponse.data.karyawan?.jabatan ?? '';
-    if (jabatan.isNotEmpty) {
-      return jabatan;
-    }
-
-    return profileResponse.data.user.role ?? '';
   }
 }
