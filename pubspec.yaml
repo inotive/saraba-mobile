@@ -57,9 +57,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/saraba_logo.png
+  image_path: assets/images/splash_logo.png
   adaptive_icon_background: "#F5F5F5"
-  adaptive_icon_foreground: assets/images/saraba_logo.png
+  adaptive_icon_foreground: assets/images/splash_logo.png
 
 flutter_native_splash:
   color: "#F5F5F5"
