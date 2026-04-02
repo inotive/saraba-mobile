@@ -241,7 +241,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: OperasionalExpenseCard(
                                 item: item,
-                                onTapOptions: () {},
+                                onTapEdit: () => _openOptions(context, draft, detail.catatan),
                               ),
                             ),
                           ),

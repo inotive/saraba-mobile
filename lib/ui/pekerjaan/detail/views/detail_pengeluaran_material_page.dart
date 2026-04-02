@@ -243,7 +243,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           ...draft.items.map(
                             (item) => Padding(
                               padding: const EdgeInsets.only(bottom: 14),
-                              child: SelectedMaterialItemCard(item: item),
+                              child: SelectedMaterialItemCard(item: item, onTapEdit: () => _openOptions(context, draft)),
                             ),
                           ),
                         ],

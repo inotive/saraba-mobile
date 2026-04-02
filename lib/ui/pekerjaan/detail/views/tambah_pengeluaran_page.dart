@@ -164,6 +164,21 @@ class MaterialExpenseItem {
   }
 }
 
+class MaterialItemSheetResult {
+  final MaterialExpenseItem? item;
+  final bool isDeleted;
+
+  const MaterialItemSheetResult._({this.item, required this.isDeleted});
+
+  factory MaterialItemSheetResult.saved(MaterialExpenseItem item) {
+    return MaterialItemSheetResult._(item: item, isDeleted: false);
+  }
+
+  factory MaterialItemSheetResult.deleted() {
+    return const MaterialItemSheetResult._(isDeleted: true);
+  }
+}
+
 class MaterialAttachmentItem {
   final String path;
   final bool isFile;
@@ -380,6 +395,39 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     });
   }
 
+  Future<void> _openEditMaterialItemSheet({
+    required MaterialExpenseItem item,
+    required int itemIndex,
+  }) async {
+    final result = await showModalBottomSheet<MaterialItemSheetResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => TambahItemBaruSheet(initialItem: item),
+    );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      final updatedItems = [..._selectedItems];
+      if (result.isDeleted) {
+        if (itemIndex >= 0 && itemIndex < updatedItems.length) {
+          updatedItems.removeAt(itemIndex);
+        }
+      } else if (result.item != null &&
+          itemIndex >= 0 &&
+          itemIndex < updatedItems.length) {
+        updatedItems[itemIndex] = result.item!;
+      }
+      _selectedItems = updatedItems;
+    });
+  }
+
   void _saveMaterialFlow() {
     if (_selectedItems.isEmpty) {
       return;
@@ -455,40 +503,6 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       message: 'Kamu berhasil menambahkan item pengeluaran baru',
       type: StatusBannerType.success,
     );
-  }
-
-  Future<void> _openOperasionalOptions(
-    OperasionalExpenseItem item,
-    int index,
-  ) async {
-    final action = await showModalBottomSheet<_OperasionalAction>(
-      context: context,
-      backgroundColor: const Color(0xFFFAFAFA),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _OperasionalOptionsSheet(),
-    );
-
-    if (!mounted || action == null) {
-      return;
-    }
-
-    if (action == _OperasionalAction.edit) {
-      await _openOperasionalItemSheet(item: item, itemIndex: index);
-      return;
-    }
-
-    if (action == _OperasionalAction.viewNote) {
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: const Color(0xFFFAFAFA),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (_) => _OperasionalNoteSheet(note: item.note),
-      );
-    }
   }
 
   void _saveOperasionalFlow() {
@@ -663,13 +677,20 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                   else
                                     Column(
                                       children: _selectedItems
+                                          .asMap()
+                                          .entries
                                           .map(
-                                            (item) => Padding(
+                                            (entry) => Padding(
                                               padding: const EdgeInsets.only(
                                                 bottom: 12,
                                               ),
                                               child: SelectedMaterialItemCard(
-                                                item: item,
+                                                item: entry.value,
+                                                onTapEdit: () =>
+                                                    _openEditMaterialItemSheet(
+                                                      item: entry.value,
+                                                      itemIndex: entry.key,
+                                                    ),
                                               ),
                                             ),
                                           )
@@ -728,10 +749,10 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                               ),
                                               child: OperasionalExpenseCard(
                                                 item: entry.value,
-                                                onTapOptions: () =>
-                                                    _openOperasionalOptions(
-                                                      entry.value,
-                                                      entry.key,
+                                                onTapEdit: () =>
+                                                    _openOperasionalItemSheet(
+                                                      item: entry.value,
+                                                      itemIndex: entry.key,
                                                     ),
                                               ),
                                             );
@@ -1008,7 +1029,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
   }
 
   Future<void> _openAddNewItemSheet() async {
-    final result = await showModalBottomSheet<MaterialExpenseItem>(
+    final result = await showModalBottomSheet<MaterialItemSheetResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFFAFAFA),
@@ -1018,12 +1039,12 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
       builder: (_) => const TambahItemBaruSheet(),
     );
 
-    if (result == null) {
+    if (result?.item == null) {
       return;
     }
 
     setState(() {
-      _items = [..._items, result.copyWith(isSelected: true)];
+      _items = [..._items, result!.item!.copyWith(isSelected: true)];
     });
   }
 
@@ -1191,7 +1212,9 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
 }
 
 class TambahItemBaruSheet extends StatefulWidget {
-  const TambahItemBaruSheet({super.key});
+  final MaterialExpenseItem? initialItem;
+
+  const TambahItemBaruSheet({super.key, this.initialItem});
 
   @override
   State<TambahItemBaruSheet> createState() => _TambahItemBaruSheetState();
@@ -1213,6 +1236,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
   @override
   void initState() {
     super.initState();
+    _nameController.text = widget.initialItem?.name ?? '';
+    _quantityController.text = widget.initialItem == null
+        ? ''
+        : widget.initialItem!.quantity.toString();
+    _totalController.text = widget.initialItem == null
+        ? ''
+        : widget.initialItem!.total.toStringAsFixed(0);
     _nameController.addListener(() => setState(() {}));
     _quantityController.addListener(() => setState(() {}));
     _totalController.addListener(() => setState(() {}));
@@ -1226,18 +1256,24 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
     super.dispose();
   }
 
+  void _deleteItem() {
+    Navigator.pop(context, MaterialItemSheetResult.deleted());
+  }
+
   void _saveItem() {
     final item = MaterialExpenseItem(
-      id: 'custom-${DateTime.now().millisecondsSinceEpoch}',
+      id:
+          widget.initialItem?.id ??
+          'custom-${DateTime.now().millisecondsSinceEpoch}',
       name: _nameController.text.trim(),
       quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
       total:
           double.tryParse(_totalController.text.trim().replaceAll(',', '')) ??
           0,
       isSelected: true,
-      isCustom: true,
+      isCustom: widget.initialItem?.isCustom ?? true,
     );
-    Navigator.pop(context, item);
+    Navigator.pop(context, MaterialItemSheetResult.saved(item));
   }
 
   @override
@@ -1261,10 +1297,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                 ),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Tambah Item Baru',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    widget.initialItem == null ? 'Tambah Item Baru' : 'Edit',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -1272,9 +1311,26 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
             const SizedBox(height: 12),
             const _FieldLabel('Nama Item'),
             const SizedBox(height: 8),
-            _SearchTextField(
+            TextField(
               controller: _nameController,
-              hintText: 'Cari Item',
+              decoration: InputDecoration(
+                hintText: 'Item 1',
+                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF5D93E8)),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -1311,29 +1367,76 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _canSave ? _saveItem : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF7944D),
-                  disabledBackgroundColor: const Color(0xFFFAD1B7),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 24),
+            if (widget.initialItem != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _deleteItem,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF111827)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                      child: const Text(
+                        'Hapus',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Simpan',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _canSave ? _saveItem : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8BC7F1),
+                        disabledBackgroundColor: const Color(0xFFD6EAF8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Simpan',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _canSave ? _saveItem : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7944D),
+                    disabledBackgroundColor: const Color(0xFFFAD1B7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Simpan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -1343,8 +1446,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
 
 class SelectedMaterialItemCard extends StatelessWidget {
   final MaterialExpenseItem item;
+  final VoidCallback onTapEdit;
 
-  const SelectedMaterialItemCard({super.key, required this.item});
+  const SelectedMaterialItemCard({
+    super.key,
+    required this.item,
+    required this.onTapEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1356,58 +1464,77 @@ class SelectedMaterialItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F6FF),
-              borderRadius: BorderRadius.circular(17),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              size: 18,
-              color: Color(0xFF5D93E8),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Nama Material',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F6FF),
+                  borderRadius: BorderRadius.circular(17),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F1F1F),
+                child: const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 18,
+                  color: Color(0xFF5D93E8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 36),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Nama Material',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1F1F1F),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MetaColumn(
+                              label: 'Jumlah',
+                              value: item.quantity.toString(),
+                            ),
+                          ),
+                          Expanded(
+                            child: _MetaColumn(
+                              label: 'Total',
+                              value: _formatCurrency(item.total),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MetaColumn(
-                        label: 'Jumlah',
-                        value: item.quantity.toString(),
-                      ),
-                    ),
-                    Expanded(
-                      child: _MetaColumn(
-                        label: 'Total',
-                        value: _formatCurrency(item.total),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: IconButton(
+              onPressed: onTapEdit,
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
+              tooltip: 'Edit item',
             ),
           ),
         ],
@@ -1597,16 +1724,14 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
   }
 }
 
-enum _OperasionalAction { edit, viewNote }
-
 class OperasionalExpenseCard extends StatelessWidget {
   final OperasionalExpenseItem item;
-  final VoidCallback onTapOptions;
+  final VoidCallback onTapEdit;
 
   const OperasionalExpenseCard({
     super.key,
     required this.item,
-    required this.onTapOptions,
+    required this.onTapEdit,
   });
 
   @override
@@ -1619,72 +1744,88 @@ class OperasionalExpenseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              color: Color(0xFFDDEAFE),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.work_outline, color: Color(0xFF5D93E8)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDDEAFE),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatCurrency(item.amount),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1B2A4A),
+                child: const Icon(Icons.work_outline, color: Color(0xFF5D93E8)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatCurrency(item.amount),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1B2A4A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 36),
+                child: OutlinedButton(
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      backgroundColor: const Color(0xFFFAFAFA),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                      ),
+                      builder: (_) => _OperasionalNoteSheet(note: item.note),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFF7944D)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 38),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: const Text(
+                    'Lihat Nota',
+                    style: TextStyle(
+                      color: Color(0xFFF7944D),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {
-              showModalBottomSheet<void>(
-                context: context,
-                backgroundColor: const Color(0xFFFAFAFA),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                builder: (_) => _OperasionalNoteSheet(note: item.note),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFF7944D)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
               ),
-              minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-            child: const Text(
-              'Lihat Nota',
-              style: TextStyle(
-                color: Color(0xFFF7944D),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
+            ],
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: onTapOptions,
-            icon: const Icon(Icons.more_vert, color: Color(0xFFF7944D)),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: IconButton(
+              onPressed: onTapEdit,
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
+              tooltip: 'Edit item',
+            ),
           ),
         ],
       ),
@@ -1876,88 +2017,6 @@ class _TambahItemOperasionalSheetState
                   ),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OperasionalOptionsSheet extends StatelessWidget {
-  const _OperasionalOptionsSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Pilihan',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _OptionRow(
-              icon: Icons.edit_outlined,
-              label: 'Edit',
-              onTap: () => Navigator.pop(context, _OperasionalAction.edit),
-            ),
-            _OptionRow(
-              icon: Icons.remove_red_eye_outlined,
-              label: 'Lihat Catatan',
-              onTap: () => Navigator.pop(context, _OperasionalAction.viewNote),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OptionRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _OptionRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color(0xFF777777)),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1F1F1F),
-              ),
             ),
           ],
         ),
