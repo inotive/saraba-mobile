@@ -4,7 +4,6 @@ import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_state.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_foto_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_overview_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_pengeluaran_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_progress_view.dart';
@@ -26,9 +25,10 @@ class ProjectDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          ProjectDetailBloc(PekerjaanService())..add(FetchProjectDetail(projectId)),
+          ProjectDetailBloc(PekerjaanService())
+            ..add(FetchProjectDetail(projectId)),
       child: DefaultTabController(
-        length: 5,
+        length: 4,
         child: Scaffold(
           backgroundColor: const Color(0xFFFAFAFA),
           body: SafeArea(
@@ -45,7 +45,9 @@ class ProjectDetailPage extends StatelessWidget {
                       child: Builder(
                         builder: (context) {
                           if (state.isLoading && detail == null) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
 
                           if (state.errorMessage != null && detail == null) {
@@ -90,7 +92,6 @@ class ProjectDetailPage extends StatelessWidget {
                                 projectId: projectId,
                                 pengeluaran: detail.pengeluaran,
                               ),
-                              const ProjectFotoView(),
                             ],
                           );
                         },
