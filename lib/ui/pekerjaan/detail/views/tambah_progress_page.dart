@@ -43,7 +43,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
+  Future<void> _pickFromGallery() async {
     final pickedImages = await _imagePicker.pickMultiImage(imageQuality: 85);
 
     if (!mounted || pickedImages.isEmpty) {
@@ -54,6 +54,45 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
       final remainingSlots = 5 - _selectedImages.length;
       _selectedImages.addAll(pickedImages.take(remainingSlots));
     });
+  }
+
+  Future<void> _pickFromCamera() async {
+    final capturedImage = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+
+    if (!mounted || capturedImage == null) {
+      return;
+    }
+
+    setState(() {
+      if (_selectedImages.length < 5) {
+        _selectedImages.add(capturedImage);
+      }
+    });
+  }
+
+  Future<void> _choosePhotoSource() async {
+    final action = await showModalBottomSheet<_PhotoSourceAction>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => const _PhotoSourceBottomSheet(),
+    );
+
+    if (action == null) {
+      return;
+    }
+
+    if (action == _PhotoSourceAction.camera) {
+      await _pickFromCamera();
+      return;
+    }
+
+    await _pickFromGallery();
   }
 
   Future<void> _pickDate() async {
@@ -118,6 +157,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
         progressPersen: progressPersen,
         tanggal: DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(_selectedDate),
         catatan: catatan,
+        fotoPaths: _selectedImages.map((image) => image.path).toList(),
       ),
     );
   }
@@ -195,7 +235,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
                                 width: double.infinity,
                                 height: 42,
                                 child: OutlinedButton.icon(
-                                  onPressed: _pickImages,
+                                  onPressed: _choosePhotoSource,
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
                                       color: Color(0xFFB7C9F5),
@@ -331,6 +371,41 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _PhotoSourceAction { camera, gallery }
+
+class _PhotoSourceBottomSheet extends StatelessWidget {
+  const _PhotoSourceBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Pilih Sumber Foto',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Kamera'),
+              onTap: () => Navigator.pop(context, _PhotoSourceAction.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeri'),
+              onTap: () => Navigator.pop(context, _PhotoSourceAction.gallery),
+            ),
+          ],
         ),
       ),
     );

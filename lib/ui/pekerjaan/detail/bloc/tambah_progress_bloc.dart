@@ -31,6 +31,7 @@ class TambahProgressBloc
       progressPersen: event.progressPersen,
       tanggal: event.tanggal,
       catatan: event.catatan,
+      fotoPaths: event.fotoPaths,
     );
 
     if (response == null || !response.success) {

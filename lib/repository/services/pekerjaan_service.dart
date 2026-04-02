@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
@@ -118,17 +119,41 @@ class PekerjaanService {
     required int progressPersen,
     required String tanggal,
     required String catatan,
+    List<String> fotoPaths = const [],
   }) async {
     try {
+      final token = await AuthService().getToken();
       final dio = await AuthService().getAuthDio();
+      final formData = FormData();
+
+      formData.fields.addAll([
+        MapEntry('judul', judul),
+        MapEntry('progress_persen', progressPersen.toString()),
+        MapEntry('tanggal', tanggal),
+        MapEntry('catatan', catatan),
+      ]);
+
+      for (final path in fotoPaths) {
+        final file = File(path);
+        if (!file.existsSync()) {
+          continue;
+        }
+
+        formData.files.add(
+          MapEntry('fotos[]', await MultipartFile.fromFile(file.path)),
+        );
+      }
+
       final response = await dio.post(
         '/proyeks/$projectId/progress-logs',
-        data: {
-          'judul': judul,
-          'progress_persen': progressPersen,
-          'tanggal': tanggal,
-          'catatan': catatan,
-        },
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': token ?? '',
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
 
       _logger.response(response);
