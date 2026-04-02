@@ -6,6 +6,7 @@ class SubmitProgressRequested extends TambahProgressEvent {
   final int progressPersen;
   final String tanggal;
   final String catatan;
+  final List<String> fotoPaths;
 
   SubmitProgressRequested({
     required this.projectId,
@@ -13,5 +14,6 @@ class SubmitProgressRequested extends TambahProgressEvent {
     required this.progressPersen,
     required this.tanggal,
     required this.catatan,
+    this.fotoPaths = const [],
   });
 }

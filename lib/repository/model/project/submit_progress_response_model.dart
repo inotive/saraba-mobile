@@ -42,9 +42,9 @@ class SubmittedProgressLog {
 
   factory SubmittedProgressLog.fromJson(Map<String, dynamic> json) {
     return SubmittedProgressLog(
-      id: json['id'] as int? ?? 0,
+      id: _parseInt(json['id']),
       judul: json['judul']?.toString() ?? '',
-      progressPersen: json['progress_persen'] as int? ?? 0,
+      progressPersen: _parseInt(json['progress_persen']),
       tanggal: json['tanggal']?.toString() ?? '',
       catatan: json['catatan']?.toString() ?? '',
       user: SubmittedProgressUser.fromJson(
@@ -59,15 +59,24 @@ class SubmittedProgressUser {
   final int id;
   final String name;
 
-  SubmittedProgressUser({
-    required this.id,
-    required this.name,
-  });
+  SubmittedProgressUser({required this.id, required this.name});
 
   factory SubmittedProgressUser.fromJson(Map<String, dynamic> json) {
     return SubmittedProgressUser(
-      id: json['id'] as int? ?? 0,
+      id: _parseInt(json['id']),
       name: json['name']?.toString() ?? '',
     );
   }
+}
+
+int _parseInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is String) {
+    return int.tryParse(value) ?? 0;
+  }
+
+  return 0;
 }
