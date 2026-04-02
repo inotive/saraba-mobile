@@ -26,6 +26,22 @@ class ProgressItemCard extends StatelessWidget {
     this.onTapArrow,
   });
 
+  void _openPhotoViewer(BuildContext context, int initialIndex) {
+    if (images.isEmpty) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ProgressPhotoViewerPage(
+          images: images,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -116,7 +132,7 @@ class ProgressItemCard extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      "Persentase",
+                      'Persentase',
                       style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
                     ),
                     const Spacer(),
@@ -165,25 +181,29 @@ class ProgressItemCard extends StatelessWidget {
                       itemCount: images.length,
                       separatorBuilder: (_, _) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        return ClipRRect(
+                        return InkWell(
+                          onTap: () => _openPhotoViewer(context, index),
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            images[index],
-                            width: 82,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) {
-                              return Container(
-                                width: 82,
-                                height: 60,
-                                color: const Color(0xFFF1F3F5),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: Color(0xFF9AA0A6),
-                                ),
-                              );
-                            },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              images[index],
+                              width: 82,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) {
+                                return Container(
+                                  width: 82,
+                                  height: 60,
+                                  color: const Color(0xFFF1F3F5),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: Color(0xFF9AA0A6),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         );
                       },
@@ -237,6 +257,78 @@ class _MiniInfoColumn extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ProgressPhotoViewerPage extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ProgressPhotoViewerPage({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_ProgressPhotoViewerPage> createState() =>
+      _ProgressPhotoViewerPageState();
+}
+
+class _ProgressPhotoViewerPageState extends State<_ProgressPhotoViewerPage> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text('${_currentIndex + 1}/${widget.images.length}'),
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 1,
+            maxScale: 4,
+            child: Center(
+              child: Image.network(
+                widget.images[index],
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) {
+                  return const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Color(0xFF9AA0A6),
+                    size: 42,
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
