@@ -113,6 +113,40 @@ class PekerjaanService {
     return null;
   }
 
+  Future<SubmitProgressResponse?> deleteProgressLog({
+    required String projectId,
+    required String logId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.delete(
+        '/proyeks/$projectId/progress-logs/$logId',
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Delete progress request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while deleting progress: $e');
+    }
+
+    return null;
+  }
+
   Future<SubmitProgressResponse?> submitProgressLog({
     required String projectId,
     String? logId,
