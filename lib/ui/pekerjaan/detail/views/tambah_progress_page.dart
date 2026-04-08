@@ -309,6 +309,33 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
                                         width: 92,
                                         height: 92,
                                         fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+
+                                              return Container(
+                                                width: 92,
+                                                height: 92,
+                                                color: const Color(
+                                                  0xFFF1F3F5,
+                                                ),
+                                                alignment: Alignment.center,
+                                                child:
+                                                    const SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color: Color(
+                                                              0xFFF7944D,
+                                                            ),
+                                                          ),
+                                                    ),
+                                              );
+                                            },
                                         errorBuilder: (_, _, _) => Container(
                                           width: 92,
                                           height: 92,

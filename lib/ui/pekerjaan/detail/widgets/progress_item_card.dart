@@ -210,6 +210,27 @@ class ProgressItemCard extends StatelessWidget {
                                   width: 82,
                                   height: 60,
                                   fit: BoxFit.cover,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+
+                                        return Container(
+                                          width: 82,
+                                          height: 60,
+                                          color: const Color(0xFFF1F3F5),
+                                          alignment: Alignment.center,
+                                          child: const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Color(0xFFF7944D),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                   errorBuilder: (_, _, _) {
                                     return Container(
                                       width: 82,
@@ -334,6 +355,20 @@ class _ProgressPhotoViewerPageState extends State<_ProgressPhotoViewerPage> {
               child: Image.network(
                 widget.images[index],
                 fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  }
+
+                  return const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFF7944D),
+                    ),
+                  );
+                },
                 errorBuilder: (_, _, _) {
                   return const Icon(
                     Icons.image_not_supported_outlined,
