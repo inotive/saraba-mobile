@@ -1446,12 +1446,12 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
 
 class SelectedMaterialItemCard extends StatelessWidget {
   final MaterialExpenseItem item;
-  final VoidCallback onTapEdit;
+  final VoidCallback? onTapEdit;
 
   const SelectedMaterialItemCard({
     super.key,
     required this.item,
-    required this.onTapEdit,
+    this.onTapEdit,
   });
 
   @override
@@ -1528,15 +1528,19 @@ class SelectedMaterialItemCard extends StatelessWidget {
               ),
             ],
           ),
-          Positioned(
-            top: -6,
-            right: -6,
-            child: IconButton(
-              onPressed: onTapEdit,
-              icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
-              tooltip: 'Edit item',
+          if (onTapEdit != null)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: IconButton(
+                onPressed: onTapEdit,
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFFF7944D),
+                ),
+                tooltip: 'Edit item',
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1726,12 +1730,12 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
 
 class OperasionalExpenseCard extends StatelessWidget {
   final OperasionalExpenseItem item;
-  final VoidCallback onTapEdit;
+  final VoidCallback? onTapEdit;
 
   const OperasionalExpenseCard({
     super.key,
     required this.item,
-    required this.onTapEdit,
+    this.onTapEdit,
   });
 
   @override
@@ -1818,15 +1822,19 @@ class OperasionalExpenseCard extends StatelessWidget {
               ),
             ],
           ),
-          Positioned(
-            top: -6,
-            right: -6,
-            child: IconButton(
-              onPressed: onTapEdit,
-              icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
-              tooltip: 'Edit item',
+          if (onTapEdit != null)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: IconButton(
+                onPressed: onTapEdit,
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFFF7944D),
+                ),
+                tooltip: 'Edit item',
+              ),
             ),
-          ),
         ],
       ),
     );

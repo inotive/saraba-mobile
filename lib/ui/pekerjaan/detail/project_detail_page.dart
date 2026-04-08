@@ -87,10 +87,13 @@ class ProjectDetailPage extends StatelessWidget {
                               ProjectProgressView(
                                 overview: detail.overview,
                                 progress: detail.progress,
+                                canEdit: !_isProjectFinished(detail.overview.status),
                               ),
                               ProjectPengeluaranView(
                                 projectId: projectId,
                                 pengeluaran: detail.pengeluaran,
+                                canEdit:
+                                    !_isProjectFinished(detail.overview.status),
                               ),
                             ],
                           );
@@ -106,4 +109,8 @@ class ProjectDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isProjectFinished(String status) {
+  return status.trim().toLowerCase() == 'selesai';
 }

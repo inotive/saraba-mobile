@@ -113,12 +113,48 @@ class PekerjaanService {
     return null;
   }
 
+  Future<SubmitProgressResponse?> deleteProgressLog({
+    required String projectId,
+    required String logId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.delete(
+        '/proyeks/$projectId/progress-logs/$logId',
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Delete progress request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while deleting progress: $e');
+    }
+
+    return null;
+  }
+
   Future<SubmitProgressResponse?> submitProgressLog({
     required String projectId,
+    String? logId,
     required String judul,
     required int progressPersen,
     required String tanggal,
     required String catatan,
+    required int jumlahTukang,
     List<String> fotoPaths = const [],
   }) async {
     try {
@@ -131,6 +167,7 @@ class PekerjaanService {
         MapEntry('progress_persen', progressPersen.toString()),
         MapEntry('tanggal', tanggal),
         MapEntry('catatan', catatan),
+        MapEntry('jumlah_tukang', jumlahTukang.toString()),
       ]);
 
       for (final path in fotoPaths) {
@@ -144,16 +181,21 @@ class PekerjaanService {
         );
       }
 
-      final response = await dio.post(
-        '/proyeks/$projectId/progress-logs',
-        data: formData,
+      final endpoint = logId == null || logId.isEmpty
+          ? '/proyeks/$projectId/progress-logs'
+          : '/proyeks/$projectId/progress-logs/$logId';
+
+      final response = await dio.request(
+        endpoint,
         options: Options(
+          method: logId == null || logId.isEmpty ? 'POST' : 'PUT',
           headers: {
             'Authorization': token ?? '',
             'Accept': 'application/json',
             'Content-Type': 'multipart/form-data',
           },
         ),
+        data: formData,
       );
 
       _logger.response(response);

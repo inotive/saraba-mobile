@@ -252,18 +252,22 @@ class ProjectProgressLog {
   final String judul;
   final String progressPersen;
   final String tanggal;
+  final int? jumlahTukang;
   final String catatan;
   final List<String> fotos;
   final ProjectUserSummary user;
+  final String createdAt;
 
   ProjectProgressLog({
     required this.id,
     required this.judul,
     required this.progressPersen,
     required this.tanggal,
+    required this.jumlahTukang,
     required this.catatan,
     required this.fotos,
     required this.user,
+    required this.createdAt,
   });
 
   factory ProjectProgressLog.fromJson(Map<String, dynamic> json) {
@@ -272,12 +276,14 @@ class ProjectProgressLog {
       judul: json['judul']?.toString() ?? '',
       progressPersen: json['progress_persen']?.toString() ?? '0',
       tanggal: json['tanggal']?.toString() ?? '',
+      jumlahTukang: _parseNullableInt(json['jumlah_tukang']),
       catatan: json['catatan']?.toString() ?? '',
       fotos: (json['fotos'] as List<dynamic>? ?? [])
           .map(_parsePhotoUrl)
           .where((value) => value.isNotEmpty)
           .toList(),
       user: ProjectUserSummary.fromJson(json['user'] as Map<String, dynamic>),
+      createdAt: json['created_at']?.toString() ?? '',
     );
   }
 }
@@ -302,6 +308,18 @@ double _parseDouble(dynamic value) {
   }
 
   return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int? _parseNullableInt(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+
+  if (value is int) {
+    return value;
+  }
+
+  return int.tryParse(value.toString());
 }
 
 String _parsePhotoUrl(dynamic value) {

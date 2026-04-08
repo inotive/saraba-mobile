@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
 import 'package:saraba_mobile/repository/services/project_profit_service.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
@@ -212,11 +213,7 @@ class AkunPage extends StatelessWidget {
   }
 
   Widget _menuCard(BuildContext context, ProfileState profile) {
-    final normalizedRole = profile.userRoleOnly.trim().toLowerCase().replaceAll(
-      ' ',
-      '',
-    );
-    final canViewProjectProfit = normalizedRole == 'superadmin';
+    final canViewProjectProfit = hasFullMenuAccess(profile.userRoleOnly);
 
     final items = <Widget>[
       if (canViewProjectProfit)

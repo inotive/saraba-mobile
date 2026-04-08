@@ -12,6 +12,10 @@ class ProfileService {
   static const AppLogger _logger = AppLogger('ProfileService');
 
   Future<ProfileResponse?> getProfile() async {
+    if (AuthService.useMock) {
+      return _getMockProfile();
+    }
+
     try {
       final dio = await AuthService().getAuthDio();
       final response = await dio.get('/profile');
@@ -49,6 +53,62 @@ class ProfileService {
     }
 
     return null;
+  }
+
+  Future<ProfileResponse?> _getMockProfile() async {
+    try {
+      final currentUser = await getCurrentUser();
+      final user = currentUser ??
+          User(
+            id: 1,
+            name: 'Staff Lapangan',
+            email: 'admin@gmail.com',
+            role: 'Staff',
+          );
+
+      final profile = ProfileResponse.fromJson({
+        'success': true,
+        'message': 'Mock profile loaded',
+        'data': {
+          'user': {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'avatar': '',
+            'role': user.role,
+            'created_at': '',
+          },
+          'karyawan': {
+            'id': user.id,
+            'nama': user.name,
+            'email': user.email,
+            'telepon': '',
+            'jabatan': 'Pelaksana',
+            'departemen': 'IT',
+            'status': 'aktif',
+            'tanggal_bergabung': '',
+            'alamat': '',
+          },
+        },
+      });
+
+      await saveCurrentUser(
+        User(
+          id: profile.data.user.id,
+          name: profile.data.karyawan?.nama.isNotEmpty == true
+              ? profile.data.karyawan!.nama
+              : profile.data.user.name,
+          email: profile.data.user.email,
+          role: profile.data.user.role ?? '',
+        ),
+      );
+
+      _logger.log('Mock profile loaded successfully');
+      return profile;
+    } catch (e) {
+      _logger.error('Unexpected error while loading mock profile: $e');
+      return null;
+    }
   }
 
   Future<ChangePasswordResponse?> changePassword({

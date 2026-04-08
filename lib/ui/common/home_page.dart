@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
@@ -110,72 +113,120 @@ class _HomePageState extends State<HomePage> {
       create: (_) => NavigationBloc(),
       child: BlocBuilder<NavigationBloc, NavigationState>(
         builder: (context, state) {
-          return Scaffold(
-            body: _buildPage(state.selectedTab),
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                currentIndex: state.selectedTab.index,
-                selectedItemColor: _selectedNavColor,
-                unselectedItemColor: Colors.grey,
-                showSelectedLabels: true,
-                showUnselectedLabels: true,
-                selectedLabelStyle: const TextStyle(fontSize: 12),
-                unselectedLabelStyle: const TextStyle(fontSize: 12),
-                onTap: (index) {
-                  context.read<NavigationBloc>().add(
-                    NavigateToPage(NavigationTab.values[index]),
-                  );
-                },
-                items: [
-                  BottomNavigationBarItem(
-                    icon: _buildNavIcon(
-                      'assets/icons/ic_dashboard_menu.png',
-                      isSelected: state.selectedTab == NavigationTab.dashboard,
-                    ),
-                    label: "Dashboard",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: _buildNavIcon(
-                      'assets/icons/ic_absensi_menu.png',
-                      isSelected: state.selectedTab == NavigationTab.absensi,
-                    ),
-                    label: "Absensi",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: _buildNavIcon(
-                      'assets/icons/ic_pekerjaan_menu.png',
-                      isSelected: state.selectedTab == NavigationTab.pekerjaan,
-                    ),
-                    label: "Pekerjaan",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: _buildNavIcon(
-                      'assets/icons/ic_akun_menu.png',
-                      isSelected: state.selectedTab == NavigationTab.akun,
-                    ),
-                    label: "Akun",
-                  ),
-                ],
-              ),
+          return ValueListenableBuilder(
+            valueListenable: Hive.box<User>('userBox').listenable(
+              keys: const ['current_user'],
             ),
+            builder: (context, _, child) {
+              final currentUser = Hive.box<User>('userBox').get('current_user');
+              final visibleTabs = _buildVisibleTabs(currentUser?.role ?? '');
+              final selectedTab = visibleTabs.contains(state.selectedTab)
+                  ? state.selectedTab
+                  : NavigationTab.dashboard;
+
+              if (selectedTab != state.selectedTab) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) {
+                    return;
+                  }
+                  context.read<NavigationBloc>().add(
+                    NavigateToPage(selectedTab),
+                  );
+                });
+              }
+
+              return Scaffold(
+                body: _buildPage(selectedTab),
+                bottomNavigationBar: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: BottomNavigationBar(
+                    type: BottomNavigationBarType.fixed,
+                    currentIndex: visibleTabs.indexOf(selectedTab),
+                    selectedItemColor: _selectedNavColor,
+                    unselectedItemColor: Colors.grey,
+                    showSelectedLabels: true,
+                    showUnselectedLabels: true,
+                    selectedLabelStyle: const TextStyle(fontSize: 12),
+                    unselectedLabelStyle: const TextStyle(fontSize: 12),
+                    onTap: (index) {
+                      context.read<NavigationBloc>().add(
+                        NavigateToPage(visibleTabs[index]),
+                      );
+                    },
+                    items: visibleTabs
+                        .map(
+                          (tab) => BottomNavigationBarItem(
+                            icon: _buildNavIcon(
+                              _buildNavAsset(tab),
+                              isSelected: selectedTab == tab,
+                            ),
+                            label: _buildNavLabel(tab),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
     );
+  }
+
+  List<NavigationTab> _buildVisibleTabs(String role) {
+    if (hasFullMenuAccess(role)) {
+      return const [
+        NavigationTab.dashboard,
+        NavigationTab.absensi,
+        NavigationTab.pekerjaan,
+        NavigationTab.akun,
+      ];
+    }
+
+    return const [
+      NavigationTab.dashboard,
+      NavigationTab.absensi,
+      NavigationTab.akun,
+    ];
+  }
+
+  String _buildNavAsset(NavigationTab tab) {
+    switch (tab) {
+      case NavigationTab.dashboard:
+        return 'assets/icons/ic_dashboard_menu.png';
+      case NavigationTab.absensi:
+        return 'assets/icons/ic_absensi_menu.png';
+      case NavigationTab.pekerjaan:
+        return 'assets/icons/ic_pekerjaan_menu.png';
+      case NavigationTab.akun:
+        return 'assets/icons/ic_akun_menu.png';
+    }
+  }
+
+  String _buildNavLabel(NavigationTab tab) {
+    switch (tab) {
+      case NavigationTab.dashboard:
+        return 'Dashboard';
+      case NavigationTab.absensi:
+        return 'Absensi';
+      case NavigationTab.pekerjaan:
+        return 'Pekerjaan';
+      case NavigationTab.akun:
+        return 'Akun';
+    }
   }
 }
