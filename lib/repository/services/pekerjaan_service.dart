@@ -119,6 +119,7 @@ class PekerjaanService {
     required int progressPersen,
     required String tanggal,
     required String catatan,
+    required int jumlahTukang,
     List<String> fotoPaths = const [],
   }) async {
     try {
@@ -131,6 +132,7 @@ class PekerjaanService {
         MapEntry('progress_persen', progressPersen.toString()),
         MapEntry('tanggal', tanggal),
         MapEntry('catatan', catatan),
+        MapEntry('jumlah_tukang', jumlahTukang.toString()),
       ]);
 
       for (final path in fotoPaths) {

@@ -26,6 +26,7 @@ class SubmittedProgressLog {
   final String judul;
   final int progressPersen;
   final String tanggal;
+  final int jumlahTukang;
   final String catatan;
   final SubmittedProgressUser user;
   final String createdAt;
@@ -35,6 +36,7 @@ class SubmittedProgressLog {
     required this.judul,
     required this.progressPersen,
     required this.tanggal,
+    required this.jumlahTukang,
     required this.catatan,
     required this.user,
     required this.createdAt,
@@ -46,6 +48,7 @@ class SubmittedProgressLog {
       judul: json['judul']?.toString() ?? '',
       progressPersen: _parseInt(json['progress_persen']),
       tanggal: json['tanggal']?.toString() ?? '',
+      jumlahTukang: _parseInt(json['jumlah_tukang']),
       catatan: json['catatan']?.toString() ?? '',
       user: SubmittedProgressUser.fromJson(
         json['user'] as Map<String, dynamic>? ?? const {},

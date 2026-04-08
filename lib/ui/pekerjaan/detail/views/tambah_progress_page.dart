@@ -118,6 +118,8 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
 
     final judul = _judulController.text.trim();
     final progressPersen = int.tryParse(_progressController.text.trim()) ?? -1;
+    final jumlahTukang =
+        int.tryParse(_jumlahTukangController.text.trim()) ?? -1;
     final catatan = _catatanController.text.trim();
 
     if (judul.isEmpty) {
@@ -150,6 +152,16 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
       return;
     }
 
+    if (jumlahTukang < 0) {
+      StatusBanner.show(
+        context,
+        title: 'Validasi Gagal',
+        message: 'Jumlah tukang wajib diisi dengan angka yang valid',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
     context.read<TambahProgressBloc>().add(
       SubmitProgressRequested(
         projectId: widget.projectId,
@@ -157,6 +169,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
         progressPersen: progressPersen,
         tanggal: DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(_selectedDate),
         catatan: catatan,
+        jumlahTukang: jumlahTukang,
         fotoPaths: _selectedImages.map((image) => image.path).toList(),
       ),
     );
