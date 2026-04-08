@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
@@ -173,6 +174,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
       },
       builder: (context, state) {
+        final canEditRole = hasFullMenuAccess(state.userRoleOnly);
+
         return Scaffold(
           backgroundColor: const Color(0xFFF7F7F7),
           appBar: AppBar(
@@ -259,31 +262,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedRole,
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Color(0xFFB8B8B8),
-                        ),
-                        decoration: _inputDecoration(),
-                        items: roleItems
-                            .map(
-                              (role) => DropdownMenuItem<String>(
-                                value: role,
-                                child: Text(role),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
+                      if (canEditRole)
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedRole,
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Color(0xFFB8B8B8),
+                          ),
+                          decoration: _inputDecoration(),
+                          items: roleItems
+                              .map(
+                                (role) => DropdownMenuItem<String>(
+                                  value: role,
+                                  child: Text(role),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
 
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        },
-                      ),
+                            setState(() {
+                              _selectedRole = value;
+                            });
+                          },
+                        )
+                      else
+                        TextFormField(
+                          initialValue: _selectedRole,
+                          readOnly: true,
+                          enabled: false,
+                          decoration: _inputDecoration(),
+                        ),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,

@@ -19,18 +19,18 @@ class AuthServiceMock {
       "data": {
         "user": {
           "id": 1,
-          "name": "Super Admin",
+          "name": "Staff Lapangan",
           "email": "admin@gmail.com",
-          "role": "Super Admin",
+          "role": "Staff",
         },
         "karyawan": {
           "id": 1,
-          "nama": "Super Admin",
-          "jabatan": "Administrator",
+          "nama": "Staff Lapangan",
+          "jabatan": "Pelaksana",
           "departemen": "IT",
           "status": "aktif",
         },
-        "token": "7|Tbwl6khAtmufKKH99MkwgBDJCrK7inTz67GiK1VJ60a28f3e",
+        "token": "6|WxcXfnEwPjsOq6XK9YU0tEN8LfwFz1kzoL1eKU9M8ca37d75",
         "token_type": "Bearer",
       },
     });
