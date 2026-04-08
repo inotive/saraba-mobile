@@ -28,8 +28,9 @@ class SubmittedProgressLog {
   final String tanggal;
   final int jumlahTukang;
   final String catatan;
-  final SubmittedProgressUser user;
+  final SubmittedProgressUser? user;
   final String createdAt;
+  final String updatedAt;
 
   SubmittedProgressLog({
     required this.id,
@@ -40,6 +41,7 @@ class SubmittedProgressLog {
     required this.catatan,
     required this.user,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   factory SubmittedProgressLog.fromJson(Map<String, dynamic> json) {
@@ -50,10 +52,11 @@ class SubmittedProgressLog {
       tanggal: json['tanggal']?.toString() ?? '',
       jumlahTukang: _parseInt(json['jumlah_tukang']),
       catatan: json['catatan']?.toString() ?? '',
-      user: SubmittedProgressUser.fromJson(
-        json['user'] as Map<String, dynamic>? ?? const {},
-      ),
+      user: json['user'] is Map<String, dynamic>
+          ? SubmittedProgressUser.fromJson(json['user'] as Map<String, dynamic>)
+          : null,
       createdAt: json['created_at']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString() ?? '',
     );
   }
 }

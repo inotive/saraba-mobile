@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_progress_bloc.dart';
@@ -12,26 +13,44 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_progress_state.dar
 
 class TambahProgressPage extends StatefulWidget {
   final String projectId;
+  final ProjectProgressLog? initialLog;
+  final String pageTitle;
 
-  const TambahProgressPage({super.key, required this.projectId});
+  const TambahProgressPage({
+    super.key,
+    required this.projectId,
+    this.initialLog,
+    this.pageTitle = 'Tambah Progress',
+  });
 
   @override
   State<TambahProgressPage> createState() => _TambahProgressPageState();
 }
 
 class _TambahProgressPageState extends State<TambahProgressPage> {
+  static const int _maxPhotoCount = 5;
+  static const int _maxPhotoSizeInBytes = 5 * 1024 * 1024;
   final _imagePicker = ImagePicker();
   final _judulController = TextEditingController();
   final _progressController = TextEditingController();
   final _jumlahTukangController = TextEditingController();
   final _catatanController = TextEditingController();
   final List<XFile> _selectedImages = [];
+  final List<String> _existingImageUrls = [];
   late DateTime _selectedDate;
+
+  bool get _isEditMode => widget.initialLog != null;
 
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    final log = widget.initialLog;
+    _judulController.text = log?.judul ?? '';
+    _progressController.text = log?.progressPersen ?? '';
+    _jumlahTukangController.text = log?.jumlahTukang?.toString() ?? '';
+    _catatanController.text = log?.catatan ?? '';
+    _selectedDate = _parseInitialDate(log?.tanggal) ?? DateTime.now();
+    _existingImageUrls.addAll(log?.fotos ?? const []);
   }
 
   @override
@@ -50,10 +69,40 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
       return;
     }
 
+    final allowedImages = <XFile>[];
+    for (final image in pickedImages) {
+      final isAllowed = await _validatePhotoSize(image);
+      if (!isAllowed) {
+        continue;
+      }
+      allowedImages.add(image);
+    }
+
+    if (!mounted || allowedImages.isEmpty) {
+      return;
+    }
+
+    final remainingSlots =
+        _maxPhotoCount - (_existingImageUrls.length + _selectedImages.length);
+
+    if (remainingSlots <= 0) {
+      _showPhotoLimitBanner(
+        'Maksimal upload $_maxPhotoCount foto',
+      );
+      return;
+    }
+
+    final selectedImages = allowedImages.take(remainingSlots).toList();
+
     setState(() {
-      final remainingSlots = 5 - _selectedImages.length;
-      _selectedImages.addAll(pickedImages.take(remainingSlots));
+      _selectedImages.addAll(selectedImages);
     });
+
+    if (allowedImages.length > remainingSlots && mounted) {
+      _showPhotoLimitBanner(
+        'Maksimal upload $_maxPhotoCount foto',
+      );
+    }
   }
 
   Future<void> _pickFromCamera() async {
@@ -66,11 +115,43 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
       return;
     }
 
+    final isAllowed = await _validatePhotoSize(capturedImage);
+    if (!mounted || !isAllowed) {
+      return;
+    }
+
     setState(() {
-      if (_selectedImages.length < 5) {
+      if (_existingImageUrls.length + _selectedImages.length < _maxPhotoCount) {
         _selectedImages.add(capturedImage);
+      } else {
+        _showPhotoLimitBanner(
+          'Maksimal upload $_maxPhotoCount foto',
+        );
       }
     });
+  }
+
+  Future<bool> _validatePhotoSize(XFile image) async {
+    final fileSize = await image.length();
+    if (fileSize <= _maxPhotoSizeInBytes) {
+      return true;
+    }
+
+    if (mounted) {
+      _showPhotoLimitBanner(
+        'Ukuran tiap foto maksimal 5 MB',
+      );
+    }
+    return false;
+  }
+
+  void _showPhotoLimitBanner(String message) {
+    StatusBanner.show(
+      context,
+      title: 'Upload Gagal',
+      message: message,
+      type: StatusBannerType.error,
+    );
   }
 
   Future<void> _choosePhotoSource() async {
@@ -165,6 +246,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
     context.read<TambahProgressBloc>().add(
       SubmitProgressRequested(
         projectId: widget.projectId,
+        logId: widget.initialLog?.id.toString(),
         judul: judul,
         progressPersen: progressPersen,
         tanggal: DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(_selectedDate),
@@ -199,7 +281,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
           body: SafeArea(
             child: Column(
               children: [
-                const _TambahProgressHeader(),
+                _TambahProgressHeader(title: widget.pageTitle),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -220,18 +302,48 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  ..._selectedImages.map(
-                                    (image) => ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Image.file(
-                                        File(image.path),
+                                  ..._existingImageUrls.asMap().entries.map(
+                                    (entry) => _ProgressPhotoTile(
+                                      image: Image.network(
+                                        entry.value,
+                                        width: 92,
+                                        height: 92,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Container(
+                                          width: 92,
+                                          height: 92,
+                                          color: const Color(0xFFF1F3F5),
+                                          alignment: Alignment.center,
+                                          child: const Icon(
+                                            Icons.image_not_supported_outlined,
+                                            color: Color(0xFF9AA0A6),
+                                          ),
+                                        ),
+                                      ),
+                                      onRemove: () {
+                                        setState(() {
+                                          _existingImageUrls.removeAt(entry.key);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  ..._selectedImages.asMap().entries.map(
+                                    (entry) => _ProgressPhotoTile(
+                                      image: Image.file(
+                                        File(entry.value.path),
                                         width: 92,
                                         height: 92,
                                         fit: BoxFit.cover,
                                       ),
+                                      onRemove: () {
+                                        setState(() {
+                                          _selectedImages.removeAt(entry.key);
+                                        });
+                                      },
                                     ),
                                   ),
-                                  if (_selectedImages.length < 5)
+                                  if (_existingImageUrls.isEmpty &&
+                                      _selectedImages.isEmpty)
                                     const _UploadPhotoBox(),
                                 ],
                               ),
@@ -369,9 +481,11 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
-                                  "Submit Progress",
-                                  style: TextStyle(
+                              : Text(
+                                  _isEditMode
+                                      ? "Simpan Perubahan"
+                                      : "Submit Progress",
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -426,7 +540,9 @@ class _PhotoSourceBottomSheet extends StatelessWidget {
 }
 
 class _TambahProgressHeader extends StatelessWidget {
-  const _TambahProgressHeader();
+  final String title;
+
+  const _TambahProgressHeader({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -438,10 +554,10 @@ class _TambahProgressHeader extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              "Tambah Progress",
-              style: TextStyle(
+              title,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1F1F1F),
@@ -451,6 +567,18 @@ class _TambahProgressHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+DateTime? _parseInitialDate(String? rawDate) {
+  if (rawDate == null || rawDate.isEmpty) {
+    return null;
+  }
+
+  try {
+    return DateTime.parse(rawDate);
+  } catch (_) {
+    return null;
   }
 }
 
@@ -479,6 +607,53 @@ class _UploadPhotoBox extends StatelessWidget {
             style: TextStyle(
               color: Color(0xFF2457F5),
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressPhotoTile extends StatelessWidget {
+  final Widget image;
+  final VoidCallback onRemove;
+
+  const _ProgressPhotoTile({
+    required this.image,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 92,
+      height: 92,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: image,
+          ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: InkWell(
+              onTap: onRemove,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: const Color(0xB3000000),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

@@ -2,6 +2,7 @@ abstract class TambahProgressEvent {}
 
 class SubmitProgressRequested extends TambahProgressEvent {
   final String projectId;
+  final String? logId;
   final String judul;
   final int progressPersen;
   final String tanggal;
@@ -11,6 +12,7 @@ class SubmitProgressRequested extends TambahProgressEvent {
 
   SubmitProgressRequested({
     required this.projectId,
+    this.logId,
     required this.judul,
     required this.progressPersen,
     required this.tanggal,

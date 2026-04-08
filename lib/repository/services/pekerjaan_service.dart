@@ -115,6 +115,7 @@ class PekerjaanService {
 
   Future<SubmitProgressResponse?> submitProgressLog({
     required String projectId,
+    String? logId,
     required String judul,
     required int progressPersen,
     required String tanggal,
@@ -146,16 +147,21 @@ class PekerjaanService {
         );
       }
 
-      final response = await dio.post(
-        '/proyeks/$projectId/progress-logs',
-        data: formData,
+      final endpoint = logId == null || logId.isEmpty
+          ? '/proyeks/$projectId/progress-logs'
+          : '/proyeks/$projectId/progress-logs/$logId';
+
+      final response = await dio.request(
+        endpoint,
         options: Options(
+          method: logId == null || logId.isEmpty ? 'POST' : 'PUT',
           headers: {
             'Authorization': token ?? '',
             'Accept': 'application/json',
             'Content-Type': 'multipart/form-data',
           },
         ),
+        data: formData,
       );
 
       _logger.response(response);

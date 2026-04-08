@@ -27,6 +27,7 @@ class TambahProgressBloc
 
     final response = await pekerjaanService.submitProgressLog(
       projectId: event.projectId,
+      logId: event.logId,
       judul: event.judul,
       progressPersen: event.progressPersen,
       tanggal: event.tanggal,

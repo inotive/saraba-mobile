@@ -57,7 +57,39 @@ class ProjectProgressView extends StatelessWidget {
                             progress: progressValue,
                             images: item.fotos,
                             description: item.catatan,
-                            onTapArrow: () {},
+                            onTapArrow: canEdit
+                                ? () async {
+                                    final result = await Navigator.push<String>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => TambahProgressPage(
+                                          projectId: overview.id.toString(),
+                                          pageTitle: 'Edit Progress',
+                                          initialLog: item,
+                                        ),
+                                      ),
+                                    );
+
+                                    if (!context.mounted ||
+                                        result == null ||
+                                        result.isEmpty) {
+                                      return;
+                                    }
+
+                                    context.read<ProjectDetailBloc>().add(
+                                      FetchProjectDetail(
+                                        overview.id.toString(),
+                                      ),
+                                    );
+
+                                    StatusBanner.show(
+                                      context,
+                                      title: 'Progress Berhasil',
+                                      message: result,
+                                      type: StatusBannerType.success,
+                                    );
+                                  }
+                                : null,
                           );
                         },
                       ),
