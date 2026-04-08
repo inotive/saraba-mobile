@@ -11,11 +11,13 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dar
 class ProjectProgressView extends StatelessWidget {
   final ProjectOverviewDetail overview;
   final ProjectProgressSection progress;
+  final bool canEdit;
 
   const ProjectProgressView({
     super.key,
     required this.overview,
     required this.progress,
+    required this.canEdit,
   });
 
   @override
@@ -23,7 +25,7 @@ class ProjectProgressView extends StatelessWidget {
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 92),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, canEdit ? 92 : 16),
           child: Column(
             children: [
               _DateFilterField(value: _formatLongDate(DateTime.now())),
@@ -63,57 +65,60 @@ class ProjectProgressView extends StatelessWidget {
             ],
           ),
         ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 16,
-          child: SizedBox(
-            height: 58,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push<String>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TambahProgressPage(
-                      projectId: overview.id.toString(),
-                    ),
-                  ),
-                ).then((message) {
-                  if (!context.mounted || message == null || message.isEmpty) {
-                    return;
-                  }
-
-                  context.read<ProjectDetailBloc>().add(
-                    FetchProjectDetail(overview.id.toString()),
-                  );
-
-                  StatusBanner.show(
+        if (canEdit)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SizedBox(
+              height: 58,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push<String>(
                     context,
-                    title: 'Progress Berhasil',
-                    message: message,
-                    type: StatusBannerType.success,
-                  );
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF7944D),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                    MaterialPageRoute(
+                      builder: (_) => TambahProgressPage(
+                        projectId: overview.id.toString(),
+                      ),
+                    ),
+                  ).then((message) {
+                    if (!context.mounted ||
+                        message == null ||
+                        message.isEmpty) {
+                      return;
+                    }
+
+                    context.read<ProjectDetailBloc>().add(
+                      FetchProjectDetail(overview.id.toString()),
+                    );
+
+                    StatusBanner.show(
+                      context,
+                      title: 'Progress Berhasil',
+                      message: message,
+                      type: StatusBannerType.success,
+                    );
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF7944D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
                 ),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                "Tambah Progress",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  "Tambah Progress",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

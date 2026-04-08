@@ -11,11 +11,13 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.
 class DetailPengeluaranMaterialPage extends StatelessWidget {
   final String projectId;
   final String pengeluaranId;
+  final bool canEdit;
 
   const DetailPengeluaranMaterialPage({
     super.key,
     required this.projectId,
     required this.pengeluaranId,
+    required this.canEdit,
   });
 
   Future<void> _openOptions(
@@ -243,7 +245,12 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           ...draft.items.map(
                             (item) => Padding(
                               padding: const EdgeInsets.only(bottom: 14),
-                              child: SelectedMaterialItemCard(item: item, onTapEdit: () => _openOptions(context, draft)),
+                              child: SelectedMaterialItemCard(
+                                item: item,
+                                onTapEdit: canEdit
+                                    ? () => _openOptions(context, draft)
+                                    : null,
+                              ),
                             ),
                           ),
                         ],
@@ -289,41 +296,44 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: state.isDeleting
-                                ? null
-                                : () => _openOptions(context, draft),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFF7944D)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        if (canEdit)
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: state.isDeleting
+                                  ? null
+                                  : () => _openOptions(context, draft),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFFF7944D),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                minimumSize: const Size.fromHeight(50),
                               ),
-                              minimumSize: const Size.fromHeight(50),
-                            ),
-                            icon: state.isDeleting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                              icon: state.isDeleting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFFF7944D),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.more_horiz,
                                       color: Color(0xFFF7944D),
                                     ),
-                                  )
-                                : const Icon(
-                                    Icons.more_horiz,
-                                    color: Color(0xFFF7944D),
-                                  ),
-                            label: Text(
-                              state.isDeleting ? 'Menghapus...' : 'Pilihan',
-                              style: const TextStyle(
-                                color: Color(0xFFF7944D),
-                                fontWeight: FontWeight.w600,
+                              label: Text(
+                                state.isDeleting ? 'Menghapus...' : 'Pilihan',
+                                style: const TextStyle(
+                                  color: Color(0xFFF7944D),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),

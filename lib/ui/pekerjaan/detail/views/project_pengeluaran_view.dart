@@ -13,11 +13,13 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.
 class ProjectPengeluaranView extends StatelessWidget {
   final String projectId;
   final ProjectPengeluaranSection pengeluaran;
+  final bool canEdit;
 
   const ProjectPengeluaranView({
     super.key,
     required this.projectId,
     required this.pengeluaran,
+    required this.canEdit,
   });
 
   @override
@@ -31,7 +33,7 @@ class ProjectPengeluaranView extends StatelessWidget {
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, canEdit ? 80 : 16),
           child: pengeluaran.items.isEmpty
               ? const _EmptyPengeluaranState()
               : ListView.builder(
@@ -65,7 +67,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                         ...items.map(
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                            child: PengeluaranItemCard(
+                          child: PengeluaranItemCard(
                               code: _buildCardCode(item.kategori),
                               title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
@@ -79,7 +81,12 @@ class ProjectPengeluaranView extends StatelessWidget {
                                 item,
                               ),
                               iconAsset: _buildCardIconAsset(item.kategori),
-                              onTap: _buildOnTap(context, projectId, item),
+                              onTap: _buildOnTap(
+                                context,
+                                projectId,
+                                item,
+                                canEdit,
+                              ),
                             ),
                           ),
                         ),
@@ -90,71 +97,72 @@ class ProjectPengeluaranView extends StatelessWidget {
                 ),
         ),
 
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 16,
-          child: SizedBox(
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                showModalBottomSheet<PengeluaranCategory>(
-                  context: context,
-                  backgroundColor: const Color(0xFFFAFAFA),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24),
+        if (canEdit)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showModalBottomSheet<PengeluaranCategory>(
+                    context: context,
+                    backgroundColor: const Color(0xFFFAFAFA),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
                     ),
-                  ),
-                  builder: (_) => const PengeluaranCategorySheet(),
-                ).then((category) async {
-                  if (!context.mounted || category == null) {
-                    return;
-                  }
+                    builder: (_) => const PengeluaranCategorySheet(),
+                  ).then((category) async {
+                    if (!context.mounted || category == null) {
+                      return;
+                    }
 
-                  final result =
-                      await Navigator.push<PengeluaranMaterialFlowResult>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TambahPengeluaranPage(
-                            projectId: projectId,
-                            category: category,
+                    final result =
+                        await Navigator.push<PengeluaranMaterialFlowResult>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TambahPengeluaranPage(
+                              projectId: projectId,
+                              category: category,
+                            ),
                           ),
-                        ),
-                      );
+                        );
 
-                  if (!context.mounted || result == null) {
-                    return;
-                  }
+                    if (!context.mounted || result == null) {
+                      return;
+                    }
 
-                  context.read<ProjectDetailBloc>().add(
-                    FetchProjectDetail(projectId),
-                  );
-                  StatusBanner.show(
-                    context,
-                    title: result.title,
-                    message: result.message,
-                    type: StatusBannerType.success,
-                  );
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF7944D),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                    context.read<ProjectDetailBloc>().add(
+                      FetchProjectDetail(projectId),
+                    );
+                    StatusBanner.show(
+                      context,
+                      title: result.title,
+                      message: result.message,
+                      type: StatusBannerType.success,
+                    );
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF7944D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-              ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                "Tambah Pengeluaran",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  "Tambah Pengeluaran",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -213,6 +221,7 @@ Future<void> Function()? _buildOnTap(
   BuildContext context,
   String projectId,
   ProjectPengeluaranItem item,
+  bool canEdit,
 ) {
   final category = item.kategori.toLowerCase();
 
@@ -224,6 +233,7 @@ Future<void> Function()? _buildOnTap(
           builder: (_) => DetailPengeluaranMaterialPage(
             projectId: projectId,
             pengeluaranId: item.id.toString(),
+            canEdit: canEdit,
           ),
         ),
       );
@@ -251,6 +261,7 @@ Future<void> Function()? _buildOnTap(
             projectId: projectId,
             pengeluaranId: item.id.toString(),
             category: PengeluaranCategory.operasional,
+            canEdit: canEdit,
           ),
         ),
       );
@@ -278,6 +289,7 @@ Future<void> Function()? _buildOnTap(
             projectId: projectId,
             pengeluaranId: item.id.toString(),
             category: PengeluaranCategory.pettyCash,
+            canEdit: canEdit,
           ),
         ),
       );
