@@ -28,6 +28,7 @@ class SubmittedProgressLog {
   final String tanggal;
   final int jumlahTukang;
   final String catatan;
+  final List<SubmittedProgressPhoto> fotos;
   final SubmittedProgressUser? user;
   final String createdAt;
   final String updatedAt;
@@ -39,6 +40,7 @@ class SubmittedProgressLog {
     required this.tanggal,
     required this.jumlahTukang,
     required this.catatan,
+    required this.fotos,
     required this.user,
     required this.createdAt,
     required this.updatedAt,
@@ -52,11 +54,38 @@ class SubmittedProgressLog {
       tanggal: json['tanggal']?.toString() ?? '',
       jumlahTukang: _parseInt(json['jumlah_tukang']),
       catatan: json['catatan']?.toString() ?? '',
+      fotos: (json['fotos'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(SubmittedProgressPhoto.fromJson)
+          .toList(),
       user: json['user'] is Map<String, dynamic>
           ? SubmittedProgressUser.fromJson(json['user'] as Map<String, dynamic>)
           : null,
       createdAt: json['created_at']?.toString() ?? '',
       updatedAt: json['updated_at']?.toString() ?? '',
+    );
+  }
+}
+
+class SubmittedProgressPhoto {
+  final int id;
+  final String fotoPath;
+  final String fotoUrl;
+  final String keterangan;
+
+  SubmittedProgressPhoto({
+    required this.id,
+    required this.fotoPath,
+    required this.fotoUrl,
+    required this.keterangan,
+  });
+
+  factory SubmittedProgressPhoto.fromJson(Map<String, dynamic> json) {
+    return SubmittedProgressPhoto(
+      id: _parseInt(json['id']),
+      fotoPath: json['foto_path']?.toString() ?? '',
+      fotoUrl: json['foto_url']?.toString() ?? '',
+      keterangan: json['keterangan']?.toString() ?? '',
     );
   }
 }

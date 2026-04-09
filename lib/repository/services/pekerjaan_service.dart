@@ -168,6 +168,7 @@ class PekerjaanService {
         MapEntry('tanggal', tanggal),
         MapEntry('catatan', catatan),
         MapEntry('jumlah_tukang', jumlahTukang.toString()),
+        if (logId != null && logId.isNotEmpty) const MapEntry('_method', 'PUT'),
       ]);
 
       for (final path in fotoPaths) {
@@ -188,7 +189,7 @@ class PekerjaanService {
       final response = await dio.request(
         endpoint,
         options: Options(
-          method: logId == null || logId.isEmpty ? 'POST' : 'PUT',
+          method: 'POST',
           headers: {
             'Authorization': token ?? '',
             'Accept': 'application/json',
