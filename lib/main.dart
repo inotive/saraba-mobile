@@ -7,12 +7,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:saraba_mobile/core/debug/alice_debug.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:saraba_mobile/ui/common/debug/debug_log_page.dart';
 import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
@@ -46,7 +46,6 @@ class _MyAppState extends State<MyApp> {
   final GlobalKey<NavigatorState> _navigatorKey = AliceDebug.navigatorKey;
   StreamSubscription<AccelerometerEvent>? _shakeSubscription;
   DateTime? _lastShakeAt;
-  bool _isLogPageOpen = false;
 
   @override
   void initState() {
@@ -81,53 +80,39 @@ class _MyAppState extends State<MyApp> {
       }
 
       _lastShakeAt = now;
-      _openDebugLogs();
+      _openAliceInspector();
     });
   }
 
   bool get _isShakeLoggingEnabled => !kReleaseMode || _enableShakeLogsInRelease;
 
-  void _openDebugLogs() {
-    if (_isLogPageOpen) {
-      return;
-    }
-
-    final navigator = _navigatorKey.currentState;
-    if (navigator == null) {
-      return;
-    }
-
-    _isLogPageOpen = true;
-    navigator
-        .push(
-          MaterialPageRoute<void>(
-            builder: (_) => const DebugLogPage(),
-          ),
-        )
-        .whenComplete(() {
-          _isLogPageOpen = false;
-        });
+  void _openAliceInspector() {
+    AliceDebug.showInspector();
   }
 
   @override
   Widget build(BuildContext context) {
+    final app = MaterialApp(
+      navigatorKey: _navigatorKey,
+      title: 'Saraba Mobile',
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFF7944D),
+        ),
+      ),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+      home: const AuthWrapper(),
+    );
+
     return MultiBlocProvider(
       providers: [BlocProvider(create: (_) => AuthBloc(AuthService()))],
-      child: MaterialApp(
-        navigatorKey: _navigatorKey,
-        title: 'Saraba Mobile',
-        theme: ThemeData(
-          scaffoldBackgroundColor: const Color(0xFFFAFAFA),
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF7944D)),
-        ),
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
-        home: const AuthWrapper(),
-      ),
+      child: AliceDebug.isEnabled ? OverlaySupport.global(child: app) : app,
     );
   }
 }
