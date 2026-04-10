@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:saraba_mobile/core/debug/alice_debug.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_item_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
@@ -42,7 +43,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _navigatorKey = AliceDebug.navigatorKey;
   StreamSubscription<AccelerometerEvent>? _shakeSubscription;
   DateTime? _lastShakeAt;
   bool _isLogPageOpen = false;

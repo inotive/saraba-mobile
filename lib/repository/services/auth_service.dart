@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
+import 'package:saraba_mobile/core/debug/alice_debug.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/login_response_model.dart';
 import 'package:saraba_mobile/repository/model/mock/auth_service_mock.dart';
@@ -13,13 +14,15 @@ class AuthService {
 
   late final Dio _dio = _buildDio(
     BaseOptions(
-      baseUrl: "https://saraba.inotivedev.com/api/v1",
+      baseUrl: "https://sarabakawabonding.id/api/v1",
       headers: {"Accept": "application/json"},
     ),
   );
 
   Dio _buildDio(BaseOptions options) {
     final dio = Dio(options);
+
+    AliceDebug.attachToDio(dio);
 
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -167,7 +170,7 @@ class AuthService {
 
     return _buildDio(
       BaseOptions(
-        baseUrl: "https://saraba.inotivedev.com/api/v1",
+        baseUrl: "https://sarabakawabonding.id/api/v1",
         headers: {"Authorization": token ?? "", "Accept": "application/json"},
       ),
     );

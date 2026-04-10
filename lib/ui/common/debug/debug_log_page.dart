@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/core/debug/alice_debug.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 
 class DebugLogPage extends StatelessWidget {
@@ -16,6 +17,12 @@ class DebugLogPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          if (AliceDebug.isEnabled)
+            IconButton(
+              onPressed: AliceDebug.showInspector,
+              icon: const Icon(Icons.travel_explore_rounded),
+              tooltip: 'Alice',
+            ),
           IconButton(
             onPressed: () async {
               await Clipboard.setData(

@@ -1,5 +1,6 @@
 import 'package:saraba_mobile/repository/model/absensi/absensi_detail_response_model.dart';
 import 'package:dio/dio.dart';
+import 'package:saraba_mobile/core/debug/alice_debug.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/history_absensi_model.dart';
 import 'package:saraba_mobile/repository/model/mock/absensi_service_mock.dart';
@@ -17,10 +18,12 @@ class AbsensiService {
   Dio _buildDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: "https://saraba.inotivedev.com/api/v1",
+        baseUrl: "https://sarabakawabonding.id/api/v1",
         headers: {"Accept": "application/json"},
       ),
     );
+
+    AliceDebug.attachToDio(dio);
 
     dio.interceptors.add(
       InterceptorsWrapper(

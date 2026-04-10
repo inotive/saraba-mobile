@@ -42,6 +42,7 @@ dependencies:
   device_info_plus: ^11.2.1
   flutter_launcher_icons: ^0.13.1
   flutter_native_splash: ^2.4.1
+  flutter_alice: ^2.0.1
  
 dev_dependencies:
   flutter_test:
