@@ -68,17 +68,14 @@ class ProjectPengeluaranView extends StatelessWidget {
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                           child: PengeluaranItemCard(
-                              code: _buildCardCode(item.kategori),
+                              code: _buildCardCode(item),
                               title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
-                              summaryLabel: _buildPrimaryLabel(item.kategori),
-                              summaryValue: _buildPrimaryValue(item),
-                              secondaryLabel: _buildSecondaryLabel(
-                                item.kategori,
-                              ),
+                              summaryLabel: _buildPrimaryLabel(),
+                              summaryValue: _buildPrimaryValue(pengeluaran),
+                              secondaryLabel: _buildSecondaryLabel(),
                               secondaryValue: _buildSecondaryValue(
-                                item.kategori,
-                                item,
+                                pengeluaran,
                               ),
                               iconAsset: _buildCardIconAsset(item.kategori),
                               onTap: _buildOnTap(
@@ -168,15 +165,16 @@ class ProjectPengeluaranView extends StatelessWidget {
   }
 }
 
-String _buildCardCode(String kategori) {
+String _buildCardCode(ProjectPengeluaranItem item) {
+  final kategori = item.kategori;
   final normalized = kategori.toLowerCase();
   if (normalized.contains('material')) {
-    return 'MAT-001';
+    return 'MAT-${item.id}';
   }
   if (normalized.contains('petty')) {
-    return 'PC-001';
+    return 'PC-${item.id}';
   }
-  return 'OPR-001';
+  return 'OPR-${item.id}';
 }
 
 String _buildCardTitle(String kategori) {
@@ -201,20 +199,20 @@ String _buildCardIconAsset(String kategori) {
   return 'assets/icons/ic_pengeluaran_operasional.png';
 }
 
-String _buildPrimaryLabel(String kategori) {
+String _buildPrimaryLabel() {
+  return 'Total Item';
+}
+
+String _buildPrimaryValue(ProjectPengeluaranSection pengeluaran) {
+  return '${pengeluaran.items.length}';
+}
+
+String _buildSecondaryLabel() {
   return 'Jumlah Biaya';
 }
 
-String _buildPrimaryValue(ProjectPengeluaranItem item) {
-  return _formatCurrency(item.jumlah);
-}
-
-String? _buildSecondaryLabel(String kategori) {
-  return null;
-}
-
-String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
-  return null;
+String _buildSecondaryValue(ProjectPengeluaranSection pengeluaran) {
+  return _formatCurrency(pengeluaran.totalPengeluaran.toString());
 }
 
 Future<void> Function()? _buildOnTap(

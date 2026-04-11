@@ -65,7 +65,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
       builder: (context, state) {
         return Column(
           children: [
-            _headerSection(state),
+            _headerSection(context, state),
             const SizedBox(height: 16),
             _periodeSection(context, state),
             const SizedBox(height: 12),
@@ -76,7 +76,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
     );
   }
 
-  Widget _headerSection(AbsensiState state) {
+  Widget _headerSection(BuildContext context, AbsensiState state) {
     final todayData = state.todayData;
     final absensi = todayData?.absensi;
 
@@ -107,19 +107,25 @@ class _AbsensiViewState extends State<_AbsensiView> {
                     children: [
                       BlocBuilder<ProfileBloc, ProfileState>(
                         builder: (context, profile) {
-                          return _buildProfileAvatar(profile);
+                          return Row(
+                            children: [
+                              _buildProfileAvatar(profile),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(profile.displayName),
+                                  Text(
+                                    profile.displayRole,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
                         },
-                      ),
-                      const SizedBox(width: 12),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Jadwal Kerja"),
-                          Text(
-                            "5 Hari Kerja",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
                       ),
                     ],
                   ),
