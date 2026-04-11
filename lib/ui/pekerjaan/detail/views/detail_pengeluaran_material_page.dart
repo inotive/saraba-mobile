@@ -11,12 +11,14 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.
 class DetailPengeluaranMaterialPage extends StatelessWidget {
   final String projectId;
   final String pengeluaranId;
+  final String categoryLabel;
   final bool canEdit;
 
   const DetailPengeluaranMaterialPage({
     super.key,
     required this.projectId,
     required this.pengeluaranId,
+    required this.categoryLabel,
     required this.canEdit,
   });
 
@@ -189,7 +191,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  const _DetailHeader(),
+                  _DetailHeader(categoryLabel: categoryLabel),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -200,7 +202,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           _DetailValue(draft.materialCode),
                           const SizedBox(height: 18),
-                          const _DetailLabel('Tanggal Pengeluaran'),
+                          const _DetailLabel('Tanggal Transaksi'),
                           const SizedBox(height: 4),
                           _DetailValue(
                             DateFormat(
@@ -467,7 +469,9 @@ class _OptionTile extends StatelessWidget {
 }
 
 class _DetailHeader extends StatelessWidget {
-  const _DetailHeader();
+  final String categoryLabel;
+
+  const _DetailHeader({required this.categoryLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -479,9 +483,9 @@ class _DetailHeader extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Detail Pengeluaran Material',
+              'Detail Transaksi $categoryLabel',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

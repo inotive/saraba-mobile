@@ -216,7 +216,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           _DetailValue(draft.operasionalName),
                           const SizedBox(height: 18),
-                          const _DetailLabel('Tanggal Pengeluaran'),
+                          const _DetailLabel('Tanggal Transaksi'),
                           const SizedBox(height: 4),
                           _DetailValue(
                             DateFormat(
@@ -492,7 +492,7 @@ class _DetailOperasionalHeader extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Detail Pengeluaran $categoryLabel',
+              'Detail Transaksi $categoryLabel',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

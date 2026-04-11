@@ -231,6 +231,9 @@ Future<void> Function()? _buildOnTap(
           builder: (_) => DetailPengeluaranMaterialPage(
             projectId: projectId,
             pengeluaranId: item.id.toString(),
+            categoryLabel: item.kategoriLabel.isNotEmpty
+                ? item.kategoriLabel
+                : _buildCardTitle(item.kategori),
             canEdit: canEdit,
           ),
         ),
