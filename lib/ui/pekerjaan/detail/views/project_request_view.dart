@@ -7,8 +7,13 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
 class ProjectRequestView extends StatefulWidget {
   final String projectId;
+  final bool canEdit;
 
-  const ProjectRequestView({super.key, required this.projectId});
+  const ProjectRequestView({
+    super.key,
+    required this.projectId,
+    this.canEdit = true,
+  });
 
   @override
   State<ProjectRequestView> createState() => _ProjectRequestViewState();
@@ -308,41 +313,44 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
                     final item = _requests[index];
                     return _RequestCard(
                       item: item,
-                      onEdit: item.status == RequestStatus.pending
+                      onEdit: widget.canEdit &&
+                              item.status == RequestStatus.pending
                           ? () => _openEditRequest(item)
                           : null,
-                      onDelete: item.status == RequestStatus.pending
+                      onDelete: widget.canEdit &&
+                              item.status == RequestStatus.pending
                           ? () => _deleteRequest(item)
                           : null,
                     );
                   },
                 ),
         ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 16,
-          child: SizedBox(
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: _openCreateRequest,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF7944D),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+        if (widget.canEdit)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _openCreateRequest,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF7944D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-              ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Tambah Request',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'Tambah Request',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
