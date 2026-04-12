@@ -198,9 +198,9 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _DetailLabel('Nama Material'),
+                          const _DetailLabel('Nomor Transaksi'),
                           const SizedBox(height: 4),
-                          _DetailValue(draft.materialCode),
+                          _DetailValue(detail.nomorTransaksi),
                           const SizedBox(height: 18),
                           const _DetailLabel('Tanggal Transaksi'),
                           const SizedBox(height: 4),

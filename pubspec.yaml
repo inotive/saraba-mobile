@@ -44,6 +44,7 @@ dependencies:
   flutter_native_splash: ^2.4.1
   flutter_alice: ^2.0.1
   overlay_support: ^2.1.0
+  pdfrx: ^2.2.24
  
 dev_dependencies:
   flutter_test:
