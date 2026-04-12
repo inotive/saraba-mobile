@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
@@ -435,6 +436,7 @@ class PekerjaanService {
 
   Future<SubmitPengeluaranResponse?> submitPengeluaran({
     required String projectId,
+    String? pengeluaranId,
     required String kategori,
     required String tanggal,
     required String catatan,
@@ -450,25 +452,49 @@ class PekerjaanService {
         MapEntry('catatan', catatan),
       ]);
 
-      for (var index = 0; index < items.length; index++) {
-        final item = items[index];
-        formData.fields.addAll([
-          MapEntry('items[$index][name]', item.nama),
-          MapEntry('items[$index][jumlah]', item.jumlah.toString()),
-          MapEntry('items[$index][nominal]', item.nominal.toString()),
-        ]);
+      if (pengeluaranId == null) {
+        for (var index = 0; index < items.length; index++) {
+          final item = items[index];
+          formData.fields.addAll([
+            MapEntry('items[$index][name]', item.nama),
+            MapEntry('items[$index][jumlah]', item.jumlah.toString()),
+            MapEntry('items[$index][nominal]', item.nominal.toString()),
+          ]);
+        }
+      } else {
+        formData.fields.add(
+          MapEntry(
+            'items',
+            jsonEncode(
+              items
+                  .map(
+                    (item) => {
+                      'name': item.nama,
+                      'jumlah': item.jumlah,
+                      'nominal': item.nominal,
+                    },
+                  )
+                  .toList(),
+            ),
+          ),
+        );
       }
 
       for (final path in lampiranPaths) {
         formData.files.add(
-          MapEntry('lampiran[]', await MultipartFile.fromFile(path)),
+          MapEntry(
+            pengeluaranId == null ? 'lampiran[]' : 'lampiran',
+            await MultipartFile.fromFile(path),
+          ),
         );
       }
 
-      final response = await dio.post(
-        '/proyeks/$projectId/pengeluaran',
-        data: formData,
-      );
+      final response = pengeluaranId == null
+          ? await dio.post('/proyeks/$projectId/pengeluaran', data: formData)
+          : await dio.put(
+              '/proyeks/$projectId/pengeluaran/$pengeluaranId',
+              data: formData,
+            );
 
       _logger.response(response);
 

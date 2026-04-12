@@ -308,6 +308,7 @@ class PengeluaranMaterialFlowResult {
 
 class TambahPengeluaranPage extends StatefulWidget {
   final String? projectId;
+  final String? pengeluaranId;
   final PengeluaranCategory category;
   final String pageTitle;
   final MaterialPengeluaranDraft? initialDraft;
@@ -317,6 +318,7 @@ class TambahPengeluaranPage extends StatefulWidget {
   const TambahPengeluaranPage({
     super.key,
     this.projectId,
+    this.pengeluaranId,
     required this.category,
     this.pageTitle = 'Tambah Pengeluaran',
     this.initialDraft,
@@ -472,7 +474,30 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (_isEditMode || widget.projectId == null) {
-      Navigator.pop(context, widget.successResult);
+      if (widget.projectId == null || widget.pengeluaranId == null) {
+        Navigator.pop(context, widget.successResult);
+        return;
+      }
+
+      _submitBloc.add(
+        SubmitPengeluaranRequested(
+          projectId: widget.projectId!,
+          pengeluaranId: widget.pengeluaranId,
+          kategori: 'material',
+          tanggal: _buildSubmitDate(_selectedDate),
+          catatan: _catatanController.text.trim(),
+          lampiranPaths: _collectUploadPaths(_selectedImages),
+          items: _selectedItems
+              .map(
+                (item) => PengeluaranSubmissionPayload(
+                  nama: item.name,
+                  jumlah: item.quantity,
+                  nominal: item.total,
+                ),
+              )
+              .toList(),
+        ),
+      );
       return;
     }
 
@@ -578,7 +603,28 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (_isEditMode || widget.projectId == null) {
-      Navigator.pop(context, widget.successResult);
+      if (widget.projectId == null || widget.pengeluaranId == null) {
+        Navigator.pop(context, widget.successResult);
+        return;
+      }
+
+      _submitBloc.add(
+        SubmitPengeluaranRequested(
+          projectId: widget.projectId!,
+          pengeluaranId: widget.pengeluaranId,
+          kategori: _buildSubmitCategory(),
+          tanggal: _buildSubmitDate(_selectedDate),
+          catatan: _buildSimpleExpenseCatatan(),
+          lampiranPaths: _collectOperasionalAttachmentPaths(),
+          items: _operasionalItems.map((item) {
+            return PengeluaranSubmissionPayload(
+              nama: item.name,
+              jumlah: 1,
+              nominal: item.amount,
+            );
+          }).toList(),
+        ),
+      );
       return;
     }
 

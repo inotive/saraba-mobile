@@ -56,6 +56,8 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => TambahPengeluaranPage(
+          projectId: projectId,
+          pengeluaranId: pengeluaranId,
           category: PengeluaranCategory.material,
           pageTitle: 'Edit Pengeluaran',
           initialDraft: draft,
