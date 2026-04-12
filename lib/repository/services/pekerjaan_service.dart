@@ -103,6 +103,32 @@ class PekerjaanService {
     return null;
   }
 
+  Future<SubmitProgressResponse?> fetchProgressLogDetail({
+    required String projectId,
+    required String logId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/proyeks/$projectId/progress-logs/$logId',
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Progress detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading progress detail: $e');
+    }
+
+    return null;
+  }
+
   Future<ProjectRequestResponse?> fetchProjectRequests(String projectId) async {
     try {
       final dio = await AuthService().getAuthDio();

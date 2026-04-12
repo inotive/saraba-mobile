@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
 
-class ProgressDetailPage extends StatelessWidget {
+class ProgressDetailPage extends StatefulWidget {
   final String projectId;
   final ProjectProgressLog log;
   final bool canEdit;
@@ -17,7 +18,65 @@ class ProgressDetailPage extends StatelessWidget {
   });
 
   @override
+  State<ProgressDetailPage> createState() => _ProgressDetailPageState();
+}
+
+class _ProgressDetailPageState extends State<ProgressDetailPage> {
+  final PekerjaanService _service = PekerjaanService();
+  SubmittedProgressLog? _detail;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final response = await _service.fetchProgressLogDetail(
+      projectId: widget.projectId,
+      logId: widget.log.id.toString(),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null || response.success != true || response.data == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = response?.message.isNotEmpty == true
+            ? response!.message
+            : 'Gagal memuat detail progress';
+      });
+      return;
+    }
+
+    setState(() {
+      _detail = response.data;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final detail = _detail;
+    final displayPhotos = detail?.fotos.map((item) => item.fotoUrl).toList() ??
+        widget.log.fotos;
+    final displayJudul = detail?.judul ?? widget.log.judul;
+    final displayProgress =
+        detail?.progressPersen.toString() ?? widget.log.progressPersen;
+    final displayTanggal = detail?.tanggal ?? widget.log.tanggal;
+    final displayJumlahTukang =
+        detail?.jumlahTukang.toString() ?? widget.log.jumlahTukang?.toString() ?? '-';
+    final displayCatatan = detail?.catatan ?? widget.log.catatan;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
@@ -25,98 +84,122 @@ class ProgressDetailPage extends StatelessWidget {
           children: [
             const _DetailProgressHeader(title: 'Detail Progress'),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: Column(
-                  children: [
-                    if (log.fotos.isNotEmpty) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: SizedBox(
-                          height: 92,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: log.fotos.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(width: 8),
-                            itemBuilder: (context, index) {
-                              return _DetailProgressPhotoTile(
-                                imageUrl: log.fotos[index],
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => _ProgressPhotoViewerPage(
-                                        images: log.fotos,
-                                        initialIndex: index,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_errorMessage!, textAlign: TextAlign.center),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _loadDetail,
+                              child: const Text('Muat Ulang'),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _DetailFieldLabel('Judul Progress'),
-                          const SizedBox(height: 8),
-                          _ReadOnlyField(value: log.judul),
-                          const SizedBox(height: 16),
-                          const _DetailFieldLabel('Input % Progress'),
-                          const SizedBox(height: 8),
-                          _ReadOnlySuffixField(
-                            value: log.progressPersen,
-                            suffixText: '%',
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Maksimal 100%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF6B7280),
+                          if (displayPhotos.isNotEmpty) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(0xFFE5E7EB),
+                                ),
+                              ),
+                              child: SizedBox(
+                                height: 92,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: displayPhotos.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(width: 8),
+                                  itemBuilder: (context, index) {
+                                    return _DetailProgressPhotoTile(
+                                      imageUrl: displayPhotos[index],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                _ProgressPhotoViewerPage(
+                                                  images: displayPhotos,
+                                                  initialIndex: index,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const _DetailFieldLabel('Judul Progress'),
+                                const SizedBox(height: 8),
+                                _ReadOnlyField(value: displayJudul),
+                                const SizedBox(height: 16),
+                                const _DetailFieldLabel('Input % Progress'),
+                                const SizedBox(height: 8),
+                                _ReadOnlySuffixField(
+                                  value: displayProgress,
+                                  suffixText: '%',
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Maksimal 100%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const _DetailFieldLabel('Tanggal'),
+                                const SizedBox(height: 8),
+                                _ReadOnlyDateField(
+                                  value: _formatDetailDate(displayTanggal),
+                                ),
+                                const SizedBox(height: 16),
+                                const _DetailFieldLabel('Jumlah Tukang'),
+                                const SizedBox(height: 8),
+                                _ReadOnlyField(value: displayJumlahTukang),
+                                const SizedBox(height: 16),
+                                const _DetailFieldLabel('Catatan'),
+                                const SizedBox(height: 8),
+                                _ReadOnlyNotesField(value: displayCatatan),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const _DetailFieldLabel('Tanggal'),
-                          const SizedBox(height: 8),
-                          _ReadOnlyDateField(value: _formatDetailDate(log.tanggal)),
-                          const SizedBox(height: 16),
-                          const _DetailFieldLabel('Jumlah Tukang'),
-                          const SizedBox(height: 8),
-                          _ReadOnlyField(
-                            value: log.jumlahTukang?.toString() ?? '-',
-                          ),
-                          const SizedBox(height: 16),
-                          const _DetailFieldLabel('Catatan'),
-                          const SizedBox(height: 8),
-                          _ReadOnlyNotesField(value: log.catatan),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
             ),
-            if (canEdit)
+            if (widget.canEdit && _errorMessage == null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: SizedBox(
@@ -171,9 +254,9 @@ class ProgressDetailPage extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (_) => TambahProgressPage(
-            projectId: projectId,
+            projectId: widget.projectId,
             pageTitle: 'Edit Progress',
-            initialLog: log,
+            initialLog: _buildEditableLog(),
           ),
         ),
       );
@@ -204,8 +287,8 @@ class ProgressDetailPage extends StatelessWidget {
     );
 
     final result = await PekerjaanService().deleteProgressLog(
-      projectId: projectId,
-      logId: log.id.toString(),
+      projectId: widget.projectId,
+      logId: widget.log.id.toString(),
     );
 
     if (context.mounted) {
@@ -238,6 +321,31 @@ class ProgressDetailPage extends StatelessWidget {
             : 'Gagal menghapus progress',
         isSuccess: false,
       ),
+    );
+  }
+
+  ProjectProgressLog _buildEditableLog() {
+    final detail = _detail;
+    if (detail == null) {
+      return widget.log;
+    }
+
+    return ProjectProgressLog(
+      id: detail.id,
+      judul: detail.judul,
+      progressPersen: detail.progressPersen.toString(),
+      tanggal: detail.tanggal,
+      jumlahTukang: detail.jumlahTukang,
+      catatan: detail.catatan,
+      fotos: detail.fotos
+          .map((foto) => foto.fotoUrl)
+          .where((url) => url.isNotEmpty)
+          .toList(),
+      user: ProjectUserSummary(
+        id: detail.user?.id ?? widget.log.user.id,
+        name: detail.user?.name ?? widget.log.user.name,
+      ),
+      createdAt: detail.createdAt,
     );
   }
 }
