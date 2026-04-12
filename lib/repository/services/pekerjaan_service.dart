@@ -6,6 +6,7 @@ import 'package:saraba_mobile/repository/model/project/project_detail_response_m
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_pengeluaran_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
@@ -94,6 +95,45 @@ class PekerjaanService {
       _logger.error('Project request list request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading project requests: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestSubmitResponse?> submitProjectRequest({
+    required String projectId,
+    required String tanggalPermintaan,
+    required String deskripsi,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.post(
+        '/proyeks/$projectId/permintaans',
+        data: {
+          'tanggal_permintaan': tanggalPermintaan,
+          'deskripsi': deskripsi,
+        },
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Submit project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while submitting project request: $e');
     }
 
     return null;

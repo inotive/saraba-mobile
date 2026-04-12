@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
 class ProjectRequestView extends StatefulWidget {
   final String projectId;
@@ -60,22 +62,44 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
       return;
     }
 
-    setState(() {
-      _requests.insert(
-        0,
-        ProjectRequestItem(
-          id: _buildNextRequestId(),
-          createdBy: 'Lily Karmila',
-          requestDate: result.requestDate,
-          status: RequestStatus.pending,
-          requestText: result.requestText,
-        ),
+    final response = await _service.submitProjectRequest(
+      projectId: widget.projectId,
+      tanggalPermintaan: DateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      ).format(result.requestDate),
+      deskripsi: result.requestText,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null || response.success != true || response.data == null) {
+      StatusBanner.show(
+        context,
+        title: 'Request Gagal',
+        message: response?.message.isNotEmpty == true
+            ? response!.message
+            : 'Gagal mengirim request proyek',
+        type: StatusBannerType.error,
       );
+      return;
+    }
+
+    setState(() {
+      _requests.insert(0, _mapSubmittedRequestItem(response.data!));
     });
+
+    StatusBanner.show(
+      context,
+      title: 'Request Berhasil',
+      message: response.message,
+      type: StatusBannerType.success,
+    );
   }
 
   Future<void> _openEditRequest(ProjectRequestItem item) async {
-    final result = await Navigator.push<ProjectRequestFormResult>(
+    await Navigator.push<ProjectRequestFormResult>(
       context,
       MaterialPageRoute(
         builder: (_) => RequestFormPage(
@@ -86,22 +110,6 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
         ),
       ),
     );
-
-    if (!mounted || result == null) {
-      return;
-    }
-
-    final index = _requests.indexWhere((request) => request.id == item.id);
-    if (index == -1) {
-      return;
-    }
-
-    setState(() {
-      _requests[index] = item.copyWith(
-        requestDate: result.requestDate,
-        requestText: result.requestText,
-      );
-    });
   }
 
   Future<void> _deleteRequest(ProjectRequestItem item) async {
@@ -137,14 +145,17 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     });
   }
 
-  String _buildNextRequestId() {
-    final now = DateTime.now();
-    final datePrefix = DateFormat('yyyyMMdd').format(now);
-    final nextNumber = _requests.length + 1;
-    return '$datePrefix${nextNumber.toString().padLeft(3, '0')}';
+  ProjectRequestItem _mapRequestItem(ProjectRequestData item) {
+    return ProjectRequestItem(
+      id: item.id.toString(),
+      createdBy: '-',
+      requestDate: _parseRequestDate(item.tanggalPermintaan) ?? DateTime.now(),
+      status: _mapRequestStatus(item.status),
+      requestText: item.deskripsi,
+    );
   }
 
-  ProjectRequestItem _mapRequestItem(ProjectRequestData item) {
+  ProjectRequestItem _mapSubmittedRequestItem(ProjectRequestSubmitData item) {
     return ProjectRequestItem(
       id: item.id.toString(),
       createdBy: '-',
