@@ -92,7 +92,6 @@ class ProjectDetailPage extends StatelessWidget {
                               ),
                               ProjectPengeluaranView(
                                 projectId: projectId,
-                                pengeluaran: detail.pengeluaran,
                                 canEdit:
                                     !_isProjectFinished(detail.overview.status),
                               ),
