@@ -5,6 +5,7 @@ import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_pengeluaran_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
@@ -74,6 +75,25 @@ class PekerjaanService {
       _logger.error('Pengeluaran detail request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading pengeluaran detail: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestResponse?> fetchProjectRequests(String projectId) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get('/proyeks/$projectId/permintaans');
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return ProjectRequestResponse.fromJson(response.data);
+      }
+
+      _logger.error('Project request list request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading project requests: $e');
     }
 
     return null;

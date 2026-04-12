@@ -96,7 +96,7 @@ class ProjectDetailPage extends StatelessWidget {
                                 canEdit:
                                     !_isProjectFinished(detail.overview.status),
                               ),
-                              const ProjectRequestView(),
+                              ProjectRequestView(projectId: projectId),
                             ],
                           );
                         },

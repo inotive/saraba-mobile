@@ -1,55 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 
 class ProjectRequestView extends StatefulWidget {
-  const ProjectRequestView({super.key});
+  final String projectId;
+
+  const ProjectRequestView({super.key, required this.projectId});
 
   @override
   State<ProjectRequestView> createState() => _ProjectRequestViewState();
 }
 
 class _ProjectRequestViewState extends State<ProjectRequestView> {
-  late final List<ProjectRequestItem> _requests = [
-    ProjectRequestItem(
-      id: '20260410001',
-      createdBy: 'Lily Karmila',
-      requestDate: DateTime(2026, 4, 10),
-      status: RequestStatus.pending,
-      requestText:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n'
-          'Suspendisse iaculis augue massa, eu fringilla ex tempor eu.\n'
-          'Aenean a nulla efficitur, efficitur ante ac.',
-    ),
-    ProjectRequestItem(
-      id: '20260410002',
-      createdBy: 'Lily Karmila',
-      requestDate: DateTime(2026, 4, 10),
-      status: RequestStatus.processed,
-      requestText:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n'
-          'Suspendisse iaculis augue massa, eu fringilla ex tempor eu.\n'
-          'Aenean a nulla efficitur, efficitur ante ac.',
-    ),
-    ProjectRequestItem(
-      id: '20260410003',
-      createdBy: 'Lily Karmila',
-      requestDate: DateTime(2026, 4, 10),
-      status: RequestStatus.done,
-      requestText:
-          '- Lorem ipsum dolor sit amet,\n'
-          '- consectetur adipiscing elit.\n'
-          '- Suspendisse iaculis augue massa,\n'
-          '- eu fringilla ex tempor eu.\n'
-          '- Aenean a nulla efficitur,\n'
-          '  efficitur ante ac.\n'
-          '- Lorem ipsum dolor sit amet,\n'
-          '- consectetur adipiscing elit.\n'
-          '- Suspendisse iaculis augue massa,\n'
-          '- eu fringilla ex tempor eu.\n'
-          '- Aenean a nulla efficitur,\n'
-          '  efficitur ante ac.',
-    ),
-  ];
+  final PekerjaanService _service = PekerjaanService();
+  List<ProjectRequestItem> _requests = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRequests();
+  }
+
+  Future<void> _loadRequests() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final response = await _service.fetchProjectRequests(widget.projectId);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Gagal memuat request proyek';
+      });
+      return;
+    }
+
+    setState(() {
+      _requests = response.data.map(_mapRequestItem).toList();
+      _isLoading = false;
+    });
+  }
 
   Future<void> _openCreateRequest() async {
     final result = await Navigator.push<ProjectRequestFormResult>(
@@ -145,39 +144,92 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     return '$datePrefix${nextNumber.toString().padLeft(3, '0')}';
   }
 
+  ProjectRequestItem _mapRequestItem(ProjectRequestData item) {
+    return ProjectRequestItem(
+      id: item.id.toString(),
+      createdBy: '-',
+      requestDate: _parseRequestDate(item.tanggalPermintaan) ?? DateTime.now(),
+      status: _mapRequestStatus(item.status),
+      requestText: item.deskripsi,
+    );
+  }
+
+  DateTime? _parseRequestDate(String value) {
+    if (value.isEmpty) {
+      return null;
+    }
+
+    try {
+      return DateFormat('dd/MM/yyyy').parseStrict(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  RequestStatus _mapRequestStatus(String value) {
+    switch (value.trim().toLowerCase()) {
+      case 'processed':
+        return RequestStatus.processed;
+      case 'done':
+        return RequestStatus.done;
+      case 'pending':
+      default:
+        return RequestStatus.pending;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadRequests,
+                child: const Text('Muat Ulang'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Stack(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-          child: ListView.separated(
-            itemCount: _requests.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return const Text(
-                  'Request',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F1F1F),
+          child: _requests.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Belum ada request',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF8C8C8C)),
                   ),
-                );
-              }
-
-              final item = _requests[index - 1];
-              return _RequestCard(
-                item: item,
-                onEdit: item.status == RequestStatus.pending
-                    ? () => _openEditRequest(item)
-                    : null,
-                onDelete: item.status == RequestStatus.pending
-                    ? () => _deleteRequest(item)
-                    : null,
-              );
-            },
-          ),
+                )
+              : ListView.separated(
+                  itemCount: _requests.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final item = _requests[index];
+                    return _RequestCard(
+                      item: item,
+                      onEdit: item.status == RequestStatus.pending
+                          ? () => _openEditRequest(item)
+                          : null,
+                      onDelete: item.status == RequestStatus.pending
+                          ? () => _deleteRequest(item)
+                          : null,
+                    );
+                  },
+                ),
         ),
         Positioned(
           left: 16,
