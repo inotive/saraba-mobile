@@ -251,6 +251,20 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 14),
                               child: SelectedMaterialItemCard(
                                 item: item,
+                                onTapDetail: () {
+                                  showModalBottomSheet<void>(
+                                    context: context,
+                                    backgroundColor: const Color(0xFFFAFAFA),
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(24),
+                                      ),
+                                    ),
+                                    builder: (_) => _MaterialItemDetailSheet(
+                                      item: item,
+                                    ),
+                                  );
+                                },
                                 onTapEdit: canEdit
                                     ? () => _openOptions(context, draft)
                                     : null,
@@ -529,6 +543,92 @@ class _DetailValue extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: Color(0xFF1B2A4A),
       ),
+    );
+  }
+}
+
+class _MaterialItemDetailSheet extends StatelessWidget {
+  final MaterialExpenseItem item;
+
+  const _MaterialItemDetailSheet({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Detail Material',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, size: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _MaterialItemDetailRow(
+              label: 'Nama Material',
+              value: item.name,
+            ),
+            const SizedBox(height: 14),
+            _MaterialItemDetailRow(
+              label: 'Jumlah',
+              value: item.quantity.toString(),
+            ),
+            const SizedBox(height: 14),
+            _MaterialItemDetailRow(
+              label: 'Total',
+              value: _formatDetailCurrency(item.total),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MaterialItemDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MaterialItemDetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF9CA3AF),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F1F1F),
+          ),
+        ),
+      ],
     );
   }
 }

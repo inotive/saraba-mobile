@@ -662,9 +662,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                           const SizedBox(width: 8),
                                       itemBuilder: (context, index) {
                                         if (index == 0) {
-                                          return _UploadBox(
-                                            onTap: _pickImages,
-                                          );
+                                          return _UploadBox(onTap: _pickImages);
                                         }
 
                                         return AttachmentThumbnail(
@@ -1453,11 +1451,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
 class SelectedMaterialItemCard extends StatelessWidget {
   final MaterialExpenseItem item;
   final VoidCallback? onTapEdit;
+  final VoidCallback? onTapDetail;
 
   const SelectedMaterialItemCard({
     super.key,
     required this.item,
     this.onTapEdit,
+    this.onTapDetail,
   });
 
   @override
@@ -1491,7 +1491,9 @@ class SelectedMaterialItemCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 36),
+                  padding: EdgeInsets.only(
+                    right: onTapEdit != null || onTapDetail != null ? 118 : 0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1515,12 +1517,14 @@ class SelectedMaterialItemCard extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
+                            flex: 1,
                             child: _MetaColumn(
                               label: 'Jumlah',
                               value: item.quantity.toString(),
                             ),
                           ),
                           Expanded(
+                            flex: 2,
                             child: _MetaColumn(
                               label: 'Total',
                               value: _formatCurrency(item.total),
@@ -1536,15 +1540,52 @@ class SelectedMaterialItemCard extends StatelessWidget {
           ),
           if (onTapEdit != null)
             Positioned(
-              top: -6,
-              right: -6,
-              child: IconButton(
-                onPressed: onTapEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  color: Color(0xFFF7944D),
-                ),
-                tooltip: 'Edit item',
+              top: -2,
+              right: -2,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onTapDetail != null)
+                    OutlinedButton(
+                      onPressed: onTapDetail,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF7944D)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size(0, 32),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Text(
+                        'Lihat Detail',
+                        style: TextStyle(
+                          color: Color(0xFFF7944D),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  if (onTapDetail != null) const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: onTapEdit,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: Color(0xFFF7944D),
+                      size: 20,
+                    ),
+                    tooltip: 'Edit item',
+                  ),
+                ],
               ),
             ),
         ],
@@ -1569,12 +1610,17 @@ class _MetaColumn extends StatelessWidget {
           style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1F1F1F),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F1F1F),
+            ),
           ),
         ),
       ],
@@ -1738,11 +1784,7 @@ class OperasionalExpenseCard extends StatelessWidget {
   final OperasionalExpenseItem item;
   final VoidCallback? onTapEdit;
 
-  const OperasionalExpenseCard({
-    super.key,
-    required this.item,
-    this.onTapEdit,
-  });
+  const OperasionalExpenseCard({super.key, required this.item, this.onTapEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -1837,10 +1879,7 @@ class OperasionalExpenseCard extends StatelessWidget {
               right: -6,
               child: IconButton(
                 onPressed: onTapEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  color: Color(0xFFF7944D),
-                ),
+                icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
                 tooltip: 'Edit item',
               ),
             ),
@@ -2528,10 +2567,8 @@ class _AttachmentThumbnailContent extends StatelessWidget {
           width: width,
           height: height,
           fit: BoxFit.cover,
-          placeholderBuilder: (_) => _AttachmentLoadingTile(
-            width: width,
-            height: height,
-          ),
+          placeholderBuilder: (_) =>
+              _AttachmentLoadingTile(width: width, height: height),
         );
       }
 
@@ -2541,10 +2578,8 @@ class _AttachmentThumbnailContent extends StatelessWidget {
           width: width,
           height: height,
           fit: BoxFit.cover,
-          placeholderBuilder: (_) => _AttachmentLoadingTile(
-            width: width,
-            height: height,
-          ),
+          placeholderBuilder: (_) =>
+              _AttachmentLoadingTile(width: width, height: height),
         );
       }
 
@@ -2578,10 +2613,8 @@ class _AttachmentThumbnailContent extends StatelessWidget {
 
           return _AttachmentLoadingTile(width: width, height: height);
         },
-        errorBuilder: (_, _, _) => _AttachmentErrorTile(
-          width: width,
-          height: height,
-        ),
+        errorBuilder: (_, _, _) =>
+            _AttachmentErrorTile(width: width, height: height),
       );
     }
 
@@ -2645,9 +2678,7 @@ class _AttachmentPreviewPageState extends State<_AttachmentPreviewPage> {
           });
         },
         itemBuilder: (context, index) {
-          return Center(
-            child: _buildPreviewContent(widget.images[index]),
-          );
+          return Center(child: _buildPreviewContent(widget.images[index]));
         },
       ),
     );
@@ -2720,18 +2751,14 @@ class _AttachmentPreviewPageState extends State<_AttachmentPreviewPage> {
     if (image.isFile) {
       return PdfViewer.file(
         image.path,
-        params: const PdfViewerParams(
-          backgroundColor: Colors.black,
-        ),
+        params: const PdfViewerParams(backgroundColor: Colors.black),
       );
     }
 
     if (image.isNetwork) {
       return PdfViewer.uri(
         Uri.parse(image.path),
-        params: const PdfViewerParams(
-          backgroundColor: Colors.black,
-        ),
+        params: const PdfViewerParams(backgroundColor: Colors.black),
       );
     }
 
@@ -2753,10 +2780,7 @@ class _AttachmentLoadingTile extends StatelessWidget {
   final double width;
   final double height;
 
-  const _AttachmentLoadingTile({
-    required this.width,
-    required this.height,
-  });
+  const _AttachmentLoadingTile({required this.width, required this.height});
 
   @override
   Widget build(BuildContext context) {
@@ -2778,10 +2802,7 @@ class _AttachmentErrorTile extends StatelessWidget {
   final double width;
   final double height;
 
-  const _AttachmentErrorTile({
-    required this.width,
-    required this.height,
-  });
+  const _AttachmentErrorTile({required this.width, required this.height});
 
   @override
   Widget build(BuildContext context) {
