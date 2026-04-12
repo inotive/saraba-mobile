@@ -1538,10 +1538,10 @@ class SelectedMaterialItemCard extends StatelessWidget {
               ),
             ],
           ),
-          if (onTapEdit != null)
+          if (onTapEdit != null || onTapDetail != null)
             Positioned(
-              top: -2,
-              right: -2,
+              top: 2,
+              right: 2,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1570,21 +1570,23 @@ class SelectedMaterialItemCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (onTapDetail != null) const SizedBox(width: 4),
-                  IconButton(
-                    onPressed: onTapEdit,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                  if (onTapDetail != null && onTapEdit != null)
+                    const SizedBox(width: 4),
+                  if (onTapEdit != null)
+                    IconButton(
+                      onPressed: onTapEdit,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Color(0xFFF7944D),
+                        size: 20,
+                      ),
+                      tooltip: 'Edit item',
                     ),
-                    icon: const Icon(
-                      Icons.edit_outlined,
-                      color: Color(0xFFF7944D),
-                      size: 20,
-                    ),
-                    tooltip: 'Edit item',
-                  ),
                 ],
               ),
             ),
@@ -1783,8 +1785,14 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
 class OperasionalExpenseCard extends StatelessWidget {
   final OperasionalExpenseItem item;
   final VoidCallback? onTapEdit;
+  final VoidCallback? onTapDetail;
 
-  const OperasionalExpenseCard({super.key, required this.item, this.onTapEdit});
+  const OperasionalExpenseCard({
+    super.key,
+    required this.item,
+    this.onTapEdit,
+    this.onTapDetail,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1833,21 +1841,23 @@ class OperasionalExpenseCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 36),
                 child: OutlinedButton(
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      backgroundColor: const Color(0xFFFAFAFA),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(24),
-                        ),
-                      ),
-                      builder: (_) => _OperasionalDetailSheet(
-                        note: item.note,
-                        attachments: item.attachments,
-                      ),
-                    );
-                  },
+                  onPressed:
+                      onTapDetail ??
+                      () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          backgroundColor: const Color(0xFFFAFAFA),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24),
+                            ),
+                          ),
+                          builder: (_) => OperasionalDetailSheet(
+                            note: item.note,
+                            attachments: item.attachments,
+                          ),
+                        );
+                      },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFF7944D)),
                     shape: RoundedRectangleBorder(
@@ -2086,20 +2096,25 @@ class _TambahItemOperasionalSheetState
   }
 }
 
-class _OperasionalDetailSheet extends StatelessWidget {
+class OperasionalDetailSheet extends StatelessWidget {
   final String note;
   final List<MaterialAttachmentItem> attachments;
+  final String? amount;
+  final String? totalItems;
 
-  const _OperasionalDetailSheet({
+  const OperasionalDetailSheet({
+    super.key,
     required this.note,
     required this.attachments,
+    this.amount,
+    this.totalItems,
   });
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2120,6 +2135,32 @@ class _OperasionalDetailSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
+            if (amount != null) ...[
+              const Text(
+                'Jumlah',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _DetailSheetBox(text: amount!),
+              const SizedBox(height: 16),
+            ],
+            if (totalItems != null) ...[
+              const Text(
+                'Total Item',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _DetailSheetBox(text: totalItems!),
+              const SizedBox(height: 16),
+            ],
             const Text(
               'Catatan',
               style: TextStyle(
@@ -2129,23 +2170,7 @@ class _OperasionalDetailSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Text(
-                note.trim().isEmpty ? '-' : note,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.45,
-                  color: Color(0xFF1F1F1F),
-                ),
-              ),
-            ),
+            _DetailSheetBox(text: note.trim().isEmpty ? '-' : note),
             const SizedBox(height: 16),
             const Text(
               'Lampiran',
@@ -2157,23 +2182,7 @@ class _OperasionalDetailSheet extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (attachments.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: const Text(
-                  '-',
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.45,
-                    color: Color(0xFF1F1F1F),
-                  ),
-                ),
-              )
+              const _DetailSheetBox(text: '-')
             else
               SizedBox(
                 height: 74,
@@ -2195,6 +2204,33 @@ class _OperasionalDetailSheet extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailSheetBox extends StatelessWidget {
+  final String text;
+
+  const _DetailSheetBox({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.45,
+          color: Color(0xFF1F1F1F),
         ),
       ),
     );

@@ -106,6 +106,67 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
     );
   }
 
+  Future<void> _openItemDetail(
+    BuildContext context,
+    OperasionalExpenseItem item,
+  ) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final response = await PekerjaanService().fetchPengeluaranItemDetail(
+      projectId: projectId,
+      batchId: pengeluaranId,
+      itemId: item.id,
+    );
+
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (response?.success != true || response?.data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response?.message.isNotEmpty == true
+                ? response!.message
+                : 'Gagal memuat detail item pengeluaran',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final detail = response!.data!;
+    final attachments = detail.lampiran
+        .map((item) => MaterialAttachmentItem.network(item.url))
+        .toList();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => OperasionalDetailSheet(
+        note: detail.keterangan,
+        attachments: attachments,
+        amount: category == PengeluaranCategory.operasional
+            ? _formatOperasionalCurrency(detail.jumlah)
+            : null,
+        totalItems: category == PengeluaranCategory.operasional
+            ? detail.batch.totalItems.toString()
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -230,6 +291,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: OperasionalExpenseCard(
                                 item: item,
+                                onTapDetail: () => _openItemDetail(context, item),
                                 onTapEdit: canEdit
                                     ? () =>
                                           _openOptions(
