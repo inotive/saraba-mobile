@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_pengeluaran_list_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
@@ -98,6 +99,33 @@ class PekerjaanService {
       _logger.error('Project pengeluaran list request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading pengeluaran list: $e');
+    }
+
+    return null;
+  }
+
+  Future<PengeluaranItemDetailResponse?> fetchPengeluaranItemDetail({
+    required String projectId,
+    required String batchId,
+    required String itemId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/proyeks/$projectId/pengeluaran/$batchId/$itemId',
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return PengeluaranItemDetailResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Pengeluaran item detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading pengeluaran item detail: $e');
     }
 
     return null;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
@@ -46,10 +47,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
       }
 
       context.read<PengeluaranDetailBloc>().add(
-        DeletePengeluaran(
-          projectId: projectId,
-          pengeluaranId: pengeluaranId,
-        ),
+        DeletePengeluaran(projectId: projectId, pengeluaranId: pengeluaranId),
       );
       return;
     }
@@ -95,14 +93,59 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC52222),
               ),
-              child: const Text(
-                'Hapus',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
       },
+    );
+  }
+
+  Future<void> _openItemDetail(
+    BuildContext context,
+    MaterialExpenseItem item,
+  ) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final response = await PekerjaanService().fetchPengeluaranItemDetail(
+      projectId: projectId,
+      batchId: pengeluaranId,
+      itemId: item.id,
+    );
+
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (response?.success != true || response?.data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response?.message.isNotEmpty == true
+                ? response!.message
+                : 'Gagal memuat detail item pengeluaran',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final detail = response!.data!;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _MaterialItemDetailSheet(detail: detail),
     );
   }
 
@@ -120,9 +163,9 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
         listener: (context, state) {
           if (state.deleteErrorMessage != null &&
               state.deleteErrorMessage!.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.deleteErrorMessage!)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.deleteErrorMessage!)));
           }
 
           if (state.deleteSuccessMessage != null &&
@@ -251,20 +294,8 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 14),
                               child: SelectedMaterialItemCard(
                                 item: item,
-                                onTapDetail: () {
-                                  showModalBottomSheet<void>(
-                                    context: context,
-                                    backgroundColor: const Color(0xFFFAFAFA),
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(24),
-                                      ),
-                                    ),
-                                    builder: (_) => _MaterialItemDetailSheet(
-                                      item: item,
-                                    ),
-                                  );
-                                },
+                                onTapDetail: () =>
+                                    _openItemDetail(context, item),
                                 onTapEdit: canEdit
                                     ? () => _openOptions(context, draft)
                                     : null,
@@ -278,9 +309,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                   Container(
                     decoration: const BoxDecoration(
                       color: Colors.white,
-                      border: Border(
-                        top: BorderSide(color: Color(0xFFF1F3F5)),
-                      ),
+                      border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
                       boxShadow: [
                         BoxShadow(
                           color: Color(0x14000000),
@@ -548,12 +577,16 @@ class _DetailValue extends StatelessWidget {
 }
 
 class _MaterialItemDetailSheet extends StatelessWidget {
-  final MaterialExpenseItem item;
+  final PengeluaranItemDetailData detail;
 
-  const _MaterialItemDetailSheet({required this.item});
+  const _MaterialItemDetailSheet({required this.detail});
 
   @override
   Widget build(BuildContext context) {
+    final attachments = detail.lampiran
+        .map((item) => MaterialAttachmentItem.network(item.url))
+        .toList();
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -578,19 +611,42 @@ class _MaterialItemDetailSheet extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _MaterialItemDetailRow(
-              label: 'Nama Material',
-              value: item.name,
-            ),
-            const SizedBox(height: 14),
-            _MaterialItemDetailRow(
               label: 'Jumlah',
-              value: item.quantity.toString(),
+              value: _formatDetailCurrency(detail.jumlah),
             ),
             const SizedBox(height: 14),
             _MaterialItemDetailRow(
-              label: 'Total',
-              value: _formatDetailCurrency(item.total),
+              label: 'Total Item',
+              value: detail.batch.totalItems.toString(),
             ),
+            const SizedBox(height: 14),
+            _MaterialItemDetailRow(label: 'Catatan', value: detail.keterangan),
+            if (attachments.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              const Text(
+                'Lampiran',
+                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 74,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: attachments.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) => ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AttachmentThumbnail(
+                      image: attachments[index],
+                      galleryImages: attachments,
+                      initialIndex: index,
+                      width: 74,
+                      height: 74,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -602,10 +658,7 @@ class _MaterialItemDetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _MaterialItemDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _MaterialItemDetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -614,10 +667,7 @@ class _MaterialItemDetailRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF9CA3AF),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
         ),
         const SizedBox(height: 4),
         Text(
