@@ -179,6 +179,40 @@ class PekerjaanService {
     return null;
   }
 
+  Future<ProjectRequestSubmitResponse?> deleteProjectRequest({
+    required String projectId,
+    required String requestId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.delete(
+        '/proyeks/$projectId/permintaans/$requestId',
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Delete project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while deleting project request: $e');
+    }
+
+    return null;
+  }
+
   Future<SubmitPengeluaranResponse?> deletePengeluaran({
     required String projectId,
     required String pengeluaranId,

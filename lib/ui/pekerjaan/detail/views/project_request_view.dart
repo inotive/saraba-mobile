@@ -188,9 +188,37 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
       return;
     }
 
+    final response = await _service.deleteProjectRequest(
+      projectId: widget.projectId,
+      requestId: item.id,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null || response.success != true) {
+      StatusBanner.show(
+        context,
+        title: 'Hapus Gagal',
+        message: response?.message.isNotEmpty == true
+            ? response!.message
+            : 'Gagal menghapus request proyek',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
     setState(() {
       _requests.removeWhere((request) => request.id == item.id);
     });
+
+    StatusBanner.show(
+      context,
+      title: 'Request Dihapus',
+      message: response.message,
+      type: StatusBannerType.success,
+    );
   }
 
   ProjectRequestItem _mapRequestItem(ProjectRequestData item) {
