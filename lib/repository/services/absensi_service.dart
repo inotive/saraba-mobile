@@ -49,7 +49,7 @@ class AbsensiService {
     required String latitude,
     required String longitude,
     required String imagePath,
-    required String deviceInfo,
+    required String keterangan,
   }) async {
     if (useMock) {
       try {
@@ -58,7 +58,7 @@ class AbsensiService {
           latitude: latitude,
           longitude: longitude,
           imagePath: imagePath,
-          keterangan: deviceInfo,
+          keterangan: keterangan,
         );
         _logger.log('Mock submit absensi success: ${response.message}');
         return response;
@@ -75,7 +75,7 @@ class AbsensiService {
         "proyek_id": "",
         "lat": latitude,
         "long": longitude,
-        "keterangan": deviceInfo,
+        "keterangan": keterangan,
         "foto": await MultipartFile.fromFile(imagePath),
       });
 
