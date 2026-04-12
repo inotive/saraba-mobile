@@ -22,6 +22,7 @@ class DetailTopTabBar extends StatelessWidget {
         Tab(text: "RAB"),
         Tab(text: "Progress"),
         Tab(text: "Pengeluaran"),
+        Tab(text: "Request"),
       ],
     );
   }
