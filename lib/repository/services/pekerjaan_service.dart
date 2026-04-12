@@ -139,6 +139,46 @@ class PekerjaanService {
     return null;
   }
 
+  Future<ProjectRequestSubmitResponse?> updateProjectRequest({
+    required String projectId,
+    required String requestId,
+    required String tanggalPermintaan,
+    required String deskripsi,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.put(
+        '/proyeks/$projectId/permintaans/$requestId',
+        data: {
+          'tanggal_permintaan': tanggalPermintaan,
+          'deskripsi': deskripsi,
+        },
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Update project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while updating project request: $e');
+    }
+
+    return null;
+  }
+
   Future<SubmitPengeluaranResponse?> deletePengeluaran({
     required String projectId,
     required String pengeluaranId,

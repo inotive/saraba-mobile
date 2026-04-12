@@ -99,7 +99,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
   }
 
   Future<void> _openEditRequest(ProjectRequestItem item) async {
-    await Navigator.push<ProjectRequestFormResult>(
+    final result = await Navigator.push<ProjectRequestFormResult>(
       context,
       MaterialPageRoute(
         builder: (_) => RequestFormPage(
@@ -109,6 +109,54 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
           submitLabel: 'Simpan Request',
         ),
       ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    final response = await _service.updateProjectRequest(
+      projectId: widget.projectId,
+      requestId: item.id,
+      tanggalPermintaan: DateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      ).format(result.requestDate),
+      deskripsi: result.requestText,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null || response.success != true || response.data == null) {
+      StatusBanner.show(
+        context,
+        title: 'Update Gagal',
+        message: response?.message.isNotEmpty == true
+            ? response!.message
+            : 'Gagal memperbarui request proyek',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    final updatedItem = _mapSubmittedRequestItem(response.data!);
+    final index = _requests.indexWhere((request) => request.id == item.id);
+    if (index == -1) {
+      return;
+    }
+
+    setState(() {
+      _requests[index] = updatedItem.copyWith(
+        createdBy: item.createdBy,
+      );
+    });
+
+    StatusBanner.show(
+      context,
+      title: 'Update Berhasil',
+      message: response.message,
+      type: StatusBannerType.success,
     );
   }
 
