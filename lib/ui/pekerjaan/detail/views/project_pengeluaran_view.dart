@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
-import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_pengeluaran_list_response_model.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
@@ -10,22 +11,85 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_opera
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
 
-class ProjectPengeluaranView extends StatelessWidget {
+class ProjectPengeluaranView extends StatefulWidget {
   final String projectId;
-  final ProjectPengeluaranSection pengeluaran;
   final bool canEdit;
 
   const ProjectPengeluaranView({
     super.key,
     required this.projectId,
-    required this.pengeluaran,
     required this.canEdit,
   });
 
   @override
+  State<ProjectPengeluaranView> createState() => _ProjectPengeluaranViewState();
+}
+
+class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
+  final PekerjaanService _service = PekerjaanService();
+  List<ProjectPengeluaranListItem> _items = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPengeluaran();
+  }
+
+  Future<void> _loadPengeluaran() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final response = await _service.fetchProjectPengeluaran(widget.projectId);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Gagal memuat pengeluaran proyek';
+      });
+      return;
+    }
+
+    setState(() {
+      _items = response.data;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final groupedData = <String, List<ProjectPengeluaranItem>>{};
-    for (final item in pengeluaran.items) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadPengeluaran,
+                child: const Text('Muat Ulang'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final groupedData = <String, List<ProjectPengeluaranListItem>>{};
+    for (final item in _items) {
       groupedData.putIfAbsent(item.tanggal, () => []).add(item);
     }
     final dates = groupedData.keys.toList();
@@ -33,8 +97,8 @@ class ProjectPengeluaranView extends StatelessWidget {
     return Stack(
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, canEdit ? 80 : 16),
-          child: pengeluaran.items.isEmpty
+          padding: EdgeInsets.fromLTRB(16, 16, 16, widget.canEdit ? 80 : 16),
+          child: _items.isEmpty
               ? const _EmptyPengeluaranState()
               : ListView.builder(
                   itemCount: dates.length,
@@ -68,24 +132,20 @@ class ProjectPengeluaranView extends StatelessWidget {
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                           child: PengeluaranItemCard(
-                              code: _buildCardCode(item.kategori),
+                              code: _buildCardCode(item),
                               title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
-                              summaryLabel: _buildPrimaryLabel(item.kategori),
+                              summaryLabel: _buildPrimaryLabel(),
                               summaryValue: _buildPrimaryValue(item),
-                              secondaryLabel: _buildSecondaryLabel(
-                                item.kategori,
-                              ),
-                              secondaryValue: _buildSecondaryValue(
-                                item.kategori,
-                                item,
-                              ),
+                              secondaryLabel: _buildSecondaryLabel(),
+                              secondaryValue: _buildSecondaryValue(item),
                               iconAsset: _buildCardIconAsset(item.kategori),
                               onTap: _buildOnTap(
                                 context,
-                                projectId,
+                                widget.projectId,
                                 item,
-                                canEdit,
+                                widget.canEdit,
+                                _loadPengeluaran,
                               ),
                             ),
                           ),
@@ -97,7 +157,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                 ),
         ),
 
-        if (canEdit)
+        if (widget.canEdit)
           Positioned(
             left: 16,
             right: 16,
@@ -125,7 +185,7 @@ class ProjectPengeluaranView extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => TambahPengeluaranPage(
-                              projectId: projectId,
+                              projectId: widget.projectId,
                               category: category,
                             ),
                           ),
@@ -136,8 +196,12 @@ class ProjectPengeluaranView extends StatelessWidget {
                     }
 
                     context.read<ProjectDetailBloc>().add(
-                      FetchProjectDetail(projectId),
+                      FetchProjectDetail(widget.projectId),
                     );
+                    await _loadPengeluaran();
+                    if (!context.mounted) {
+                      return;
+                    }
                     StatusBanner.show(
                       context,
                       title: result.title,
@@ -168,15 +232,16 @@ class ProjectPengeluaranView extends StatelessWidget {
   }
 }
 
-String _buildCardCode(String kategori) {
+String _buildCardCode(ProjectPengeluaranListItem item) {
+  final kategori = item.kategori;
   final normalized = kategori.toLowerCase();
   if (normalized.contains('material')) {
-    return 'MAT-001';
+    return 'MAT-${item.id}';
   }
   if (normalized.contains('petty')) {
-    return 'PC-001';
+    return 'PC-${item.id}';
   }
-  return 'OPR-001';
+  return 'OPR-${item.id}';
 }
 
 String _buildCardTitle(String kategori) {
@@ -201,27 +266,28 @@ String _buildCardIconAsset(String kategori) {
   return 'assets/icons/ic_pengeluaran_operasional.png';
 }
 
-String _buildPrimaryLabel(String kategori) {
+String _buildPrimaryLabel() {
+  return 'Total Item';
+}
+
+String _buildPrimaryValue(ProjectPengeluaranListItem item) {
+  return '${item.totalItem}';
+}
+
+String _buildSecondaryLabel() {
   return 'Jumlah Biaya';
 }
 
-String _buildPrimaryValue(ProjectPengeluaranItem item) {
-  return _formatCurrency(item.jumlah);
-}
-
-String? _buildSecondaryLabel(String kategori) {
-  return null;
-}
-
-String? _buildSecondaryValue(String kategori, ProjectPengeluaranItem item) {
-  return null;
+String _buildSecondaryValue(ProjectPengeluaranListItem item) {
+  return _formatCurrency(item.grandTotal.toString());
 }
 
 Future<void> Function()? _buildOnTap(
   BuildContext context,
   String projectId,
-  ProjectPengeluaranItem item,
+  ProjectPengeluaranListItem item,
   bool canEdit,
+  Future<void> Function() reload,
 ) {
   final category = item.kategori.toLowerCase();
 
@@ -233,6 +299,7 @@ Future<void> Function()? _buildOnTap(
           builder: (_) => DetailPengeluaranMaterialPage(
             projectId: projectId,
             pengeluaranId: item.id.toString(),
+            categoryLabel: _buildCardTitle(item.kategori),
             canEdit: canEdit,
           ),
         ),
@@ -243,6 +310,10 @@ Future<void> Function()? _buildOnTap(
       }
 
       context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
+      await reload();
+      if (!context.mounted) {
+        return;
+      }
       StatusBanner.show(
         context,
         title: result.title,
@@ -271,6 +342,10 @@ Future<void> Function()? _buildOnTap(
       }
 
       context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
+      await reload();
+      if (!context.mounted) {
+        return;
+      }
       StatusBanner.show(
         context,
         title: result.title,
@@ -299,6 +374,10 @@ Future<void> Function()? _buildOnTap(
       }
 
       context.read<ProjectDetailBloc>().add(FetchProjectDetail(projectId));
+      await reload();
+      if (!context.mounted) {
+        return;
+      }
       StatusBanner.show(
         context,
         title: result.title,

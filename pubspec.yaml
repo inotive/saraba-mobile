@@ -1,7 +1,7 @@
 name: saraba_mobile
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.7.2+1
+version: 0.8.0+1
 
 environment:
   sdk: ^3.10.4
@@ -44,6 +44,7 @@ dependencies:
   flutter_native_splash: ^2.4.1
   flutter_alice: ^2.0.1
   overlay_support: ^2.1.0
+  pdfrx: ^2.2.24
  
 dev_dependencies:
   flutter_test:

@@ -28,7 +28,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       latitude: event.latitude,
       longitude: event.longitude,
       imagePath: event.imagePath,
-      deviceInfo: event.deviceInfo,
+      keterangan: event.keterangan,
     );
 
     if (result != null && result.isSuccess) {
@@ -75,7 +75,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       latitude: event.latitude,
       longitude: event.longitude,
       imagePath: event.imagePath,
-      deviceInfo: event.deviceInfo,
+      keterangan: event.keterangan,
     );
 
     if (result != null && result.isSuccess) {

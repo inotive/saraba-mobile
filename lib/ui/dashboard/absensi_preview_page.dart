@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:saraba_mobile/core/utils/device_info_helper.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:saraba_mobile/repository/services/location_service.dart';
 import 'package:saraba_mobile/ui/dashboard/bloc/attendance_bloc.dart';
@@ -41,10 +40,10 @@ class AttendancePreviewPage extends StatefulWidget {
 class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
   final LocationService _locationService = LocationService();
   final ProfileService _profileService = ProfileService();
+  final TextEditingController _keteranganController = TextEditingController();
 
   String? latitude;
   String? longitude;
-  String? deviceInfo;
   String employeeName = 'User';
   bool isPreparingLocation = true;
   String? locationError;
@@ -56,20 +55,21 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
     _loadEmployeeName();
   }
 
+  @override
+  void dispose() {
+    _keteranganController.dispose();
+    super.dispose();
+  }
+
   Future<void> _prepareAttendanceData() async {
     try {
-      final positionFuture = _locationService.getCurrentLocation();
-      final deviceInfoFuture = DeviceInfoHelper.getDeviceInfo();
-
-      final position = await positionFuture;
-      final resolvedDeviceInfo = await deviceInfoFuture;
+      final position = await _locationService.getCurrentLocation();
 
       if (!mounted) return;
 
       if (position == null) {
         setState(() {
           isPreparingLocation = false;
-          deviceInfo = resolvedDeviceInfo;
           locationError = "Lokasi tidak diizinkan atau tidak tersedia";
         });
         return;
@@ -78,7 +78,6 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
       setState(() {
         latitude = position.latitude.toString();
         longitude = position.longitude.toString();
-        deviceInfo = resolvedDeviceInfo;
         isPreparingLocation = false;
         locationError = null;
       });
@@ -87,7 +86,6 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
 
       setState(() {
         isPreparingLocation = false;
-        deviceInfo = "Unknown Device";
         locationError = "Gagal mendapatkan lokasi";
       });
     }
@@ -121,7 +119,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
           latitude: latitude!,
           longitude: longitude!,
           imagePath: widget.imageFile.path,
-          deviceInfo: deviceInfo ?? "Unknown Device",
+          keterangan: _keteranganController.text.trim(),
         ),
       );
     } else {
@@ -130,7 +128,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
           latitude: latitude!,
           longitude: longitude!,
           imagePath: widget.imageFile.path,
-          deviceInfo: deviceInfo ?? "Unknown Device",
+          keterangan: _keteranganController.text.trim(),
         ),
       );
     }
@@ -164,6 +162,7 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xFFFAFAFA),
         appBar: AppBar(
           elevation: 0,
@@ -230,117 +229,185 @@ class _AttendancePreviewPageState extends State<AttendancePreviewPage> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Nama Pegawai",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      employeeName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        widget.imageFile,
-                        height: 120,
-                        width: 90,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.isClockIn ? "Clock In" : "Clock Out",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.timeText,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    BlocBuilder<AttendanceBloc, AttendanceState>(
-                      builder: (context, state) {
-                        final isSubmitDisabled =
-                            state.isLoading || isPreparingLocation;
-
-                        return Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: state.isLoading
-                                    ? null
-                                    : () {
-                                        Navigator.pop(
-                                          context,
-                                          const AttendancePreviewResult(
-                                            action:
-                                                AttendancePreviewAction.retake,
-                                          ),
-                                        );
-                                      },
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Colors.orange),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    20,
+                    20,
+                    20 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Nama Pegawai",
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          employeeName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            widget.imageFile,
+                            height: 120,
+                            width: 90,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.isClockIn ? "Clock In" : "Clock Out",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.timeText,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (widget.isClockIn) ...[
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Keterangan",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _keteranganController,
+                            minLines: 2,
+                            maxLines: 2,
+                            textAlignVertical: TextAlignVertical.top,
+                            decoration: InputDecoration(
+                              hintText: 'Cth. Monitoring Pesanan kasir',
+                              hintStyle: const TextStyle(
+                                color: Color(0xFF9CA3AF),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE5E7EB),
                                 ),
-                                child: Text(
-                                  "Foto Ulang",
-                                  style: const TextStyle(color: Colors.orange),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE5E7EB),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFF7944D),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: isSubmitDisabled
-                                    ? null
-                                    : () => _submit(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: state.isLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Text(
-                                        widget.buttonText,
-                                        style: TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        BlocBuilder<AttendanceBloc, AttendanceState>(
+                          builder: (context, state) {
+                            final isSubmitDisabled =
+                                state.isLoading || isPreparingLocation;
+
+                            return Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    onPressed: state.isLoading
+                                        ? null
+                                        : () {
+                                            Navigator.pop(
+                                              context,
+                                              const AttendancePreviewResult(
+                                                action: AttendancePreviewAction
+                                                    .retake,
+                                              ),
+                                            );
+                                          },
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: Colors.orange,
                                       ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "Foto Ulang",
+                                      style: const TextStyle(
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: isSubmitDisabled
+                                        ? null
+                                        : () => _submit(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: state.isLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            widget.buttonText,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

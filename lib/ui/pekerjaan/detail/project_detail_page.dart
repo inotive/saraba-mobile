@@ -8,6 +8,7 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_overview_view.da
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_pengeluaran_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_progress_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_rab_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_request_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/detail_header.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/detail_top_tab_bar.dart';
 
@@ -28,7 +29,7 @@ class ProjectDetailPage extends StatelessWidget {
           ProjectDetailBloc(PekerjaanService())
             ..add(FetchProjectDetail(projectId)),
       child: DefaultTabController(
-        length: 4,
+        length: 5,
         child: Scaffold(
           backgroundColor: const Color(0xFFFAFAFA),
           body: SafeArea(
@@ -91,7 +92,11 @@ class ProjectDetailPage extends StatelessWidget {
                               ),
                               ProjectPengeluaranView(
                                 projectId: projectId,
-                                pengeluaran: detail.pengeluaran,
+                                canEdit:
+                                    !_isProjectFinished(detail.overview.status),
+                              ),
+                              ProjectRequestView(
+                                projectId: projectId,
                                 canEdit:
                                     !_isProjectFinished(detail.overview.status),
                               ),

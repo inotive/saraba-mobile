@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
@@ -205,29 +207,56 @@ class MaterialAttachmentItem {
 
 class OperasionalExpenseItem {
   final String id;
+  final String name;
   final double amount;
   final String note;
   final List<MaterialAttachmentItem> attachments;
+  final bool isSelected;
+  final bool isCustom;
 
   const OperasionalExpenseItem({
     required this.id,
+    required this.name,
     required this.amount,
     required this.note,
     required this.attachments,
+    this.isSelected = false,
+    this.isCustom = false,
   });
 
   OperasionalExpenseItem copyWith({
     String? id,
+    String? name,
     double? amount,
     String? note,
     List<MaterialAttachmentItem>? attachments,
+    bool? isSelected,
+    bool? isCustom,
   }) {
     return OperasionalExpenseItem(
       id: id ?? this.id,
+      name: name ?? this.name,
       amount: amount ?? this.amount,
       note: note ?? this.note,
       attachments: attachments ?? this.attachments,
+      isSelected: isSelected ?? this.isSelected,
+      isCustom: isCustom ?? this.isCustom,
     );
+  }
+}
+
+class OperasionalItemSheetResult {
+  final OperasionalExpenseItem? item;
+  final bool isDeleted;
+
+  const OperasionalItemSheetResult._({this.item, required this.isDeleted});
+
+  factory OperasionalItemSheetResult.saved(OperasionalExpenseItem item) {
+    return OperasionalItemSheetResult._(item: item, isDeleted: false);
+  }
+
+  factory OperasionalItemSheetResult.deleted() {
+    return const OperasionalItemSheetResult._(isDeleted: true);
   }
 }
 
@@ -252,6 +281,8 @@ class OperasionalPengeluaranDraft {
   final String operasionalName;
   final DateTime date;
   final String createdBy;
+  final String note;
+  final List<MaterialAttachmentItem> attachments;
   final List<OperasionalExpenseItem> items;
 
   const OperasionalPengeluaranDraft({
@@ -259,6 +290,8 @@ class OperasionalPengeluaranDraft {
     required this.operasionalName,
     required this.date,
     required this.createdBy,
+    required this.note,
+    required this.attachments,
     required this.items,
   });
 }
@@ -275,6 +308,7 @@ class PengeluaranMaterialFlowResult {
 
 class TambahPengeluaranPage extends StatefulWidget {
   final String? projectId;
+  final String? pengeluaranId;
   final PengeluaranCategory category;
   final String pageTitle;
   final MaterialPengeluaranDraft? initialDraft;
@@ -284,6 +318,7 @@ class TambahPengeluaranPage extends StatefulWidget {
   const TambahPengeluaranPage({
     super.key,
     this.projectId,
+    this.pengeluaranId,
     required this.category,
     this.pageTitle = 'Tambah Pengeluaran',
     this.initialDraft,
@@ -318,8 +353,13 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         widget.initialDraft?.date ??
         widget.initialOperasionalDraft?.date ??
         DateTime.now();
-    _catatanController.text = widget.initialDraft?.note ?? '';
-    _selectedImages.addAll(widget.initialDraft?.attachments ?? const []);
+    _catatanController.text =
+        widget.initialDraft?.note ?? widget.initialOperasionalDraft?.note ?? '';
+    _selectedImages.addAll(
+      widget.initialDraft?.attachments ??
+          widget.initialOperasionalDraft?.attachments ??
+          const [],
+    );
     _selectedItems = widget.initialDraft?.items ?? const [];
     _operasionalItems = widget.initialOperasionalDraft?.items ?? const [];
   }
@@ -434,7 +474,30 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (_isEditMode || widget.projectId == null) {
-      Navigator.pop(context, widget.successResult);
+      if (widget.projectId == null || widget.pengeluaranId == null) {
+        Navigator.pop(context, widget.successResult);
+        return;
+      }
+
+      _submitBloc.add(
+        SubmitPengeluaranRequested(
+          projectId: widget.projectId!,
+          pengeluaranId: widget.pengeluaranId,
+          kategori: 'material',
+          tanggal: _buildSubmitDate(_selectedDate),
+          catatan: _catatanController.text.trim(),
+          lampiranPaths: _collectUploadPaths(_selectedImages),
+          items: _selectedItems
+              .map(
+                (item) => PengeluaranSubmissionPayload(
+                  nama: item.name,
+                  jumlah: item.quantity,
+                  nominal: item.total,
+                ),
+              )
+              .toList(),
+        ),
+      );
       return;
     }
 
@@ -473,7 +536,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     OperasionalExpenseItem? item,
     int? itemIndex,
   }) async {
-    final result = await showModalBottomSheet<OperasionalExpenseItem>(
+    final result = await showModalBottomSheet<OperasionalItemSheetResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFFAFAFA),
@@ -488,21 +551,50 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     setState(() {
-      if (itemIndex != null) {
-        final updatedItems = [..._operasionalItems];
-        updatedItems[itemIndex] = result;
+      if (result.isDeleted && itemIndex != null) {
+        final updatedItems = [..._operasionalItems]..removeAt(itemIndex);
         _operasionalItems = updatedItems;
-      } else {
-        _operasionalItems = [..._operasionalItems, result];
+      } else if (result.item != null && itemIndex != null) {
+        final updatedItems = [..._operasionalItems];
+        updatedItems[itemIndex] = result.item!;
+        _operasionalItems = updatedItems;
+      } else if (result.item != null) {
+        _operasionalItems = [..._operasionalItems, result.item!];
       }
     });
 
     StatusBanner.show(
       context,
-      title: 'Berhasil Menyimpan',
-      message: 'Kamu berhasil menambahkan item pengeluaran baru',
+      title: result.isDeleted ? 'Berhasil Menghapus' : 'Berhasil Menyimpan',
+      message: result.isDeleted
+          ? 'Kamu berhasil menghapus item pengeluaran'
+          : 'Kamu berhasil menambahkan item pengeluaran baru',
       type: StatusBannerType.success,
     );
+  }
+
+  Future<void> _openOperasionalItemPicker() async {
+    final result = await showModalBottomSheet<List<OperasionalExpenseItem>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => OperasionalItemPickerSheet(
+        projectId: widget.projectId,
+        category: widget.category,
+        initialItems: _operasionalItems,
+      ),
+    );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _operasionalItems = result;
+    });
   }
 
   void _saveOperasionalFlow() {
@@ -511,7 +603,28 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (_isEditMode || widget.projectId == null) {
-      Navigator.pop(context, widget.successResult);
+      if (widget.projectId == null || widget.pengeluaranId == null) {
+        Navigator.pop(context, widget.successResult);
+        return;
+      }
+
+      _submitBloc.add(
+        SubmitPengeluaranRequested(
+          projectId: widget.projectId!,
+          pengeluaranId: widget.pengeluaranId,
+          kategori: _buildSubmitCategory(),
+          tanggal: _buildSubmitDate(_selectedDate),
+          catatan: _buildSimpleExpenseCatatan(),
+          lampiranPaths: _collectOperasionalAttachmentPaths(),
+          items: _operasionalItems.map((item) {
+            return PengeluaranSubmissionPayload(
+              nama: item.name,
+              jumlah: 1,
+              nominal: item.amount,
+            );
+          }).toList(),
+        ),
+      );
       return;
     }
 
@@ -525,19 +638,13 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         items: _operasionalItems.asMap().entries.map((entry) {
           final item = entry.value;
           return PengeluaranSubmissionPayload(
-            nama: '${_buildSimpleExpenseName()} ${entry.key + 1}',
+            nama: item.name,
             jumlah: 1,
             nominal: item.amount,
           );
         }).toList(),
       ),
     );
-  }
-
-  String _buildSimpleExpenseName() {
-    return widget.category == PengeluaranCategory.pettyCash
-        ? 'Petty Cash'
-        : 'Operasional';
   }
 
   String _buildSubmitCategory() {
@@ -552,15 +659,11 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   }
 
   String _buildSimpleExpenseCatatan() {
-    return _operasionalItems
-        .map((item) => item.note.trim())
-        .where((note) => note.isNotEmpty)
-        .join('\n');
+    return _catatanController.text.trim();
   }
 
   List<String> _collectOperasionalAttachmentPaths() {
-    return _operasionalItems
-        .expand((item) => item.attachments)
+    return _selectedImages
         .where((attachment) => attachment.isFile)
         .map((attachment) => attachment.path)
         .toSet()
@@ -652,21 +755,23 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                   const SizedBox(height: 8),
                                   SizedBox(
                                     height: 92,
-                                    child: ListView(
+                                    child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
-                                      children: [
-                                        _UploadBox(onTap: _pickImages),
-                                        ..._selectedImages.map(
-                                          (image) => Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8,
-                                            ),
-                                            child: AttachmentThumbnail(
-                                              image: image,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      physics: const BouncingScrollPhysics(),
+                                      itemCount: _selectedImages.length + 1,
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(width: 8),
+                                      itemBuilder: (context, index) {
+                                        if (index == 0) {
+                                          return _UploadBox(onTap: _pickImages);
+                                        }
+
+                                        return AttachmentThumbnail(
+                                          image: _selectedImages[index - 1],
+                                          galleryImages: _selectedImages,
+                                          initialIndex: index - 1,
+                                        );
+                                      },
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -729,7 +834,38 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                     onTap: _pickDate,
                                   ),
                                   const SizedBox(height: 16),
-                                  const _FieldLabel('Item Pengeluaran'),
+                                  const _FieldLabel('Catatan'),
+                                  const SizedBox(height: 8),
+                                  _NotesField(
+                                    controller: _catatanController,
+                                    hintText: 'Ketik Disini',
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Lampiran'),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 92,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      itemCount: _selectedImages.length + 1,
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(width: 8),
+                                      itemBuilder: (context, index) {
+                                        if (index == 0) {
+                                          return _UploadBox(onTap: _pickImages);
+                                        }
+
+                                        return AttachmentThumbnail(
+                                          image: _selectedImages[index - 1],
+                                          galleryImages: _selectedImages,
+                                          initialIndex: index - 1,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _FieldLabel('Item ${widget.category.label}'),
                                   const SizedBox(height: 8),
                                   if (_operasionalItems.isEmpty)
                                     _EmptyOperasionalState(
@@ -749,6 +885,51 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                               ),
                                               child: OperasionalExpenseCard(
                                                 item: entry.value,
+                                                onTapDetail: () {
+                                                  showModalBottomSheet<void>(
+                                                    context: context,
+                                                    backgroundColor:
+                                                        const Color(
+                                                          0xFFFAFAFA,
+                                                        ),
+                                                    shape:
+                                                        const RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.vertical(
+                                                                top:
+                                                                    Radius.circular(
+                                                                      24,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                    builder: (_) =>
+                                                        OperasionalDetailSheet(
+                                                          note:
+                                                              _catatanController
+                                                                  .text,
+                                                          attachments:
+                                                              _selectedImages,
+                                                          amount:
+                                                              widget.category ==
+                                                                  PengeluaranCategory
+                                                                      .operasional
+                                                              ? _formatCurrency(
+                                                                  entry
+                                                                      .value
+                                                                      .amount,
+                                                                )
+                                                              : null,
+                                                          totalItems:
+                                                              widget.category ==
+                                                                  PengeluaranCategory
+                                                                      .operasional
+                                                              ? _operasionalItems
+                                                                    .length
+                                                                    .toString()
+                                                              : null,
+                                                        ),
+                                                  );
+                                                },
                                                 onTapEdit: () =>
                                                     _openOperasionalItemSheet(
                                                       item: entry.value,
@@ -825,7 +1006,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                       : isMaterial
                                       ? _openItemPicker
                                       : isSimpleExpense
-                                      ? () => _openOperasionalItemSheet()
+                                      ? _openOperasionalItemPicker
                                       : null,
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
@@ -1211,6 +1392,305 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
   }
 }
 
+class OperasionalItemPickerSheet extends StatefulWidget {
+  final String? projectId;
+  final PengeluaranCategory category;
+  final List<OperasionalExpenseItem> initialItems;
+
+  const OperasionalItemPickerSheet({
+    super.key,
+    required this.initialItems,
+    required this.category,
+    this.projectId,
+  });
+
+  @override
+  State<OperasionalItemPickerSheet> createState() =>
+      _OperasionalItemPickerSheetState();
+}
+
+class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet> {
+  final _searchController = TextEditingController();
+  final _service = PekerjaanService();
+  List<OperasionalExpenseItem> _items = const [];
+  bool _isLoadingItems = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+    _loadItems();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadItems() async {
+    if (widget.category == PengeluaranCategory.pettyCash ||
+        widget.projectId == null ||
+        widget.projectId!.isEmpty) {
+      setState(() {
+        _items = List<OperasionalExpenseItem>.from(widget.initialItems);
+        _isLoadingItems = false;
+      });
+      return;
+    }
+
+    final response = await _service.fetchProyekDetail(widget.projectId!);
+    final rabItems = response?.data.rab.items ?? const <ProjectRabItem>[];
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _items = _mergeWithRabItems(widget.initialItems, rabItems);
+      _isLoadingItems = false;
+    });
+  }
+
+  List<OperasionalExpenseItem> _mergeWithRabItems(
+    List<OperasionalExpenseItem> selected,
+    List<ProjectRabItem> rabItems,
+  ) {
+    final mapped = <String, OperasionalExpenseItem>{};
+
+    void addItem(OperasionalExpenseItem item) {
+      mapped[_itemKey(item.name)] = item;
+    }
+
+    for (final item in _flattenRabItems(rabItems)) {
+      addItem(
+        OperasionalExpenseItem(
+          id: 'rab-${item.id}',
+          name: item.uraian,
+          amount: 0,
+          note: '',
+          attachments: const [],
+        ),
+      );
+    }
+
+    for (final item in selected) {
+      addItem(item.copyWith(isSelected: true));
+    }
+
+    return mapped.values.toList();
+  }
+
+  List<ProjectRabItem> _flattenRabItems(List<ProjectRabItem> items) {
+    final result = <ProjectRabItem>[];
+
+    void visit(ProjectRabItem item) {
+      final isOperasional =
+          item.kategori.trim().toLowerCase() == 'operasional';
+      final isLeafItem = item.tipe.trim().toLowerCase() == 'item';
+      final hasName = item.uraian.trim().isNotEmpty;
+
+      if (isOperasional && isLeafItem && hasName) {
+        result.add(item);
+      }
+
+      for (final child in item.children) {
+        visit(child);
+      }
+    }
+
+    for (final item in items) {
+      visit(item);
+    }
+
+    return result;
+  }
+
+  String _itemKey(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  List<OperasionalExpenseItem> get _filteredItems {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return _items;
+    }
+
+    return _items
+        .where((item) => item.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  Future<void> _openAddNewItemSheet() async {
+    final result = await showModalBottomSheet<OperasionalItemSheetResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const TambahItemOperasionalSheet(),
+    );
+
+    if (result?.item == null) {
+      return;
+    }
+
+    setState(() {
+      _items = [..._items, result!.item!.copyWith(isSelected: true)];
+    });
+  }
+
+  void _toggleItem(OperasionalExpenseItem item, bool value) {
+    setState(() {
+      _items = _items
+          .map(
+            (current) => current.id == item.id
+                ? current.copyWith(
+                    isSelected: value,
+                    amount: value ? current.amount : 0,
+                  )
+                : current,
+          )
+          .toList();
+    });
+  }
+
+  void _updateAmount(OperasionalExpenseItem item, String rawValue) {
+    final sanitized = rawValue.replaceAll(RegExp(r'[^0-9.]'), '');
+    final amount = double.tryParse(sanitized) ?? 0;
+    setState(() {
+      _items = _items
+          .map(
+            (current) => current.id == item.id
+                ? current.copyWith(amount: amount)
+                : current,
+          )
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedItems = _items.where((item) => item.isSelected).toList();
+    final emptyText = widget.category == PengeluaranCategory.pettyCash
+        ? 'Belum ada item petty cash'
+        : 'Belum ada item operasional';
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.75,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Pilih Item',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _SearchTextField(
+                controller: _searchController,
+                hintText: 'Cari Item',
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: _isLoadingItems
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFF7944D),
+                        ),
+                      )
+                    : _filteredItems.isEmpty
+                    ? Center(
+                        child: Text(
+                          emptyText,
+                          style: const TextStyle(color: Color(0xFF6B7280)),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _filteredItems.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = _filteredItems[index];
+                          return OperasionalItemSelectionCard(
+                            key: ValueKey(item.id),
+                            item: item,
+                            onChanged: (value) => _toggleItem(item, value),
+                            onAmountChanged: (value) =>
+                                _updateAmount(item, value),
+                          );
+                        },
+                      ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _openAddNewItemSheet,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF7944D)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                      icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
+                      label: const Text(
+                        'Tambah Baru',
+                        style: TextStyle(color: Color(0xFFF7944D)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: selectedItems.isEmpty
+                          ? null
+                          : () => Navigator.pop(context, selectedItems),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF7944D),
+                        disabledBackgroundColor: const Color(0xFFFAD1B7),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Simpan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class TambahItemBaruSheet extends StatefulWidget {
   final MaterialExpenseItem? initialItem;
 
@@ -1447,11 +1927,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
 class SelectedMaterialItemCard extends StatelessWidget {
   final MaterialExpenseItem item;
   final VoidCallback? onTapEdit;
+  final VoidCallback? onTapDetail;
 
   const SelectedMaterialItemCard({
     super.key,
     required this.item,
     this.onTapEdit,
+    this.onTapDetail,
   });
 
   @override
@@ -1485,7 +1967,9 @@ class SelectedMaterialItemCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 36),
+                  padding: EdgeInsets.only(
+                    right: onTapEdit != null || onTapDetail != null ? 118 : 0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1509,12 +1993,14 @@ class SelectedMaterialItemCard extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
+                            flex: 1,
                             child: _MetaColumn(
                               label: 'Jumlah',
                               value: item.quantity.toString(),
                             ),
                           ),
                           Expanded(
+                            flex: 2,
                             child: _MetaColumn(
                               label: 'Total',
                               value: _formatCurrency(item.total),
@@ -1528,17 +2014,56 @@ class SelectedMaterialItemCard extends StatelessWidget {
               ),
             ],
           ),
-          if (onTapEdit != null)
+          if (onTapEdit != null || onTapDetail != null)
             Positioned(
-              top: -6,
-              right: -6,
-              child: IconButton(
-                onPressed: onTapEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  color: Color(0xFFF7944D),
-                ),
-                tooltip: 'Edit item',
+              top: 2,
+              right: 2,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onTapDetail != null)
+                    OutlinedButton(
+                      onPressed: onTapDetail,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF7944D)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: const Size(0, 32),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Text(
+                        'Lihat Detail',
+                        style: TextStyle(
+                          color: Color(0xFFF7944D),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  if (onTapDetail != null && onTapEdit != null)
+                    const SizedBox(width: 4),
+                  if (onTapEdit != null)
+                    IconButton(
+                      onPressed: onTapEdit,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Color(0xFFF7944D),
+                        size: 20,
+                      ),
+                      tooltip: 'Edit item',
+                    ),
+                ],
               ),
             ),
         ],
@@ -1563,12 +2088,17 @@ class _MetaColumn extends StatelessWidget {
           style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1F1F1F),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F1F1F),
+            ),
           ),
         ),
       ],
@@ -1728,14 +2258,122 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
   }
 }
 
+class OperasionalItemSelectionCard extends StatefulWidget {
+  final OperasionalExpenseItem item;
+  final ValueChanged<bool> onChanged;
+  final ValueChanged<String> onAmountChanged;
+
+  const OperasionalItemSelectionCard({
+    super.key,
+    required this.item,
+    required this.onChanged,
+    required this.onAmountChanged,
+  });
+
+  @override
+  State<OperasionalItemSelectionCard> createState() =>
+      _OperasionalItemSelectionCardState();
+}
+
+class _OperasionalItemSelectionCardState
+    extends State<OperasionalItemSelectionCard> {
+  late final TextEditingController _amountController;
+  late final FocusNode _amountFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(
+      text: widget.item.amount == 0 ? '' : widget.item.amount.toStringAsFixed(0),
+    );
+    _amountFocusNode = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant OperasionalItemSelectionCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final nextAmount = widget.item.amount == 0
+        ? ''
+        : widget.item.amount.toStringAsFixed(0);
+
+    if (!_amountFocusNode.hasFocus && _amountController.text != nextAmount) {
+      _amountController.text = nextAmount;
+    }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _amountFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: widget.item.isSelected ? const Color(0xFFFFF1E8) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: widget.item.isSelected
+              ? const Color(0xFFF7944D)
+              : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Checkbox(
+                value: widget.item.isSelected,
+                onChanged: (value) => widget.onChanged(value ?? false),
+                activeColor: const Color(0xFFF7944D),
+                side: const BorderSide(color: Color(0xFFD1D5DB)),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              Expanded(
+                child: Text(
+                  widget.item.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F1F1F),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const _FieldLabel('Total'),
+          const SizedBox(height: 6),
+          _CompactTextField(
+            controller: _amountController,
+            focusNode: _amountFocusNode,
+            hintText: 'Rp',
+            prefixText: 'Rp ',
+            keyboardType: TextInputType.number,
+            enabled: widget.item.isSelected,
+            onChanged: widget.onAmountChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class OperasionalExpenseCard extends StatelessWidget {
   final OperasionalExpenseItem item;
   final VoidCallback? onTapEdit;
+  final VoidCallback? onTapDetail;
 
   const OperasionalExpenseCard({
     super.key,
     required this.item,
     this.onTapEdit,
+    this.onTapDetail,
   });
 
   @override
@@ -1766,6 +2404,15 @@ class OperasionalExpenseCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     const Text(
                       'Total',
                       style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
@@ -1785,18 +2432,23 @@ class OperasionalExpenseCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 36),
                 child: OutlinedButton(
-                  onPressed: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      backgroundColor: const Color(0xFFFAFAFA),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(24),
-                        ),
-                      ),
-                      builder: (_) => _OperasionalNoteSheet(note: item.note),
-                    );
-                  },
+                  onPressed:
+                      onTapDetail ??
+                      () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          backgroundColor: const Color(0xFFFAFAFA),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24),
+                            ),
+                          ),
+                          builder: (_) => OperasionalDetailSheet(
+                            note: item.note,
+                            attachments: item.attachments,
+                          ),
+                        );
+                      },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFF7944D)),
                     shape: RoundedRectangleBorder(
@@ -1811,7 +2463,7 @@ class OperasionalExpenseCard extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                   ),
                   child: const Text(
-                    'Lihat Nota',
+                    'Lihat Detail',
                     style: TextStyle(
                       color: Color(0xFFF7944D),
                       fontWeight: FontWeight.w600,
@@ -1828,10 +2480,7 @@ class OperasionalExpenseCard extends StatelessWidget {
               right: -6,
               child: IconButton(
                 onPressed: onTapEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  color: Color(0xFFF7944D),
-                ),
+                icon: const Icon(Icons.edit_outlined, color: Color(0xFFF7944D)),
                 tooltip: 'Edit item',
               ),
             ),
@@ -1853,52 +2502,38 @@ class TambahItemOperasionalSheet extends StatefulWidget {
 
 class _TambahItemOperasionalSheetState
     extends State<TambahItemOperasionalSheet> {
+  final _nameController = TextEditingController();
   final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  final _imagePicker = ImagePicker();
-  final List<MaterialAttachmentItem> _attachments = [];
 
   bool get _canSubmit {
-    return (double.tryParse(
+    return _nameController.text.trim().isNotEmpty &&
+        (double.tryParse(
                   _amountController.text.trim().replaceAll(',', ''),
                 ) ??
                 0) >
-            0 &&
-        _noteController.text.trim().isNotEmpty;
+            0;
   }
 
   @override
   void initState() {
     super.initState();
+    _nameController.text = widget.initialItem?.name ?? '';
     _amountController.text = widget.initialItem == null
         ? ''
         : widget.initialItem!.amount.toStringAsFixed(0);
-    _noteController.text = widget.initialItem?.note ?? '';
-    _attachments.addAll(widget.initialItem?.attachments ?? const []);
+    _nameController.addListener(() => setState(() {}));
     _amountController.addListener(() => setState(() {}));
-    _noteController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
     _amountController.dispose();
-    _noteController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
-    final pickedImages = await _imagePicker.pickMultiImage(imageQuality: 85);
-    if (!mounted || pickedImages.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      _attachments.addAll(
-        pickedImages
-            .take(5 - _attachments.length)
-            .map((image) => MaterialAttachmentItem.file(image.path)),
-      );
-    });
+  void _deleteItem() {
+    Navigator.pop(context, OperasionalItemSheetResult.deleted());
   }
 
   void _saveItem() {
@@ -1906,14 +2541,19 @@ class _TambahItemOperasionalSheetState
       id:
           widget.initialItem?.id ??
           'operasional-${DateTime.now().millisecondsSinceEpoch}',
+      name: _nameController.text.trim(),
       amount:
           double.tryParse(_amountController.text.trim().replaceAll(',', '')) ??
           0,
-      note: _noteController.text.trim(),
-      attachments: List<MaterialAttachmentItem>.from(_attachments),
+      note: widget.initialItem?.note ?? '',
+      attachments: List<MaterialAttachmentItem>.from(
+        widget.initialItem?.attachments ?? const [],
+      ),
+      isSelected: true,
+      isCustom: widget.initialItem?.isCustom ?? true,
     );
 
-    Navigator.pop(context, item);
+    Navigator.pop(context, OperasionalItemSheetResult.saved(item));
   }
 
   @override
@@ -1933,22 +2573,46 @@ class _TambahItemOperasionalSheetState
           children: [
             Row(
               children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                ),
                 Expanded(
                   child: Text(
-                    widget.initialItem == null ? 'Tambah Item' : 'Edit Item',
+                    widget.initialItem == null ? 'Tambah Item Baru' : 'Edit',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 18),
-                ),
               ],
             ),
             const SizedBox(height: 12),
+            const _FieldLabel('Nama Item'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                hintText: 'Item 1',
+                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF5D93E8)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             const _FieldLabel('Jumlah Biaya'),
             const SizedBox(height: 8),
             _CompactTextField(
@@ -1957,75 +2621,76 @@ class _TambahItemOperasionalSheetState
               prefixText: 'Rp ',
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
-            const _FieldLabel('Catatan'),
-            const SizedBox(height: 8),
-            _NotesField(controller: _noteController, hintText: 'Ketik Disini'),
-            const SizedBox(height: 16),
-            const _FieldLabel('Lampiran'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 92,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
+            const SizedBox(height: 24),
+            if (widget.initialItem != null)
+              Row(
                 children: [
-                  _UploadBox(onTap: _pickImages),
-                  ..._attachments.map(
-                    (image) => Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: AttachmentThumbnail(image: image),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _deleteItem,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF111827)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                      child: const Text(
+                        'Hapus',
+                        style: TextStyle(
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _canSubmit ? _saveItem : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8BC7F1),
+                        disabledBackgroundColor: const Color(0xFFD6EAF8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Simpan',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _canSubmit ? _saveItem : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7944D),
+                    disabledBackgroundColor: const Color(0xFFFAD1B7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Simpan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _canSubmit ? _saveItem : null,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFF7944D)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      minimumSize: const Size.fromHeight(50),
-                    ),
-                    icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
-                    label: const Text(
-                      'Tambah Lagi',
-                      style: TextStyle(
-                        color: Color(0xFFF7944D),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _canSubmit ? _saveItem : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF7944D),
-                      disabledBackgroundColor: const Color(0xFFFAD1B7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      minimumSize: const Size.fromHeight(50),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -2033,16 +2698,25 @@ class _TambahItemOperasionalSheetState
   }
 }
 
-class _OperasionalNoteSheet extends StatelessWidget {
+class OperasionalDetailSheet extends StatelessWidget {
   final String note;
+  final List<MaterialAttachmentItem> attachments;
+  final String? amount;
+  final String? totalItems;
 
-  const _OperasionalNoteSheet({required this.note});
+  const OperasionalDetailSheet({
+    super.key,
+    required this.note,
+    required this.attachments,
+    this.amount,
+    this.totalItems,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2052,7 +2726,7 @@ class _OperasionalNoteSheet extends StatelessWidget {
               children: [
                 const Expanded(
                   child: Text(
-                    'Lihat Catatan',
+                    'Lihat Detail',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -2063,24 +2737,102 @@ class _OperasionalNoteSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Text(
-                note.trim().isEmpty ? '-' : note,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.45,
+            if (amount != null) ...[
+              const Text(
+                'Jumlah',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF1F1F1F),
                 ),
               ),
+              const SizedBox(height: 8),
+              _DetailSheetBox(text: amount!),
+              const SizedBox(height: 16),
+            ],
+            if (totalItems != null) ...[
+              const Text(
+                'Total Item',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F1F1F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _DetailSheetBox(text: totalItems!),
+              const SizedBox(height: 16),
+            ],
+            const Text(
+              'Catatan',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F1F1F),
+              ),
             ),
+            const SizedBox(height: 8),
+            _DetailSheetBox(text: note.trim().isEmpty ? '-' : note),
+            const SizedBox(height: 16),
+            const Text(
+              'Lampiran',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F1F1F),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (attachments.isEmpty)
+              const _DetailSheetBox(text: '-')
+            else
+              SizedBox(
+                height: 74,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: attachments.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) => ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AttachmentThumbnail(
+                      image: attachments[index],
+                      galleryImages: attachments,
+                      initialIndex: index,
+                      width: 74,
+                      height: 74,
+                    ),
+                  ),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailSheetBox extends StatelessWidget {
+  final String text;
+
+  const _DetailSheetBox({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.45,
+          color: Color(0xFF1F1F1F),
         ),
       ),
     );
@@ -2383,12 +3135,16 @@ class _UploadBox extends StatelessWidget {
 
 class AttachmentThumbnail extends StatelessWidget {
   final MaterialAttachmentItem image;
+  final List<MaterialAttachmentItem>? galleryImages;
+  final int initialIndex;
   final double width;
   final double height;
 
   const AttachmentThumbnail({
     super.key,
     required this.image,
+    this.galleryImages,
+    this.initialIndex = 0,
     this.width = 92,
     this.height = 92,
   });
@@ -2399,53 +3155,11 @@ class AttachmentThumbnail extends StatelessWidget {
       onTap: () => _openPreview(context),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: image.isFile
-            ? Image.file(
-                File(image.path),
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              )
-            : image.isNetwork
-            ? Image.network(
-                image.path,
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) {
-                    return child;
-                  }
-
-                  return Container(
-                    width: width,
-                    height: height,
-                    color: const Color(0xFFF1F3F5),
-                    alignment: Alignment.center,
-                    child: const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
-                errorBuilder: (_, _, _) => Container(
-                  width: width,
-                  height: height,
-                  color: const Color(0xFFF1F3F5),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Color(0xFF9AA0A6),
-                  ),
-                ),
-              )
-            : Image.asset(
-                image.path,
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              ),
+        child: _AttachmentThumbnailContent(
+          image: image,
+          width: width,
+          height: height,
+        ),
       ),
     );
   }
@@ -2453,15 +3167,133 @@ class AttachmentThumbnail extends StatelessWidget {
   void _openPreview(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => _AttachmentPreviewPage(image: image)),
+      MaterialPageRoute(
+        builder: (_) => _AttachmentPreviewPage(
+          images: galleryImages ?? [image],
+          initialIndex: initialIndex,
+        ),
+      ),
     );
   }
 }
 
-class _AttachmentPreviewPage extends StatelessWidget {
+class _AttachmentThumbnailContent extends StatelessWidget {
   final MaterialAttachmentItem image;
+  final double width;
+  final double height;
 
-  const _AttachmentPreviewPage({required this.image});
+  const _AttachmentThumbnailContent({
+    required this.image,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isPdfAttachment(image.path)) {
+      return _AttachmentDocumentTile(
+        width: width,
+        height: height,
+        extensionLabel: 'PDF',
+      );
+    }
+
+    if (_isSvgAttachment(image.path)) {
+      if (image.isFile) {
+        return SvgPicture.file(
+          File(image.path),
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+          placeholderBuilder: (_) =>
+              _AttachmentLoadingTile(width: width, height: height),
+        );
+      }
+
+      if (image.isNetwork) {
+        return SvgPicture.network(
+          image.path,
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+          placeholderBuilder: (_) =>
+              _AttachmentLoadingTile(width: width, height: height),
+        );
+      }
+
+      return SvgPicture.asset(
+        image.path,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+
+    if (image.isFile) {
+      return Image.file(
+        File(image.path),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+
+    if (image.isNetwork) {
+      return Image.network(
+        image.path,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return _AttachmentLoadingTile(width: width, height: height);
+        },
+        errorBuilder: (_, _, _) =>
+            _AttachmentErrorTile(width: width, height: height),
+      );
+    }
+
+    return Image.asset(
+      image.path,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+    );
+  }
+}
+
+class _AttachmentPreviewPage extends StatefulWidget {
+  final List<MaterialAttachmentItem> images;
+  final int initialIndex;
+
+  const _AttachmentPreviewPage({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_AttachmentPreviewPage> createState() => _AttachmentPreviewPageState();
+}
+
+class _AttachmentPreviewPageState extends State<_AttachmentPreviewPage> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2471,37 +3303,209 @@ class _AttachmentPreviewPage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
+        title: widget.images.length > 1
+            ? Text('${_currentIndex + 1}/${widget.images.length}')
+            : null,
       ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.8,
-          maxScale: 4,
-          child: image.isFile
-              ? Image.file(File(image.path), fit: BoxFit.contain)
-              : image.isNetwork
-              ? Image.network(
-                  image.path,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) {
-                      return child;
-                    }
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          return Center(child: _buildPreviewContent(widget.images[index]));
+        },
+      ),
+    );
+  }
 
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  },
-                  errorBuilder: (_, _, _) => const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Colors.white70,
-                    size: 48,
-                  ),
-                )
-              : Image.asset(image.path, fit: BoxFit.contain),
+  Widget _buildPreviewContent(MaterialAttachmentItem image) {
+    if (_isPdfAttachment(image.path)) {
+      return _buildPdfPreview(image);
+    }
+
+    return InteractiveViewer(
+      minScale: 0.8,
+      maxScale: 4,
+      child: _buildImagePreview(image),
+    );
+  }
+
+  Widget _buildImagePreview(MaterialAttachmentItem image) {
+    if (_isSvgAttachment(image.path)) {
+      if (image.isFile) {
+        return SvgPicture.file(
+          File(image.path),
+          fit: BoxFit.contain,
+          placeholderBuilder: (_) =>
+              const CircularProgressIndicator(color: Colors.white),
+        );
+      }
+
+      if (image.isNetwork) {
+        return SvgPicture.network(
+          image.path,
+          fit: BoxFit.contain,
+          placeholderBuilder: (_) =>
+              const CircularProgressIndicator(color: Colors.white),
+        );
+      }
+
+      return SvgPicture.asset(image.path, fit: BoxFit.contain);
+    }
+
+    if (image.isFile) {
+      return Image.file(File(image.path), fit: BoxFit.contain);
+    }
+
+    if (image.isNetwork) {
+      return Image.network(
+        image.path,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        },
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.white70,
+          size: 48,
+        ),
+      );
+    }
+
+    return Image.asset(image.path, fit: BoxFit.contain);
+  }
+
+  Widget _buildPdfPreview(MaterialAttachmentItem image) {
+    if (image.isFile) {
+      return PdfViewer.file(
+        image.path,
+        params: const PdfViewerParams(backgroundColor: Colors.black),
+      );
+    }
+
+    if (image.isNetwork) {
+      return PdfViewer.uri(
+        Uri.parse(image.path),
+        params: const PdfViewerParams(backgroundColor: Colors.black),
+      );
+    }
+
+    return Center(
+      child: Text(
+        _extractFileName(image.path),
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
+}
+
+class _AttachmentLoadingTile extends StatelessWidget {
+  final double width;
+  final double height;
+
+  const _AttachmentLoadingTile({required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: const Color(0xFFF1F3F5),
+      alignment: Alignment.center,
+      child: const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+}
+
+class _AttachmentErrorTile extends StatelessWidget {
+  final double width;
+  final double height;
+
+  const _AttachmentErrorTile({required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: const Color(0xFFF1F3F5),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: Color(0xFF9AA0A6),
+      ),
+    );
+  }
+}
+
+class _AttachmentDocumentTile extends StatelessWidget {
+  final double width;
+  final double height;
+  final String extensionLabel;
+
+  const _AttachmentDocumentTile({
+    required this.width,
+    required this.height,
+    required this.extensionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: const Color(0xFFF8FAFC),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.picture_as_pdf_rounded,
+            color: Color(0xFFD14343),
+            size: 28,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            extensionLabel,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F1F1F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+bool _isPdfAttachment(String path) => path.toLowerCase().endsWith('.pdf');
+
+bool _isSvgAttachment(String path) => path.toLowerCase().endsWith('.svg');
+
+String _extractFileName(String path) {
+  final sanitized = path.split('?').first;
+  final segments = sanitized.split('/');
+  return segments.isEmpty ? path : segments.last;
 }
 
 class _EmptyMaterialState extends StatelessWidget {

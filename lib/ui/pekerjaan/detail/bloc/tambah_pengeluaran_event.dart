@@ -14,6 +14,7 @@ class PengeluaranSubmissionPayload {
 
 class SubmitPengeluaranRequested extends TambahPengeluaranEvent {
   final String projectId;
+  final String? pengeluaranId;
   final String kategori;
   final String tanggal;
   final String catatan;
@@ -22,6 +23,7 @@ class SubmitPengeluaranRequested extends TambahPengeluaranEvent {
 
   SubmitPengeluaranRequested({
     required this.projectId,
+    this.pengeluaranId,
     required this.kategori,
     required this.tanggal,
     required this.catatan,

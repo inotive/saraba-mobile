@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_pengeluaran_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_pengeluaran_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/project_model.dart';
@@ -74,6 +79,212 @@ class PekerjaanService {
       _logger.error('Pengeluaran detail request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading pengeluaran detail: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectPengeluaranListResponse?> fetchProjectPengeluaran(
+    String projectId,
+  ) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get('/proyeks/$projectId/pengeluaran');
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return ProjectPengeluaranListResponse.fromJson(response.data);
+      }
+
+      _logger.error('Project pengeluaran list request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading pengeluaran list: $e');
+    }
+
+    return null;
+  }
+
+  Future<PengeluaranItemDetailResponse?> fetchPengeluaranItemDetail({
+    required String projectId,
+    required String batchId,
+    required String itemId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/proyeks/$projectId/pengeluaran/$batchId/$itemId',
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return PengeluaranItemDetailResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Pengeluaran item detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading pengeluaran item detail: $e');
+    }
+
+    return null;
+  }
+
+  Future<SubmitProgressResponse?> fetchProgressLogDetail({
+    required String projectId,
+    required String logId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/proyeks/$projectId/progress-logs/$logId',
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return SubmitProgressResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Progress detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading progress detail: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestResponse?> fetchProjectRequests(String projectId) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get('/proyeks/$projectId/permintaans');
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return ProjectRequestResponse.fromJson(response.data);
+      }
+
+      _logger.error('Project request list request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading project requests: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestSubmitResponse?> submitProjectRequest({
+    required String projectId,
+    required String tanggalPermintaan,
+    required String deskripsi,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.post(
+        '/proyeks/$projectId/permintaans',
+        data: {
+          'tanggal_permintaan': tanggalPermintaan,
+          'deskripsi': deskripsi,
+        },
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Submit project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while submitting project request: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestSubmitResponse?> updateProjectRequest({
+    required String projectId,
+    required String requestId,
+    required String tanggalPermintaan,
+    required String deskripsi,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.put(
+        '/proyeks/$projectId/permintaans/$requestId',
+        data: {
+          'tanggal_permintaan': tanggalPermintaan,
+          'deskripsi': deskripsi,
+        },
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Update project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while updating project request: $e');
+    }
+
+    return null;
+  }
+
+  Future<ProjectRequestSubmitResponse?> deleteProjectRequest({
+    required String projectId,
+    required String requestId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.delete(
+        '/proyeks/$projectId/permintaans/$requestId',
+      );
+
+      _logger.response(response);
+
+      if (response.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Delete project request was not successful');
+    } on DioException catch (e) {
+      _logger.dioError(e);
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return ProjectRequestSubmitResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+      }
+    } catch (e) {
+      _logger.error('Unexpected error while deleting project request: $e');
     }
 
     return null;
@@ -225,6 +436,7 @@ class PekerjaanService {
 
   Future<SubmitPengeluaranResponse?> submitPengeluaran({
     required String projectId,
+    String? pengeluaranId,
     required String kategori,
     required String tanggal,
     required String catatan,
@@ -240,25 +452,49 @@ class PekerjaanService {
         MapEntry('catatan', catatan),
       ]);
 
-      for (var index = 0; index < items.length; index++) {
-        final item = items[index];
-        formData.fields.addAll([
-          MapEntry('items[$index][name]', item.nama),
-          MapEntry('items[$index][jumlah]', item.jumlah.toString()),
-          MapEntry('items[$index][nominal]', item.nominal.toString()),
-        ]);
+      if (pengeluaranId == null) {
+        for (var index = 0; index < items.length; index++) {
+          final item = items[index];
+          formData.fields.addAll([
+            MapEntry('items[$index][name]', item.nama),
+            MapEntry('items[$index][jumlah]', item.jumlah.toString()),
+            MapEntry('items[$index][nominal]', item.nominal.toString()),
+          ]);
+        }
+      } else {
+        formData.fields.add(
+          MapEntry(
+            'items',
+            jsonEncode(
+              items
+                  .map(
+                    (item) => {
+                      'name': item.nama,
+                      'jumlah': item.jumlah,
+                      'nominal': item.nominal,
+                    },
+                  )
+                  .toList(),
+            ),
+          ),
+        );
       }
 
       for (final path in lampiranPaths) {
         formData.files.add(
-          MapEntry('lampiran[]', await MultipartFile.fromFile(path)),
+          MapEntry(
+            pengeluaranId == null ? 'lampiran[]' : 'lampiran',
+            await MultipartFile.fromFile(path),
+          ),
         );
       }
 
-      final response = await dio.post(
-        '/proyeks/$projectId/pengeluaran',
-        data: formData,
-      );
+      final response = pengeluaranId == null
+          ? await dio.post('/proyeks/$projectId/pengeluaran', data: formData)
+          : await dio.put(
+              '/proyeks/$projectId/pengeluaran/$pengeluaranId',
+              data: formData,
+            );
 
       _logger.response(response);
 

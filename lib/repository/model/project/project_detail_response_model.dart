@@ -196,18 +196,26 @@ class ProjectPengeluaranSection {
 
 class ProjectPengeluaranItem {
   final int id;
+  final String nomorTransaksi;
   final String namaItem;
   final String kategori;
+  final String kategoriLabel;
   final String jumlah;
+  final double grandTotal;
+  final int? totalItem;
   final String tanggal;
   final String keterangan;
   final ProjectUserSummary user;
 
   ProjectPengeluaranItem({
     required this.id,
+    required this.nomorTransaksi,
     required this.namaItem,
     required this.kategori,
+    required this.kategoriLabel,
     required this.jumlah,
+    required this.grandTotal,
+    required this.totalItem,
     required this.tanggal,
     required this.keterangan,
     required this.user,
@@ -216,9 +224,16 @@ class ProjectPengeluaranItem {
   factory ProjectPengeluaranItem.fromJson(Map<String, dynamic> json) {
     return ProjectPengeluaranItem(
       id: json['id'] as int? ?? 0,
+      nomorTransaksi: json['nomor_transaksi']?.toString() ?? '',
       namaItem: json['nama_item']?.toString() ?? '',
       kategori: json['kategori']?.toString() ?? '',
+      kategoriLabel: json['kategori_label']?.toString() ?? '',
       jumlah: json['jumlah']?.toString() ?? '0',
+      grandTotal: _parseDouble(json['grand_total']),
+      totalItem:
+          _parseNullableInt(json['total_item']) ??
+          _parseNullableInt(json['items_count']) ??
+          _parseNullableInt(json['count']),
       tanggal: json['tanggal']?.toString() ?? '',
       keterangan: json['keterangan']?.toString() ?? '',
       user: ProjectUserSummary.fromJson(json['user'] as Map<String, dynamic>),
@@ -319,7 +334,11 @@ int? _parseNullableInt(dynamic value) {
     return value;
   }
 
-  return int.tryParse(value.toString());
+  if (value is String) {
+    return int.tryParse(value);
+  }
+
+  return null;
 }
 
 String _parsePhotoUrl(dynamic value) {

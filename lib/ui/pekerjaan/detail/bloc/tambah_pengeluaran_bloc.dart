@@ -38,6 +38,7 @@ class TambahPengeluaranBloc
 
     final response = await pekerjaanService.submitPengeluaran(
       projectId: event.projectId,
+      pengeluaranId: event.pengeluaranId,
       kategori: event.kategori,
       tanggal: event.tanggal,
       catatan: event.catatan,
@@ -52,6 +53,8 @@ class TambahPengeluaranBloc
           isSuccess: false,
           errorMessage: response?.message.isNotEmpty == true
               ? response!.message
+              : event.pengeluaranId != null
+              ? 'Gagal memperbarui pengeluaran'
               : 'Gagal menambahkan pengeluaran',
         ),
       );
@@ -64,6 +67,8 @@ class TambahPengeluaranBloc
         isSuccess: true,
         successMessage: response.message.isNotEmpty
             ? response.message
+            : event.pengeluaranId != null
+            ? 'Pengeluaran berhasil diperbarui'
             : 'Pengeluaran berhasil ditambahkan',
         clearError: true,
       ),

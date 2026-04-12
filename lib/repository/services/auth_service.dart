@@ -14,7 +14,7 @@ class AuthService {
 
   late final Dio _dio = _buildDio(
     BaseOptions(
-      baseUrl: "https://sarabakawabonding.id/api/v1",
+      baseUrl: "https://saraba.inotivedev.com/api/v1",
       headers: {"Accept": "application/json"},
     ),
   );
@@ -106,6 +106,14 @@ class AuthService {
     await box.put('current_user', user);
   }
 
+  Future<void> _clearSavedSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("token");
+
+    final box = Hive.box<User>('userBox');
+    await box.delete('current_user');
+  }
+
   User _mapLoginUser(LoginData data) {
     final karyawan = data.karyawan;
 
@@ -126,11 +134,7 @@ class AuthService {
     if (useMock) {
       try {
         _logger.log('Mock logout request');
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove("token");
-
-        final box = Hive.box<User>('userBox');
-        await box.delete('current_user');
+        await _clearSavedSession();
         _logger.log('Mock logout success');
         return true; // Just return true for mock logout
       } catch (e) {
@@ -147,22 +151,19 @@ class AuthService {
       );
 
       _logger.response(response);
-
-      if (response.statusCode == 200 && response.data["success"] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove("token");
-
-        final box = Hive.box<User>('userBox');
-        await box.delete('current_user');
-        _logger.log('Logout success');
-
-        return true;
-      }
-
-      return false;
     } catch (e) {
-      return false;
+      _logger.error('Logout request error: $e');
+    } finally {
+      try {
+        await _clearSavedSession();
+        _logger.log('Logout success');
+        return true;
+      } catch (e) {
+        _logger.error('Failed clearing saved session on logout: $e');
+      }
     }
+
+    return false;
   }
 
   Future<Dio> getAuthDio() async {
@@ -170,7 +171,7 @@ class AuthService {
 
     return _buildDio(
       BaseOptions(
-        baseUrl: "https://sarabakawabonding.id/api/v1",
+        baseUrl: "https://saraba.inotivedev.com/api/v1",
         headers: {"Authorization": token ?? "", "Accept": "application/json"},
       ),
     );
