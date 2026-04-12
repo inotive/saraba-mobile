@@ -228,6 +228,8 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 child: AttachmentThumbnail(
                                   image: draft.attachments[index],
+                                  galleryImages: draft.attachments,
+                                  initialIndex: index,
                                   width: 74,
                                   height: 74,
                                 ),

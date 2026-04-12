@@ -654,21 +654,25 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                   const SizedBox(height: 8),
                                   SizedBox(
                                     height: 92,
-                                    child: ListView(
+                                    child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
-                                      children: [
-                                        _UploadBox(onTap: _pickImages),
-                                        ..._selectedImages.map(
-                                          (image) => Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8,
-                                            ),
-                                            child: AttachmentThumbnail(
-                                              image: image,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      physics: const BouncingScrollPhysics(),
+                                      itemCount: _selectedImages.length + 1,
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(width: 8),
+                                      itemBuilder: (context, index) {
+                                        if (index == 0) {
+                                          return _UploadBox(
+                                            onTap: _pickImages,
+                                          );
+                                        }
+
+                                        return AttachmentThumbnail(
+                                          image: _selectedImages[index - 1],
+                                          galleryImages: _selectedImages,
+                                          initialIndex: index - 1,
+                                        );
+                                      },
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -1971,17 +1975,22 @@ class _TambahItemOperasionalSheetState
             const SizedBox(height: 8),
             SizedBox(
               height: 92,
-              child: ListView(
+              child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  _UploadBox(onTap: _pickImages),
-                  ..._attachments.map(
-                    (image) => Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: AttachmentThumbnail(image: image),
-                    ),
-                  ),
-                ],
+                physics: const BouncingScrollPhysics(),
+                itemCount: _attachments.length + 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _UploadBox(onTap: _pickImages);
+                  }
+
+                  return AttachmentThumbnail(
+                    image: _attachments[index - 1],
+                    galleryImages: _attachments,
+                    initialIndex: index - 1,
+                  );
+                },
               ),
             ),
             const SizedBox(height: 16),
@@ -2131,12 +2140,15 @@ class _OperasionalDetailSheet extends StatelessWidget {
                 height: 74,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
                   itemCount: attachments.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) => ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: AttachmentThumbnail(
                       image: attachments[index],
+                      galleryImages: attachments,
+                      initialIndex: index,
                       width: 74,
                       height: 74,
                     ),
@@ -2446,12 +2458,16 @@ class _UploadBox extends StatelessWidget {
 
 class AttachmentThumbnail extends StatelessWidget {
   final MaterialAttachmentItem image;
+  final List<MaterialAttachmentItem>? galleryImages;
+  final int initialIndex;
   final double width;
   final double height;
 
   const AttachmentThumbnail({
     super.key,
     required this.image,
+    this.galleryImages,
+    this.initialIndex = 0,
     this.width = 92,
     this.height = 92,
   });
@@ -2474,7 +2490,12 @@ class AttachmentThumbnail extends StatelessWidget {
   void _openPreview(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => _AttachmentPreviewPage(image: image)),
+      MaterialPageRoute(
+        builder: (_) => _AttachmentPreviewPage(
+          images: galleryImages ?? [image],
+          initialIndex: initialIndex,
+        ),
+      ),
     );
   }
 }
@@ -2573,10 +2594,35 @@ class _AttachmentThumbnailContent extends StatelessWidget {
   }
 }
 
-class _AttachmentPreviewPage extends StatelessWidget {
-  final MaterialAttachmentItem image;
+class _AttachmentPreviewPage extends StatefulWidget {
+  final List<MaterialAttachmentItem> images;
+  final int initialIndex;
 
-  const _AttachmentPreviewPage({required this.image});
+  const _AttachmentPreviewPage({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_AttachmentPreviewPage> createState() => _AttachmentPreviewPageState();
+}
+
+class _AttachmentPreviewPageState extends State<_AttachmentPreviewPage> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2586,24 +2632,40 @@ class _AttachmentPreviewPage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
+        title: widget.images.length > 1
+            ? Text('${_currentIndex + 1}/${widget.images.length}')
+            : null,
       ),
-      body: Center(child: _buildPreviewContent()),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          return Center(
+            child: _buildPreviewContent(widget.images[index]),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildPreviewContent() {
+  Widget _buildPreviewContent(MaterialAttachmentItem image) {
     if (_isPdfAttachment(image.path)) {
-      return _buildPdfPreview();
+      return _buildPdfPreview(image);
     }
 
     return InteractiveViewer(
       minScale: 0.8,
       maxScale: 4,
-      child: _buildImagePreview(),
+      child: _buildImagePreview(image),
     );
   }
 
-  Widget _buildImagePreview() {
+  Widget _buildImagePreview(MaterialAttachmentItem image) {
     if (_isSvgAttachment(image.path)) {
       if (image.isFile) {
         return SvgPicture.file(
@@ -2654,7 +2716,7 @@ class _AttachmentPreviewPage extends StatelessWidget {
     return Image.asset(image.path, fit: BoxFit.contain);
   }
 
-  Widget _buildPdfPreview() {
+  Widget _buildPdfPreview(MaterialAttachmentItem image) {
     if (image.isFile) {
       return PdfViewer.file(
         image.path,

@@ -25,7 +25,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
   Future<void> _openOptions(
     BuildContext context,
     OperasionalPengeluaranDraft draft,
-    String note,
   ) async {
     final action = await showModalBottomSheet<_OperasionalDetailAction>(
       context: context,
@@ -51,18 +50,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
           projectId: projectId,
           pengeluaranId: pengeluaranId,
         ),
-      );
-      return;
-    }
-
-    if (action == _OperasionalDetailAction.viewNote) {
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: const Color(0xFFFAFAFA),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (_) => _DetailOperasionalNoteSheet(note: note),
       );
       return;
     }
@@ -248,7 +235,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                                           _openOptions(
                                             context,
                                             draft,
-                                            detail.catatan,
                                           )
                                     : null,
                               ),
@@ -303,7 +289,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                             child: OutlinedButton.icon(
                               onPressed: () => state.isDeleting
                                   ? null
-                                  : _openOptions(context, draft, detail.catatan),
+                                  : _openOptions(context, draft),
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(
                                   color: Color(0xFFF7944D),
@@ -381,7 +367,7 @@ DateTime _parseOperasionalDetailDate(String rawDate) {
   }
 }
 
-enum _OperasionalDetailAction { edit, viewNote, delete }
+enum _OperasionalDetailAction { edit, delete }
 
 class _OperasionalDetailOptionsSheet extends StatelessWidget {
   const _OperasionalDetailOptionsSheet();
@@ -415,12 +401,6 @@ class _OperasionalDetailOptionsSheet extends StatelessWidget {
               icon: Icons.edit_outlined,
               label: 'Edit',
               onTap: () => Navigator.pop(context, _OperasionalDetailAction.edit),
-            ),
-            _DetailOptionRow(
-              icon: Icons.remove_red_eye_outlined,
-              label: 'Lihat Catatan',
-              onTap: () =>
-                  Navigator.pop(context, _OperasionalDetailAction.viewNote),
             ),
             _DetailOptionRow(
               icon: Icons.delete_outline,
@@ -533,60 +513,6 @@ class _DetailValue extends StatelessWidget {
         fontSize: 16,
         fontWeight: FontWeight.w700,
         color: Color(0xFF1B2A4A),
-      ),
-    );
-  }
-}
-
-class _DetailOperasionalNoteSheet extends StatelessWidget {
-  final String note;
-
-  const _DetailOperasionalNoteSheet({required this.note});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Lihat Catatan',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Text(
-                note.trim().isEmpty ? '-' : note,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.45,
-                  color: Color(0xFF1F1F1F),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
