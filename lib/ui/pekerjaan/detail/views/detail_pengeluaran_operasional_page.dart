@@ -407,13 +407,17 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
           : detail.nomorTransaksi,
       date: _parseOperasionalDetailDate(detail.tanggal),
       createdBy: detail.user.name,
+      note: detail.catatan,
+      attachments: attachmentItems,
       items: detail.items
           .map(
             (item) => OperasionalExpenseItem(
               id: item.id.toString(),
+              name: item.namaItem,
               amount: item.jumlah,
               note: detail.catatan,
               attachments: attachmentItems,
+              isSelected: true,
             ),
           )
           .toList(),
