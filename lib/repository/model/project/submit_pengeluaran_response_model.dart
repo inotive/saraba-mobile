@@ -57,12 +57,16 @@ class SubmittedPengeluaranItem {
   final String namaItem;
   final int kuantitas;
   final String jumlah;
+  final String? catatan;
+  final List<SubmittedPengeluaranLampiran> lampiransList;
 
   SubmittedPengeluaranItem({
     required this.id,
     required this.namaItem,
     required this.kuantitas,
     required this.jumlah,
+    this.catatan,
+    required this.lampiransList,
   });
 
   factory SubmittedPengeluaranItem.fromJson(Map<String, dynamic> json) {
@@ -71,6 +75,34 @@ class SubmittedPengeluaranItem {
       namaItem: json['nama_item']?.toString() ?? '',
       kuantitas: json['kuantitas'] as int? ?? 0,
       jumlah: json['jumlah']?.toString() ?? '0',
+      catatan: json['catatan']?.toString(),
+      lampiransList: (json['lampirans_list'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(SubmittedPengeluaranLampiran.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class SubmittedPengeluaranLampiran {
+  final int id;
+  final String nama;
+  final String url;
+  final String extension;
+
+  SubmittedPengeluaranLampiran({
+    required this.id,
+    required this.nama,
+    required this.url,
+    required this.extension,
+  });
+
+  factory SubmittedPengeluaranLampiran.fromJson(Map<String, dynamic> json) {
+    return SubmittedPengeluaranLampiran(
+      id: json['id'] as int? ?? 0,
+      nama: json['nama']?.toString() ?? '',
+      url: json['url']?.toString() ?? '',
+      extension: json['extension']?.toString() ?? '',
     );
   }
 }

@@ -467,6 +467,11 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       }
       _selectedItems = updatedItems;
     });
+
+    _showItemResultBanner(
+      isDeleted: result.isDeleted,
+      isEditing: true,
+    );
   }
 
   void _saveMaterialFlow() {
@@ -570,12 +575,26 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       }
     });
 
+    _showItemResultBanner(
+      isDeleted: result.isDeleted,
+      isEditing: itemIndex != null,
+    );
+  }
+
+  void _showItemResultBanner({
+    required bool isDeleted,
+    required bool isEditing,
+  }) {
+    final message = isDeleted
+        ? 'Kamu berhasil menghapus item pengeluaran'
+        : isEditing
+        ? 'Kamu berhasil memperbarui item pengeluaran'
+        : 'Kamu berhasil menambahkan item pengeluaran baru';
+
     StatusBanner.show(
       context,
-      title: result.isDeleted ? 'Berhasil Menghapus' : 'Berhasil Menyimpan',
-      message: result.isDeleted
-          ? 'Kamu berhasil menghapus item pengeluaran'
-          : 'Kamu berhasil menambahkan item pengeluaran baru',
+      title: isDeleted ? 'Berhasil Menghapus' : 'Berhasil Menyimpan',
+      message: message,
       type: StatusBannerType.success,
     );
   }
@@ -673,12 +692,35 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (state.isSuccess) {
+      final result = PengeluaranMaterialFlowResult(
+        title: widget.successResult.title,
+        message: state.successMessage ?? widget.successResult.message,
+      );
+
+      final shouldShowInlineSuccess =
+          widget.pengeluaranId != null;
+
+      if (shouldShowInlineSuccess) {
+        final navigator = Navigator.of(context);
+        StatusBanner.show(
+          context,
+          title: result.title,
+          message: result.message,
+          type: StatusBannerType.success,
+        );
+
+        Future<void>.delayed(const Duration(milliseconds: 700), () {
+          if (!mounted) {
+            return;
+          }
+          navigator.pop(result);
+        });
+        return;
+      }
+
       Navigator.pop(
         context,
-        PengeluaranMaterialFlowResult(
-          title: widget.successResult.title,
-          message: state.successMessage ?? widget.successResult.message,
-        ),
+        result,
       );
     }
   }

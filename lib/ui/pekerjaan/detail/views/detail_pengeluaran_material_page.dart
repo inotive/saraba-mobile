@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_state.dart';
@@ -171,13 +172,23 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
 
           if (state.deleteSuccessMessage != null &&
               state.deleteSuccessMessage!.isNotEmpty) {
-            Navigator.pop(
-              context,
-              PengeluaranMaterialFlowResult(
-                title: 'Berhasil Menghapus',
-                message: state.deleteSuccessMessage!,
-              ),
+            final result = PengeluaranMaterialFlowResult(
+              title: 'Berhasil Menghapus',
+              message: state.deleteSuccessMessage!,
             );
+            final navigator = Navigator.of(context);
+            StatusBanner.show(
+              context,
+              title: result.title,
+              message: result.message,
+              type: StatusBannerType.success,
+            );
+            Future<void>.delayed(const Duration(milliseconds: 700), () {
+              if (!context.mounted) {
+                return;
+              }
+              navigator.pop(result);
+            });
           }
         },
         builder: (context, state) {
