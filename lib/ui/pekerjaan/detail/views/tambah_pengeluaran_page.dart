@@ -885,51 +885,53 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                               ),
                                               child: OperasionalExpenseCard(
                                                 item: entry.value,
-                                                onTapDetail: () {
-                                                  showModalBottomSheet<void>(
-                                                    context: context,
-                                                    backgroundColor:
-                                                        const Color(
-                                                          0xFFFAFAFA,
-                                                        ),
-                                                    shape:
-                                                        const RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.vertical(
-                                                                top:
-                                                                    Radius.circular(
-                                                                      24,
+                                                onTapDetail: _isEditMode
+                                                    ? null
+                                                    : () {
+                                                        showModalBottomSheet<void>(
+                                                          context: context,
+                                                          backgroundColor:
+                                                              const Color(
+                                                                0xFFFAFAFA,
+                                                              ),
+                                                          shape:
+                                                              const RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.vertical(
+                                                                      top:
+                                                                          Radius.circular(
+                                                                            24,
+                                                                          ),
                                                                     ),
                                                               ),
-                                                        ),
-                                                    builder: (_) =>
-                                                        OperasionalDetailSheet(
-                                                          note:
-                                                              _catatanController
-                                                                  .text,
-                                                          attachments:
-                                                              _selectedImages,
-                                                          amount:
-                                                              widget.category ==
-                                                                  PengeluaranCategory
-                                                                      .operasional
-                                                              ? _formatCurrency(
-                                                                  entry
-                                                                      .value
-                                                                      .amount,
-                                                                )
-                                                              : null,
-                                                          totalItems:
-                                                              widget.category ==
-                                                                  PengeluaranCategory
-                                                                      .operasional
-                                                              ? _operasionalItems
-                                                                    .length
-                                                                    .toString()
-                                                              : null,
-                                                        ),
-                                                  );
-                                                },
+                                                          builder: (_) =>
+                                                              OperasionalDetailSheet(
+                                                                note:
+                                                                    _catatanController
+                                                                        .text,
+                                                                attachments:
+                                                                    _selectedImages,
+                                                                amount:
+                                                                    widget.category ==
+                                                                        PengeluaranCategory
+                                                                            .operasional
+                                                                    ? _formatCurrency(
+                                                                        entry
+                                                                            .value
+                                                                            .amount,
+                                                                      )
+                                                                    : null,
+                                                                totalItems:
+                                                                    widget.category ==
+                                                                        PengeluaranCategory
+                                                                            .operasional
+                                                                    ? _operasionalItems
+                                                                          .length
+                                                                          .toString()
+                                                                    : null,
+                                                              ),
+                                                        );
+                                                      },
                                                 onTapEdit: () =>
                                                     _openOperasionalItemSheet(
                                                       item: entry.value,
@@ -2429,49 +2431,34 @@ class OperasionalExpenseCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 36),
-                child: OutlinedButton(
-                  onPressed:
-                      onTapDetail ??
-                      () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          backgroundColor: const Color(0xFFFAFAFA),
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24),
-                            ),
-                          ),
-                          builder: (_) => OperasionalDetailSheet(
-                            note: item.note,
-                            attachments: item.attachments,
-                          ),
-                        );
-                      },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF7944D)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              if (onTapDetail != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 36),
+                  child: OutlinedButton(
+                    onPressed: onTapDetail,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFF7944D)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(0, 38),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
                     ),
-                    minimumSize: const Size(0, 38),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  child: const Text(
-                    'Lihat Detail',
-                    style: TextStyle(
-                      color: Color(0xFFF7944D),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    child: const Text(
+                      'Lihat Detail',
+                      style: TextStyle(
+                        color: Color(0xFFF7944D),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           if (onTapEdit != null)

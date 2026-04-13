@@ -156,15 +156,12 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => OperasionalDetailSheet(
+      builder: (_) => _SimpleExpenseDetailSheet(
+        name: detail.namaItem,
+        showName: category != PengeluaranCategory.pettyCash,
+        total: _formatOperasionalCurrency(detail.jumlah),
         note: detail.keterangan,
         attachments: attachments,
-        amount: category == PengeluaranCategory.operasional
-            ? _formatOperasionalCurrency(detail.jumlah)
-            : null,
-        totalItems: category == PengeluaranCategory.operasional
-            ? detail.batch.totalItems.toString()
-            : null,
       ),
     );
   }
@@ -244,10 +241,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
           }
 
           final draft = _buildDraft(detail);
-          final grandTotal = draft.items.fold<double>(
-            0,
-            (sum, item) => sum + item.amount,
-          );
           final categoryLabel = draft.category.label;
 
           return Scaffold(
@@ -262,6 +255,10 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const _DetailLabel('ID'),
+                          const SizedBox(height: 4),
+                          _DetailValue(detail.id.toString()),
+                          const SizedBox(height: 18),
                           const _DetailLabel('Nomor Transaksi'),
                           const SizedBox(height: 4),
                           _DetailValue(detail.nomorTransaksi),
@@ -275,9 +272,11 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                             ).format(draft.date),
                           ),
                           const SizedBox(height: 18),
-                          const _DetailLabel('Dibuat Oleh'),
+                          const _DetailLabel('Grand Total'),
                           const SizedBox(height: 4),
-                          _DetailValue(draft.createdBy),
+                          _DetailValue(
+                            _formatOperasionalCurrency(detail.grandTotal),
+                          ),
                           const SizedBox(height: 24),
                           Text(
                             'Item $categoryLabel',
@@ -291,16 +290,11 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                           ...draft.items.map(
                             (item) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: OperasionalExpenseCard(
+                              child: _SimpleExpenseItemCard(
                                 item: item,
+                                showName:
+                                    category != PengeluaranCategory.pettyCash,
                                 onTapDetail: () => _openItemDetail(context, item),
-                                onTapEdit: canEdit
-                                    ? () =>
-                                          _openOptions(
-                                            context,
-                                            draft,
-                                          )
-                                    : null,
                               ),
                             ),
                           ),
@@ -325,28 +319,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            const Text(
-                              'Grand Total',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F1F1F),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              _formatOperasionalCurrency(grandTotal),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFF7944D),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
                         if (canEdit)
                           SizedBox(
                             width: double.infinity,
@@ -582,6 +554,228 @@ class _DetailValue extends StatelessWidget {
         fontWeight: FontWeight.w700,
         color: Color(0xFF1B2A4A),
       ),
+    );
+  }
+}
+
+class _SimpleExpenseItemCard extends StatelessWidget {
+  final OperasionalExpenseItem item;
+  final bool showName;
+  final VoidCallback onTapDetail;
+
+  const _SimpleExpenseItemCard({
+    required this.item,
+    required this.showName,
+    required this.onTapDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F6FF),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.work_outline,
+              size: 18,
+              color: Color(0xFF5D93E8),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showName) ...[
+                  const Text(
+                    'Nama Item',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F1F1F),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                const Text(
+                  'Total',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatOperasionalCurrency(item.amount),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1F1F1F),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: onTapDetail,
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFF7944D)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              minimumSize: const Size(0, 34),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: const Text(
+              'Lihat Detail',
+              style: TextStyle(
+                color: Color(0xFFF7944D),
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SimpleExpenseDetailSheet extends StatelessWidget {
+  final String name;
+  final bool showName;
+  final String total;
+  final String note;
+  final List<MaterialAttachmentItem> attachments;
+
+  const _SimpleExpenseDetailSheet({
+    required this.name,
+    required this.showName,
+    required this.total,
+    required this.note,
+    required this.attachments,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Lihat Detail',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, size: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (showName) ...[
+              _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
+              const SizedBox(height: 14),
+            ],
+            _SimpleExpenseBottomRow(label: 'Total', value: total),
+            const SizedBox(height: 14),
+            _SimpleExpenseBottomRow(
+              label: 'Catatan',
+              value: note.trim().isEmpty ? '-' : note,
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Lampiran',
+              style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            ),
+            const SizedBox(height: 8),
+            if (attachments.isEmpty)
+              const Text(
+                '-',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F1F1F),
+                ),
+              )
+            else
+              SizedBox(
+                height: 74,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: attachments.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) => ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AttachmentThumbnail(
+                      image: attachments[index],
+                      galleryImages: attachments,
+                      initialIndex: index,
+                      width: 74,
+                      height: 74,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SimpleExpenseBottomRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SimpleExpenseBottomRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F1F1F),
+          ),
+        ),
+      ],
     );
   }
 }
