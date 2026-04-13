@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_state.dart';
@@ -140,14 +141,13 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
       return;
     }
 
-    final detail = response!.data!;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _MaterialItemDetailSheet(detail: detail),
+      builder: (_) => _MaterialItemDetailSheet(detail: response!.data!),
     );
   }
 
@@ -172,13 +172,23 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
 
           if (state.deleteSuccessMessage != null &&
               state.deleteSuccessMessage!.isNotEmpty) {
-            Navigator.pop(
-              context,
-              PengeluaranMaterialFlowResult(
-                title: 'Berhasil Menghapus',
-                message: state.deleteSuccessMessage!,
-              ),
+            final result = PengeluaranMaterialFlowResult(
+              title: 'Berhasil Menghapus',
+              message: state.deleteSuccessMessage!,
             );
+            final navigator = Navigator.of(context);
+            StatusBanner.show(
+              context,
+              title: result.title,
+              message: result.message,
+              type: StatusBannerType.success,
+            );
+            Future<void>.delayed(const Duration(milliseconds: 700), () {
+              if (!context.mounted) {
+                return;
+              }
+              navigator.pop(result);
+            });
           }
         },
         builder: (context, state) {
@@ -226,10 +236,6 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
           }
 
           final draft = _buildDraft(detail);
-          final grandTotal = draft.items.fold<double>(
-            0,
-            (sum, item) => sum + item.total,
-          );
 
           return Scaffold(
             backgroundColor: const Color(0xFFFAFAFA),
@@ -262,25 +268,32 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           const SizedBox(height: 18),
                           const _DetailLabel('Lampiran'),
                           const SizedBox(height: 8),
-                          SizedBox(
-                            height: 74,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: draft.attachments.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 10),
-                              itemBuilder: (context, index) => ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: AttachmentThumbnail(
-                                  image: draft.attachments[index],
-                                  galleryImages: draft.attachments,
-                                  initialIndex: index,
-                                  width: 74,
-                                  height: 74,
+                          if (draft.attachments.isEmpty)
+                            const _EmptyAttachmentValue()
+                          else
+                            SizedBox(
+                              height: 74,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: draft.attachments.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 10),
+                                itemBuilder: (context, index) => ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: AttachmentThumbnail(
+                                    image: draft.attachments[index],
+                                    galleryImages: draft.attachments,
+                                    initialIndex: index,
+                                    width: 74,
+                                    height: 74,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          const SizedBox(height: 18),
+                          const _DetailLabel('Grand Total'),
+                          const SizedBox(height: 4),
+                          _DetailValue(_formatDetailCurrency(detail.grandTotal)),
                           const SizedBox(height: 18),
                           const Text(
                             'Item Material',
@@ -294,13 +307,9 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           ...draft.items.map(
                             (item) => Padding(
                               padding: const EdgeInsets.only(bottom: 14),
-                              child: SelectedMaterialItemCard(
+                              child: _MaterialDetailItemCard(
                                 item: item,
-                                onTapDetail: () =>
-                                    _openItemDetail(context, item),
-                                onTapEdit: canEdit
-                                    ? () => _openOptions(context, draft)
-                                    : null,
+                                onTapDetail: () => _openItemDetail(context, item),
                               ),
                             ),
                           ),
@@ -323,28 +332,6 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            const Text(
-                              'Grand Total',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F1F1F),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              _formatDetailCurrency(grandTotal),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFF7944D),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
                         if (canEdit)
                           SizedBox(
                             width: double.infinity,
@@ -578,6 +565,153 @@ class _DetailValue extends StatelessWidget {
   }
 }
 
+class _EmptyAttachmentValue extends StatelessWidget {
+  const _EmptyAttachmentValue();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      '-',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF1B2A4A),
+      ),
+    );
+  }
+}
+
+class _MaterialDetailItemCard extends StatelessWidget {
+  final MaterialExpenseItem item;
+  final VoidCallback onTapDetail;
+
+  const _MaterialDetailItemCard({
+    required this.item,
+    required this.onTapDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F6FF),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              size: 18,
+              color: Color(0xFF5D93E8),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Nama Material',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1F1F1F),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MaterialItemMeta(
+                        label: 'Qty',
+                        value: item.quantity.toString(),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: _MaterialItemMeta(
+                        label: 'Total',
+                        value: _formatDetailCurrency(item.total),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: onTapDetail,
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFF7944D)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              minimumSize: const Size(0, 34),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: const Text(
+              'Lihat Detail',
+              style: TextStyle(
+                color: Color(0xFFF7944D),
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MaterialItemMeta extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MaterialItemMeta({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1F1F1F),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _MaterialItemDetailSheet extends StatelessWidget {
   final PengeluaranItemDetailData detail;
 
@@ -585,10 +719,6 @@ class _MaterialItemDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attachments = detail.lampiran
-        .map((item) => MaterialAttachmentItem.network(item.url))
-        .toList();
-
     return SafeArea(
       top: false,
       child: Padding(
@@ -601,7 +731,7 @@ class _MaterialItemDetailSheet extends StatelessWidget {
               children: [
                 const Expanded(
                   child: Text(
-                    'Detail Material',
+                    'Lihat Detail',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -612,43 +742,17 @@ class _MaterialItemDetailSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _MaterialItemDetailRow(
-              label: 'Jumlah',
+            _MaterialBottomRow(label: 'Nama Item', value: detail.namaItem),
+            const SizedBox(height: 14),
+            _MaterialBottomRow(
+              label: 'Total',
               value: _formatDetailCurrency(detail.jumlah),
             ),
             const SizedBox(height: 14),
-            _MaterialItemDetailRow(
-              label: 'Total Item',
-              value: detail.batch.totalItems.toString(),
+            _MaterialBottomRow(
+              label: 'Qty',
+              value: detail.kuantitas.toString(),
             ),
-            const SizedBox(height: 14),
-            _MaterialItemDetailRow(label: 'Catatan', value: detail.keterangan),
-            if (attachments.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              const Text(
-                'Lampiran',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 74,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: attachments.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) => ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AttachmentThumbnail(
-                      image: attachments[index],
-                      galleryImages: attachments,
-                      initialIndex: index,
-                      width: 74,
-                      height: 74,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -656,11 +760,11 @@ class _MaterialItemDetailSheet extends StatelessWidget {
   }
 }
 
-class _MaterialItemDetailRow extends StatelessWidget {
+class _MaterialBottomRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _MaterialItemDetailRow({required this.label, required this.value});
+  const _MaterialBottomRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

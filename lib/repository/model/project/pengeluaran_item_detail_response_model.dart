@@ -56,7 +56,7 @@ class PengeluaranItemDetailData {
       jumlah: _parseDouble(json['jumlah']),
       kategori: (json['kategori'] ?? '').toString(),
       tanggal: (json['tanggal'] ?? '').toString(),
-      keterangan: (json['keterangan'] ?? '').toString(),
+      keterangan: (json['catatan'] ?? json['keterangan'] ?? '').toString(),
       user: PengeluaranItemDetailUser.fromJson(
         json['user'] as Map<String, dynamic>? ?? const {},
       ),

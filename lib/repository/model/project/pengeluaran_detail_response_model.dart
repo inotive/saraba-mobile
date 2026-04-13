@@ -22,6 +22,7 @@ class PengeluaranDetailResponse {
 }
 
 class PengeluaranDetailData {
+  final int id;
   final String nomorTransaksi;
   final String kategori;
   final String tanggal;
@@ -32,6 +33,7 @@ class PengeluaranDetailData {
   final List<PengeluaranDetailItem> items;
 
   PengeluaranDetailData({
+    required this.id,
     required this.nomorTransaksi,
     required this.kategori,
     required this.tanggal,
@@ -44,6 +46,7 @@ class PengeluaranDetailData {
 
   factory PengeluaranDetailData.fromJson(Map<String, dynamic> json) {
     return PengeluaranDetailData(
+      id: json['id'] as int? ?? 0,
       nomorTransaksi: json['nomor_transaksi']?.toString() ?? '',
       kategori: json['kategori']?.toString() ?? '',
       tanggal: json['tanggal']?.toString() ?? '',

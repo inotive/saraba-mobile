@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
@@ -466,6 +467,11 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       }
       _selectedItems = updatedItems;
     });
+
+    _showItemResultBanner(
+      isDeleted: result.isDeleted,
+      isEditing: true,
+    );
   }
 
   void _saveMaterialFlow() {
@@ -543,7 +549,13 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => TambahItemOperasionalSheet(initialItem: item),
+      builder: (_) => TambahItemOperasionalSheet(
+        initialItem: item,
+        category: widget.category,
+        defaultName:
+            item?.name ??
+            '${widget.category.label} ${itemIndex != null ? itemIndex + 1 : _operasionalItems.length + 1}',
+      ),
     );
 
     if (result == null || !mounted) {
@@ -563,38 +575,28 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       }
     });
 
-    StatusBanner.show(
-      context,
-      title: result.isDeleted ? 'Berhasil Menghapus' : 'Berhasil Menyimpan',
-      message: result.isDeleted
-          ? 'Kamu berhasil menghapus item pengeluaran'
-          : 'Kamu berhasil menambahkan item pengeluaran baru',
-      type: StatusBannerType.success,
+    _showItemResultBanner(
+      isDeleted: result.isDeleted,
+      isEditing: itemIndex != null,
     );
   }
 
-  Future<void> _openOperasionalItemPicker() async {
-    final result = await showModalBottomSheet<List<OperasionalExpenseItem>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFFFAFAFA),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => OperasionalItemPickerSheet(
-        projectId: widget.projectId,
-        category: widget.category,
-        initialItems: _operasionalItems,
-      ),
+  void _showItemResultBanner({
+    required bool isDeleted,
+    required bool isEditing,
+  }) {
+    final message = isDeleted
+        ? 'Kamu berhasil menghapus item pengeluaran'
+        : isEditing
+        ? 'Kamu berhasil memperbarui item pengeluaran'
+        : 'Kamu berhasil menambahkan item pengeluaran baru';
+
+    StatusBanner.show(
+      context,
+      title: isDeleted ? 'Berhasil Menghapus' : 'Berhasil Menyimpan',
+      message: message,
+      type: StatusBannerType.success,
     );
-
-    if (result == null || !mounted) {
-      return;
-    }
-
-    setState(() {
-      _operasionalItems = result;
-    });
   }
 
   void _saveOperasionalFlow() {
@@ -659,11 +661,19 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   }
 
   String _buildSimpleExpenseCatatan() {
-    return _catatanController.text.trim();
+    for (final item in _operasionalItems) {
+      final note = item.note.trim();
+      if (note.isNotEmpty) {
+        return note;
+      }
+    }
+
+    return '';
   }
 
   List<String> _collectOperasionalAttachmentPaths() {
-    return _selectedImages
+    return _operasionalItems
+        .expand((item) => item.attachments)
         .where((attachment) => attachment.isFile)
         .map((attachment) => attachment.path)
         .toSet()
@@ -682,12 +692,35 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     }
 
     if (state.isSuccess) {
+      final result = PengeluaranMaterialFlowResult(
+        title: widget.successResult.title,
+        message: state.successMessage ?? widget.successResult.message,
+      );
+
+      final shouldShowInlineSuccess =
+          widget.pengeluaranId != null;
+
+      if (shouldShowInlineSuccess) {
+        final navigator = Navigator.of(context);
+        StatusBanner.show(
+          context,
+          title: result.title,
+          message: result.message,
+          type: StatusBannerType.success,
+        );
+
+        Future<void>.delayed(const Duration(milliseconds: 700), () {
+          if (!mounted) {
+            return;
+          }
+          navigator.pop(result);
+        });
+        return;
+      }
+
       Navigator.pop(
         context,
-        PengeluaranMaterialFlowResult(
-          title: widget.successResult.title,
-          message: state.successMessage ?? widget.successResult.message,
-        ),
+        result,
       );
     }
   }
@@ -834,37 +867,6 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                     onTap: _pickDate,
                                   ),
                                   const SizedBox(height: 16),
-                                  const _FieldLabel('Catatan'),
-                                  const SizedBox(height: 8),
-                                  _NotesField(
-                                    controller: _catatanController,
-                                    hintText: 'Ketik Disini',
-                                  ),
-                                  const SizedBox(height: 16),
-                                  const _FieldLabel('Lampiran'),
-                                  const SizedBox(height: 8),
-                                  SizedBox(
-                                    height: 92,
-                                    child: ListView.separated(
-                                      scrollDirection: Axis.horizontal,
-                                      physics: const BouncingScrollPhysics(),
-                                      itemCount: _selectedImages.length + 1,
-                                      separatorBuilder: (_, _) =>
-                                          const SizedBox(width: 8),
-                                      itemBuilder: (context, index) {
-                                        if (index == 0) {
-                                          return _UploadBox(onTap: _pickImages);
-                                        }
-
-                                        return AttachmentThumbnail(
-                                          image: _selectedImages[index - 1],
-                                          galleryImages: _selectedImages,
-                                          initialIndex: index - 1,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
                                   _FieldLabel('Item ${widget.category.label}'),
                                   const SizedBox(height: 8),
                                   if (_operasionalItems.isEmpty)
@@ -885,51 +887,6 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                               ),
                                               child: OperasionalExpenseCard(
                                                 item: entry.value,
-                                                onTapDetail: () {
-                                                  showModalBottomSheet<void>(
-                                                    context: context,
-                                                    backgroundColor:
-                                                        const Color(
-                                                          0xFFFAFAFA,
-                                                        ),
-                                                    shape:
-                                                        const RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.vertical(
-                                                                top:
-                                                                    Radius.circular(
-                                                                      24,
-                                                                    ),
-                                                              ),
-                                                        ),
-                                                    builder: (_) =>
-                                                        OperasionalDetailSheet(
-                                                          note:
-                                                              _catatanController
-                                                                  .text,
-                                                          attachments:
-                                                              _selectedImages,
-                                                          amount:
-                                                              widget.category ==
-                                                                  PengeluaranCategory
-                                                                      .operasional
-                                                              ? _formatCurrency(
-                                                                  entry
-                                                                      .value
-                                                                      .amount,
-                                                                )
-                                                              : null,
-                                                          totalItems:
-                                                              widget.category ==
-                                                                  PengeluaranCategory
-                                                                      .operasional
-                                                              ? _operasionalItems
-                                                                    .length
-                                                                    .toString()
-                                                              : null,
-                                                        ),
-                                                  );
-                                                },
                                                 onTapEdit: () =>
                                                     _openOperasionalItemSheet(
                                                       item: entry.value,
@@ -1006,7 +963,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                       : isMaterial
                                       ? _openItemPicker
                                       : isSimpleExpense
-                                      ? _openOperasionalItemPicker
+                                      ? _openOperasionalItemSheet
                                       : null,
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
@@ -1259,8 +1216,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
   }
 
   void _updateTotal(MaterialExpenseItem item, String rawValue) {
-    final sanitized = rawValue.replaceAll(RegExp(r'[^0-9.]'), '');
-    final total = double.tryParse(sanitized) ?? 0;
+    final total = _parseCurrencyInput(rawValue);
     setState(() {
       _items = _items
           .map(
@@ -1529,7 +1485,10 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => const TambahItemOperasionalSheet(),
+      builder: (_) => TambahItemOperasionalSheet(
+        category: widget.category,
+        defaultName: '${widget.category.label} ${_items.length + 1}',
+      ),
     );
 
     if (result?.item == null) {
@@ -1557,8 +1516,7 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
   }
 
   void _updateAmount(OperasionalExpenseItem item, String rawValue) {
-    final sanitized = rawValue.replaceAll(RegExp(r'[^0-9.]'), '');
-    final amount = double.tryParse(sanitized) ?? 0;
+    final amount = _parseCurrencyInput(rawValue);
     setState(() {
       _items = _items
           .map(
@@ -1708,9 +1666,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
   bool get _canSave {
     return _nameController.text.trim().isNotEmpty &&
         (int.tryParse(_quantityController.text.trim()) ?? 0) > 0 &&
-        (double.tryParse(_totalController.text.trim().replaceAll(',', '')) ??
-                0) >
-            0;
+        _parseCurrencyInput(_totalController.text) > 0;
   }
 
   @override
@@ -1722,7 +1678,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
         : widget.initialItem!.quantity.toString();
     _totalController.text = widget.initialItem == null
         ? ''
-        : widget.initialItem!.total.toStringAsFixed(0);
+        : _formatAmountInput(widget.initialItem!.total);
     _nameController.addListener(() => setState(() {}));
     _quantityController.addListener(() => setState(() {}));
     _totalController.addListener(() => setState(() {}));
@@ -1747,9 +1703,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
           'custom-${DateTime.now().millisecondsSinceEpoch}',
       name: _nameController.text.trim(),
       quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
-      total:
-          double.tryParse(_totalController.text.trim().replaceAll(',', '')) ??
-          0,
+      total: _parseCurrencyInput(_totalController.text),
       isSelected: true,
       isCustom: widget.initialItem?.isCustom ?? true,
     );
@@ -1836,12 +1790,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
                     children: [
                       const _FieldLabel('Total'),
                       const SizedBox(height: 8),
-                      _CompactTextField(
-                        controller: _totalController,
-                        hintText: 'Rp',
-                        prefixText: 'Rp ',
-                        keyboardType: TextInputType.number,
-                      ),
+                    _CompactTextField(
+                      controller: _totalController,
+                      hintText: 'Rp',
+                      prefixText: 'Rp ',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: const [_ThousandsSeparatorFormatter()],
+                    ),
                     ],
                   ),
                 ),
@@ -2138,7 +2093,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
       text: widget.item.quantity == 0 ? '' : widget.item.quantity.toString(),
     );
     _totalController = TextEditingController(
-      text: widget.item.total == 0 ? '' : widget.item.total.toStringAsFixed(0),
+      text: widget.item.total == 0 ? '' : _formatAmountInput(widget.item.total),
     );
     _quantityFocusNode = FocusNode();
     _totalFocusNode = FocusNode();
@@ -2153,7 +2108,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
         : widget.item.quantity.toString();
     final nextTotal = widget.item.total == 0
         ? ''
-        : widget.item.total.toStringAsFixed(0);
+        : _formatAmountInput(widget.item.total);
 
     if (!_quantityFocusNode.hasFocus &&
         _quantityController.text != nextQuantity) {
@@ -2244,6 +2199,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
                       hintText: 'Rp',
                       prefixText: 'Rp ',
                       keyboardType: TextInputType.number,
+                      inputFormatters: const [_ThousandsSeparatorFormatter()],
                       enabled: widget.item.isSelected,
                       onChanged: widget.onTotalChanged,
                     ),
@@ -2284,7 +2240,7 @@ class _OperasionalItemSelectionCardState
   void initState() {
     super.initState();
     _amountController = TextEditingController(
-      text: widget.item.amount == 0 ? '' : widget.item.amount.toStringAsFixed(0),
+      text: widget.item.amount == 0 ? '' : _formatAmountInput(widget.item.amount),
     );
     _amountFocusNode = FocusNode();
   }
@@ -2295,7 +2251,7 @@ class _OperasionalItemSelectionCardState
 
     final nextAmount = widget.item.amount == 0
         ? ''
-        : widget.item.amount.toStringAsFixed(0);
+        : _formatAmountInput(widget.item.amount);
 
     if (!_amountFocusNode.hasFocus && _amountController.text != nextAmount) {
       _amountController.text = nextAmount;
@@ -2355,6 +2311,7 @@ class _OperasionalItemSelectionCardState
             hintText: 'Rp',
             prefixText: 'Rp ',
             keyboardType: TextInputType.number,
+            inputFormatters: const [_ThousandsSeparatorFormatter()],
             enabled: widget.item.isSelected,
             onChanged: widget.onAmountChanged,
           ),
@@ -2429,49 +2386,34 @@ class OperasionalExpenseCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 36),
-                child: OutlinedButton(
-                  onPressed:
-                      onTapDetail ??
-                      () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          backgroundColor: const Color(0xFFFAFAFA),
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24),
-                            ),
-                          ),
-                          builder: (_) => OperasionalDetailSheet(
-                            note: item.note,
-                            attachments: item.attachments,
-                          ),
-                        );
-                      },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF7944D)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              if (onTapDetail != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 36),
+                  child: OutlinedButton(
+                    onPressed: onTapDetail,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFF7944D)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(0, 38),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
                     ),
-                    minimumSize: const Size(0, 38),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  child: const Text(
-                    'Lihat Detail',
-                    style: TextStyle(
-                      color: Color(0xFFF7944D),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    child: const Text(
+                      'Lihat Detail',
+                      style: TextStyle(
+                        color: Color(0xFFF7944D),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           if (onTapEdit != null)
@@ -2492,8 +2434,15 @@ class OperasionalExpenseCard extends StatelessWidget {
 
 class TambahItemOperasionalSheet extends StatefulWidget {
   final OperasionalExpenseItem? initialItem;
+  final PengeluaranCategory category;
+  final String defaultName;
 
-  const TambahItemOperasionalSheet({super.key, this.initialItem});
+  const TambahItemOperasionalSheet({
+    super.key,
+    this.initialItem,
+    required this.category,
+    required this.defaultName,
+  });
 
   @override
   State<TambahItemOperasionalSheet> createState() =>
@@ -2502,34 +2451,51 @@ class TambahItemOperasionalSheet extends StatefulWidget {
 
 class _TambahItemOperasionalSheetState
     extends State<TambahItemOperasionalSheet> {
-  final _nameController = TextEditingController();
   final _amountController = TextEditingController();
+  final _noteController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  final List<MaterialAttachmentItem> _attachments = [];
 
   bool get _canSubmit {
-    return _nameController.text.trim().isNotEmpty &&
-        (double.tryParse(
-                  _amountController.text.trim().replaceAll(',', ''),
-                ) ??
-                0) >
-            0;
+    return _parseCurrencyInput(_amountController.text) > 0;
   }
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.initialItem?.name ?? '';
     _amountController.text = widget.initialItem == null
         ? ''
-        : widget.initialItem!.amount.toStringAsFixed(0);
-    _nameController.addListener(() => setState(() {}));
+        : _formatAmountInput(widget.initialItem!.amount);
+    _noteController.text = widget.initialItem?.note ?? '';
+    _attachments.addAll(widget.initialItem?.attachments ?? const []);
     _amountController.addListener(() => setState(() {}));
+    _noteController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _amountController.dispose();
+    _noteController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachments() async {
+    final pickedImages = await _imagePicker.pickMultiImage(imageQuality: 85);
+    if (!mounted || pickedImages.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _attachments.addAll(
+        pickedImages.map((image) => MaterialAttachmentItem.file(image.path)),
+      );
+    });
+  }
+
+  void _removeAttachment(int index) {
+    setState(() {
+      _attachments.removeAt(index);
+    });
   }
 
   void _deleteItem() {
@@ -2541,14 +2507,10 @@ class _TambahItemOperasionalSheetState
       id:
           widget.initialItem?.id ??
           'operasional-${DateTime.now().millisecondsSinceEpoch}',
-      name: _nameController.text.trim(),
-      amount:
-          double.tryParse(_amountController.text.trim().replaceAll(',', '')) ??
-          0,
-      note: widget.initialItem?.note ?? '',
-      attachments: List<MaterialAttachmentItem>.from(
-        widget.initialItem?.attachments ?? const [],
-      ),
+      name: widget.initialItem?.name ?? widget.defaultName,
+      amount: _parseCurrencyInput(_amountController.text),
+      note: _noteController.text.trim(),
+      attachments: List<MaterialAttachmentItem>.from(_attachments),
       isSelected: true,
       isCustom: widget.initialItem?.isCustom ?? true,
     );
@@ -2575,11 +2537,13 @@ class _TambahItemOperasionalSheetState
               children: [
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                  icon: widget.initialItem == null
+                      ? const Icon(Icons.close, size: 18)
+                      : const Icon(Icons.arrow_back_ios_new, size: 18),
                 ),
                 Expanded(
                   child: Text(
-                    widget.initialItem == null ? 'Tambah Item Baru' : 'Edit',
+                    widget.initialItem == null ? 'Tambah Item' : 'Edit',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -2589,30 +2553,6 @@ class _TambahItemOperasionalSheetState
               ],
             ),
             const SizedBox(height: 12),
-            const _FieldLabel('Nama Item'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Item 1',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-                filled: true,
-                fillColor: const Color(0xFFF3F4F6),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF5D93E8)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
             const _FieldLabel('Jumlah Biaya'),
             const SizedBox(height: 8),
             _CompactTextField(
@@ -2620,6 +2560,63 @@ class _TambahItemOperasionalSheetState
               hintText: 'Rp',
               prefixText: 'Rp ',
               keyboardType: TextInputType.number,
+              inputFormatters: const [_ThousandsSeparatorFormatter()],
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Catatan'),
+            const SizedBox(height: 8),
+            _NotesField(
+              controller: _noteController,
+              hintText: 'Ketik Disini',
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Lampiran'),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 92,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: _attachments.length + 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _UploadBox(onTap: _pickAttachments);
+                  }
+
+                  final attachment = _attachments[index - 1];
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AttachmentThumbnail(
+                        image: attachment,
+                        galleryImages: _attachments,
+                        initialIndex: index - 1,
+                      ),
+                      Positioned(
+                        top: -6,
+                        right: -6,
+                        child: GestureDetector(
+                          onTap: () => _removeAttachment(index - 1),
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF111827),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 24),
             if (widget.initialItem != null)
@@ -2649,8 +2646,8 @@ class _TambahItemOperasionalSheetState
                     child: ElevatedButton(
                       onPressed: _canSubmit ? _saveItem : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8BC7F1),
-                        disabledBackgroundColor: const Color(0xFFD6EAF8),
+                        backgroundColor: const Color(0xFFF7944D),
+                        disabledBackgroundColor: const Color(0xFFFAD1B7),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -2660,7 +2657,7 @@ class _TambahItemOperasionalSheetState
                       child: const Text(
                         'Simpan',
                         style: TextStyle(
-                          color: Color(0xFF0F172A),
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -3044,6 +3041,7 @@ class _CompactTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool enabled;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const _CompactTextField({
     required this.controller,
@@ -3053,6 +3051,7 @@ class _CompactTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.enabled = true,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -3062,6 +3061,7 @@ class _CompactTextField extends StatelessWidget {
       focusNode: focusNode,
       keyboardType: keyboardType,
       enabled: enabled,
+      inputFormatters: inputFormatters,
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hintText,
@@ -3554,4 +3554,45 @@ String _formatCurrency(double value) {
     symbol: 'Rp',
     decimalDigits: 0,
   ).format(value);
+}
+
+String _formatAmountInput(double value) {
+  if (value == 0) {
+    return '';
+  }
+
+  return NumberFormat.decimalPattern('id_ID').format(value.round());
+}
+
+double _parseCurrencyInput(String rawValue) {
+  final digitsOnly = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digitsOnly.isEmpty) {
+    return 0;
+  }
+
+  return double.tryParse(digitsOnly) ?? 0;
+}
+
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  const _ThousandsSeparatorFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+
+    final formatted = NumberFormat.decimalPattern(
+      'id_ID',
+    ).format(int.parse(digitsOnly));
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }

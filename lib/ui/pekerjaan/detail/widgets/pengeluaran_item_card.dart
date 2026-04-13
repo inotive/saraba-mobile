@@ -60,7 +60,7 @@ class PengeluaranItemCard extends StatelessWidget {
                             Text(
                               code,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Color(0xFF8C8C8C),
                               ),
                             ),
