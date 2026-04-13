@@ -28,7 +28,6 @@ class TambahProgressPage extends StatefulWidget {
 }
 
 class _TambahProgressPageState extends State<TambahProgressPage> {
-  static const int _maxPhotoCount = 5;
   static const int _maxPhotoSizeInBytes = 5 * 1024 * 1024;
   final _imagePicker = ImagePicker();
   final _judulController = TextEditingController();
@@ -82,27 +81,9 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
       return;
     }
 
-    final remainingSlots =
-        _maxPhotoCount - (_existingImageUrls.length + _selectedImages.length);
-
-    if (remainingSlots <= 0) {
-      _showPhotoLimitBanner(
-        'Maksimal upload $_maxPhotoCount foto',
-      );
-      return;
-    }
-
-    final selectedImages = allowedImages.take(remainingSlots).toList();
-
     setState(() {
-      _selectedImages.addAll(selectedImages);
+      _selectedImages.addAll(allowedImages);
     });
-
-    if (allowedImages.length > remainingSlots && mounted) {
-      _showPhotoLimitBanner(
-        'Maksimal upload $_maxPhotoCount foto',
-      );
-    }
   }
 
   Future<void> _pickFromCamera() async {
@@ -121,13 +102,7 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
     }
 
     setState(() {
-      if (_existingImageUrls.length + _selectedImages.length < _maxPhotoCount) {
-        _selectedImages.add(capturedImage);
-      } else {
-        _showPhotoLimitBanner(
-          'Maksimal upload $_maxPhotoCount foto',
-        );
-      }
+      _selectedImages.add(capturedImage);
     });
   }
 
@@ -373,14 +348,6 @@ class _TambahProgressPageState extends State<TambahProgressPage> {
                                       _selectedImages.isEmpty)
                                     const _UploadPhotoBox(),
                                 ],
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                "Maksimal 5 Foto, 5MB",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF6B7280),
-                                ),
                               ),
                               const SizedBox(height: 12),
                               SizedBox(
