@@ -233,15 +233,9 @@ class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
 }
 
 String _buildCardCode(ProjectPengeluaranListItem item) {
-  final kategori = item.kategori;
-  final normalized = kategori.toLowerCase();
-  if (normalized.contains('material')) {
-    return 'MAT-${item.id}';
-  }
-  if (normalized.contains('petty')) {
-    return 'PC-${item.id}';
-  }
-  return 'OPR-${item.id}';
+  return item.nomorTransaksi.isNotEmpty
+      ? item.nomorTransaksi
+      : item.id.toString();
 }
 
 String _buildCardTitle(String kategori) {

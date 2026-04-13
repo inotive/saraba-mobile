@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 
@@ -24,11 +26,18 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
   List<ProjectRequestItem> _requests = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String _currentUserName = '';
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _loadRequests();
+  }
+
+  void _loadCurrentUser() {
+    final box = Hive.box<User>('userBox');
+    _currentUserName = box.get('current_user')?.name.trim().toLowerCase() ?? '';
   }
 
   Future<void> _loadRequests() async {
@@ -122,7 +131,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
 
     final response = await _service.updateProjectRequest(
       projectId: widget.projectId,
-      requestId: item.id,
+      requestId: item.requestId,
       tanggalPermintaan: DateFormat(
         "yyyy-MM-dd'T'HH:mm:ss'Z'",
       ).format(result.requestDate),
@@ -146,7 +155,9 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     }
 
     final updatedItem = _mapSubmittedRequestItem(response.data!);
-    final index = _requests.indexWhere((request) => request.id == item.id);
+    final index = _requests.indexWhere(
+      (request) => request.requestId == item.requestId,
+    );
     if (index == -1) {
       return;
     }
@@ -195,7 +206,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
 
     final response = await _service.deleteProjectRequest(
       projectId: widget.projectId,
-      requestId: item.id,
+      requestId: item.requestId,
     );
 
     if (!mounted) {
@@ -215,7 +226,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     }
 
     setState(() {
-      _requests.removeWhere((request) => request.id == item.id);
+      _requests.removeWhere((request) => request.requestId == item.requestId);
     });
 
     StatusBanner.show(
@@ -228,8 +239,9 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
 
   ProjectRequestItem _mapRequestItem(ProjectRequestData item) {
     return ProjectRequestItem(
-      id: item.id.toString(),
-      createdBy: '-',
+      requestId: item.id.toString(),
+      displayId: item.id.toString(),
+      createdBy: item.createdBy.isNotEmpty ? item.createdBy : '-',
       requestDate: _parseRequestDate(item.tanggalPermintaan) ?? DateTime.now(),
       status: _mapRequestStatus(item.status),
       requestText: item.deskripsi,
@@ -238,8 +250,9 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
 
   ProjectRequestItem _mapSubmittedRequestItem(ProjectRequestSubmitData item) {
     return ProjectRequestItem(
-      id: item.id.toString(),
-      createdBy: '-',
+      requestId: item.id.toString(),
+      displayId: item.id.toString(),
+      createdBy: item.createdBy.isNotEmpty ? item.createdBy : '-',
       requestDate: _parseRequestDate(item.tanggalPermintaan) ?? DateTime.now(),
       status: _mapRequestStatus(item.status),
       requestText: item.deskripsi,
@@ -261,6 +274,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
   RequestStatus _mapRequestStatus(String value) {
     switch (value.trim().toLowerCase()) {
       case 'processed':
+      case 'diproses':
         return RequestStatus.processed;
       case 'done':
         return RequestStatus.done;
@@ -311,16 +325,15 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
                     final item = _requests[index];
+                    final canManageItem =
+                        widget.canEdit &&
+                        item.status == RequestStatus.pending &&
+                        _currentUserName.isNotEmpty &&
+                        item.createdBy.trim().toLowerCase() == _currentUserName;
                     return _RequestCard(
                       item: item,
-                      onEdit: widget.canEdit &&
-                              item.status == RequestStatus.pending
-                          ? () => _openEditRequest(item)
-                          : null,
-                      onDelete: widget.canEdit &&
-                              item.status == RequestStatus.pending
-                          ? () => _deleteRequest(item)
-                          : null,
+                      onEdit: canManageItem ? () => _openEditRequest(item) : null,
+                      onDelete: canManageItem ? () => _deleteRequest(item) : null,
                     );
                   },
                 ),
@@ -614,7 +627,7 @@ class _RequestCardState extends State<_RequestCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      item.id,
+                      item.displayId,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -685,46 +698,50 @@ class _RequestCardState extends State<_RequestCard> {
               ),
             ),
           ],
-          if (item.status == RequestStatus.pending) ...[
+          if (item.status == RequestStatus.pending &&
+              (widget.onDelete != null || widget.onEdit != null)) ...[
             const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton(
-                  onPressed: widget.onDelete,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFFF5B5B)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                if (widget.onDelete != null)
+                  OutlinedButton(
+                    onPressed: widget.onDelete,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF5B5B)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(92, 38),
                     ),
-                    minimumSize: const Size(92, 38),
-                  ),
-                  child: const Text(
-                    'Hapus',
-                    style: TextStyle(
-                      color: Color(0xFFFF5B5B),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton(
-                  onPressed: widget.onEdit,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF7944D)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    minimumSize: const Size(92, 38),
-                  ),
-                  child: const Text(
-                    'Edit',
-                    style: TextStyle(
-                      color: Color(0xFFF7944D),
-                      fontWeight: FontWeight.w600,
+                    child: const Text(
+                      'Hapus',
+                      style: TextStyle(
+                        color: Color(0xFFFF5B5B),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                if (widget.onDelete != null && widget.onEdit != null)
+                  const SizedBox(width: 10),
+                if (widget.onEdit != null)
+                  OutlinedButton(
+                    onPressed: widget.onEdit,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFF7944D)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(92, 38),
+                    ),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Color(0xFFF7944D),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -897,14 +914,16 @@ class _RequestStatusChip extends StatelessWidget {
 }
 
 class ProjectRequestItem {
-  final String id;
+  final String requestId;
+  final String displayId;
   final String createdBy;
   final DateTime requestDate;
   final RequestStatus status;
   final String requestText;
 
   const ProjectRequestItem({
-    required this.id,
+    required this.requestId,
+    required this.displayId,
     required this.createdBy,
     required this.requestDate,
     required this.status,
@@ -912,14 +931,16 @@ class ProjectRequestItem {
   });
 
   ProjectRequestItem copyWith({
-    String? id,
+    String? requestId,
+    String? displayId,
     String? createdBy,
     DateTime? requestDate,
     RequestStatus? status,
     String? requestText,
   }) {
     return ProjectRequestItem(
-      id: id ?? this.id,
+      requestId: requestId ?? this.requestId,
+      displayId: displayId ?? this.displayId,
       createdBy: createdBy ?? this.createdBy,
       requestDate: requestDate ?? this.requestDate,
       status: status ?? this.status,

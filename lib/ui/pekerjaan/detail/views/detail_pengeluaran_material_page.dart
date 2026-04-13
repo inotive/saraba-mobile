@@ -298,9 +298,6 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                                 item: item,
                                 onTapDetail: () =>
                                     _openItemDetail(context, item),
-                                onTapEdit: canEdit
-                                    ? () => _openOptions(context, draft)
-                                    : null,
                               ),
                             ),
                           ),

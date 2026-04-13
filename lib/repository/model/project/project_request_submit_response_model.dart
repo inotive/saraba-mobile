@@ -29,6 +29,7 @@ class ProjectRequestSubmitData {
   final String tanggalPermintaan;
   final String deskripsi;
   final String status;
+  final String createdBy;
 
   const ProjectRequestSubmitData({
     required this.id,
@@ -37,6 +38,7 @@ class ProjectRequestSubmitData {
     required this.tanggalPermintaan,
     required this.deskripsi,
     required this.status,
+    required this.createdBy,
   });
 
   factory ProjectRequestSubmitData.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class ProjectRequestSubmitData {
       tanggalPermintaan: (json['tanggal_permintaan'] ?? '').toString(),
       deskripsi: (json['deskripsi'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
+      createdBy: (json['created_by'] ?? '').toString(),
     );
   }
 }

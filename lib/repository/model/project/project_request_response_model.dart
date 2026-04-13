@@ -26,6 +26,7 @@ class ProjectRequestData {
   final String proyekId;
   final String proyekName;
   final String createdAt;
+  final String createdBy;
 
   const ProjectRequestData({
     required this.id,
@@ -35,6 +36,7 @@ class ProjectRequestData {
     required this.proyekId,
     required this.proyekName,
     required this.createdAt,
+    required this.createdBy,
   });
 
   factory ProjectRequestData.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class ProjectRequestData {
       proyekId: (json['proyek_id'] ?? '').toString(),
       proyekName: (json['proyek_name'] ?? '').toString(),
       createdAt: (json['created_at'] ?? '').toString(),
+      createdBy: (json['created_by'] ?? '').toString(),
     );
   }
 }
