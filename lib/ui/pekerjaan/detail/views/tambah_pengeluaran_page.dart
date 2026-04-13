@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1261,8 +1262,7 @@ class _MaterialItemPickerSheetState extends State<MaterialItemPickerSheet> {
   }
 
   void _updateTotal(MaterialExpenseItem item, String rawValue) {
-    final sanitized = rawValue.replaceAll(RegExp(r'[^0-9.]'), '');
-    final total = double.tryParse(sanitized) ?? 0;
+    final total = _parseCurrencyInput(rawValue);
     setState(() {
       _items = _items
           .map(
@@ -1559,8 +1559,7 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
   }
 
   void _updateAmount(OperasionalExpenseItem item, String rawValue) {
-    final sanitized = rawValue.replaceAll(RegExp(r'[^0-9.]'), '');
-    final amount = double.tryParse(sanitized) ?? 0;
+    final amount = _parseCurrencyInput(rawValue);
     setState(() {
       _items = _items
           .map(
@@ -1710,9 +1709,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
   bool get _canSave {
     return _nameController.text.trim().isNotEmpty &&
         (int.tryParse(_quantityController.text.trim()) ?? 0) > 0 &&
-        (double.tryParse(_totalController.text.trim().replaceAll(',', '')) ??
-                0) >
-            0;
+        _parseCurrencyInput(_totalController.text) > 0;
   }
 
   @override
@@ -1724,7 +1721,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
         : widget.initialItem!.quantity.toString();
     _totalController.text = widget.initialItem == null
         ? ''
-        : widget.initialItem!.total.toStringAsFixed(0);
+        : _formatAmountInput(widget.initialItem!.total);
     _nameController.addListener(() => setState(() {}));
     _quantityController.addListener(() => setState(() {}));
     _totalController.addListener(() => setState(() {}));
@@ -1749,9 +1746,7 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
           'custom-${DateTime.now().millisecondsSinceEpoch}',
       name: _nameController.text.trim(),
       quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
-      total:
-          double.tryParse(_totalController.text.trim().replaceAll(',', '')) ??
-          0,
+      total: _parseCurrencyInput(_totalController.text),
       isSelected: true,
       isCustom: widget.initialItem?.isCustom ?? true,
     );
@@ -1838,12 +1833,13 @@ class _TambahItemBaruSheetState extends State<TambahItemBaruSheet> {
                     children: [
                       const _FieldLabel('Total'),
                       const SizedBox(height: 8),
-                      _CompactTextField(
-                        controller: _totalController,
-                        hintText: 'Rp',
-                        prefixText: 'Rp ',
-                        keyboardType: TextInputType.number,
-                      ),
+                    _CompactTextField(
+                      controller: _totalController,
+                      hintText: 'Rp',
+                      prefixText: 'Rp ',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: const [_ThousandsSeparatorFormatter()],
+                    ),
                     ],
                   ),
                 ),
@@ -2140,7 +2136,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
       text: widget.item.quantity == 0 ? '' : widget.item.quantity.toString(),
     );
     _totalController = TextEditingController(
-      text: widget.item.total == 0 ? '' : widget.item.total.toStringAsFixed(0),
+      text: widget.item.total == 0 ? '' : _formatAmountInput(widget.item.total),
     );
     _quantityFocusNode = FocusNode();
     _totalFocusNode = FocusNode();
@@ -2155,7 +2151,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
         : widget.item.quantity.toString();
     final nextTotal = widget.item.total == 0
         ? ''
-        : widget.item.total.toStringAsFixed(0);
+        : _formatAmountInput(widget.item.total);
 
     if (!_quantityFocusNode.hasFocus &&
         _quantityController.text != nextQuantity) {
@@ -2246,6 +2242,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
                       hintText: 'Rp',
                       prefixText: 'Rp ',
                       keyboardType: TextInputType.number,
+                      inputFormatters: const [_ThousandsSeparatorFormatter()],
                       enabled: widget.item.isSelected,
                       onChanged: widget.onTotalChanged,
                     ),
@@ -2286,7 +2283,7 @@ class _OperasionalItemSelectionCardState
   void initState() {
     super.initState();
     _amountController = TextEditingController(
-      text: widget.item.amount == 0 ? '' : widget.item.amount.toStringAsFixed(0),
+      text: widget.item.amount == 0 ? '' : _formatAmountInput(widget.item.amount),
     );
     _amountFocusNode = FocusNode();
   }
@@ -2297,7 +2294,7 @@ class _OperasionalItemSelectionCardState
 
     final nextAmount = widget.item.amount == 0
         ? ''
-        : widget.item.amount.toStringAsFixed(0);
+        : _formatAmountInput(widget.item.amount);
 
     if (!_amountFocusNode.hasFocus && _amountController.text != nextAmount) {
       _amountController.text = nextAmount;
@@ -2357,6 +2354,7 @@ class _OperasionalItemSelectionCardState
             hintText: 'Rp',
             prefixText: 'Rp ',
             keyboardType: TextInputType.number,
+            inputFormatters: const [_ThousandsSeparatorFormatter()],
             enabled: widget.item.isSelected,
             onChanged: widget.onAmountChanged,
           ),
@@ -2494,11 +2492,7 @@ class _TambahItemOperasionalSheetState
 
   bool get _canSubmit {
     return _nameController.text.trim().isNotEmpty &&
-        (double.tryParse(
-                  _amountController.text.trim().replaceAll(',', ''),
-                ) ??
-                0) >
-            0;
+        _parseCurrencyInput(_amountController.text) > 0;
   }
 
   @override
@@ -2507,7 +2501,7 @@ class _TambahItemOperasionalSheetState
     _nameController.text = widget.initialItem?.name ?? '';
     _amountController.text = widget.initialItem == null
         ? ''
-        : widget.initialItem!.amount.toStringAsFixed(0);
+        : _formatAmountInput(widget.initialItem!.amount);
     _nameController.addListener(() => setState(() {}));
     _amountController.addListener(() => setState(() {}));
   }
@@ -2529,9 +2523,7 @@ class _TambahItemOperasionalSheetState
           widget.initialItem?.id ??
           'operasional-${DateTime.now().millisecondsSinceEpoch}',
       name: _nameController.text.trim(),
-      amount:
-          double.tryParse(_amountController.text.trim().replaceAll(',', '')) ??
-          0,
+      amount: _parseCurrencyInput(_amountController.text),
       note: widget.initialItem?.note ?? '',
       attachments: List<MaterialAttachmentItem>.from(
         widget.initialItem?.attachments ?? const [],
@@ -2607,6 +2599,7 @@ class _TambahItemOperasionalSheetState
               hintText: 'Rp',
               prefixText: 'Rp ',
               keyboardType: TextInputType.number,
+              inputFormatters: const [_ThousandsSeparatorFormatter()],
             ),
             const SizedBox(height: 24),
             if (widget.initialItem != null)
@@ -3031,6 +3024,7 @@ class _CompactTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool enabled;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const _CompactTextField({
     required this.controller,
@@ -3040,6 +3034,7 @@ class _CompactTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.enabled = true,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -3049,6 +3044,7 @@ class _CompactTextField extends StatelessWidget {
       focusNode: focusNode,
       keyboardType: keyboardType,
       enabled: enabled,
+      inputFormatters: inputFormatters,
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hintText,
@@ -3541,4 +3537,45 @@ String _formatCurrency(double value) {
     symbol: 'Rp',
     decimalDigits: 0,
   ).format(value);
+}
+
+String _formatAmountInput(double value) {
+  if (value == 0) {
+    return '';
+  }
+
+  return NumberFormat.decimalPattern('id_ID').format(value.round());
+}
+
+double _parseCurrencyInput(String rawValue) {
+  final digitsOnly = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digitsOnly.isEmpty) {
+    return 0;
+  }
+
+  return double.tryParse(digitsOnly) ?? 0;
+}
+
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  const _ThousandsSeparatorFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+
+    final formatted = NumberFormat.decimalPattern(
+      'id_ID',
+    ).format(int.parse(digitsOnly));
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }
