@@ -255,10 +255,6 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _DetailLabel('ID'),
-                          const SizedBox(height: 4),
-                          _DetailValue(detail.id.toString()),
-                          const SizedBox(height: 18),
                           const _DetailLabel('Nomor Transaksi'),
                           const SizedBox(height: 4),
                           _DetailValue(detail.nomorTransaksi),
