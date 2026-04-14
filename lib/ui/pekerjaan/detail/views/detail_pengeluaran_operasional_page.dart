@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
@@ -253,6 +255,12 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
 
           final draft = _buildDraft(detail);
           final categoryLabel = draft.category.label;
+          final currentUserId =
+              Hive.box<User>('userBox').get('current_user')?.id;
+          final canManageOptions =
+              canEdit &&
+              currentUserId != null &&
+              currentUserId == detail.user.id;
 
           return Scaffold(
             backgroundColor: const Color(0xFFFAFAFA),
@@ -278,6 +286,39 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               'id_ID',
                             ).format(draft.date),
                           ),
+                          const SizedBox(height: 18),
+                          const _DetailLabel('Catatan'),
+                          const SizedBox(height: 4),
+                          _DetailValue(draft.note.isEmpty ? '-' : draft.note),
+                          const SizedBox(height: 18),
+                          const _DetailLabel('Lampiran'),
+                          const SizedBox(height: 8),
+                          if (draft.attachments.isEmpty)
+                            const _DetailValue('-')
+                          else
+                            SizedBox(
+                              height: 74,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: draft.attachments.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 10),
+                                itemBuilder: (context, index) => ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: AttachmentThumbnail(
+                                    image: draft.attachments[index],
+                                    galleryImages: draft.attachments,
+                                    initialIndex: index,
+                                    width: 74,
+                                    height: 74,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 18),
+                          const _DetailLabel('Dibuat Oleh'),
+                          const SizedBox(height: 4),
+                          _DetailValue(detail.user.name.isEmpty ? '-' : detail.user.name),
                           const SizedBox(height: 18),
                           const _DetailLabel('Grand Total'),
                           const SizedBox(height: 4),
@@ -309,7 +350,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (canEdit)
+                  if (canManageOptions)
                     Container(
                       decoration: const BoxDecoration(
                         color: Colors.white,
@@ -390,6 +431,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
             (item) => OperasionalExpenseItem(
               id: item.id.toString(),
               name: item.namaItem,
+              quantity: item.kuantitas,
               amount: item.jumlah,
               note: detail.catatan,
               attachments: attachmentItems,
