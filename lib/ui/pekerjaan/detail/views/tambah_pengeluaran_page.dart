@@ -209,6 +209,7 @@ class MaterialAttachmentItem {
 class OperasionalExpenseItem {
   final String id;
   final String name;
+  final int quantity;
   final double amount;
   final String note;
   final List<MaterialAttachmentItem> attachments;
@@ -218,6 +219,7 @@ class OperasionalExpenseItem {
   const OperasionalExpenseItem({
     required this.id,
     required this.name,
+    this.quantity = 0,
     required this.amount,
     required this.note,
     required this.attachments,
@@ -228,6 +230,7 @@ class OperasionalExpenseItem {
   OperasionalExpenseItem copyWith({
     String? id,
     String? name,
+    int? quantity,
     double? amount,
     String? note,
     List<MaterialAttachmentItem>? attachments,
@@ -237,6 +240,7 @@ class OperasionalExpenseItem {
     return OperasionalExpenseItem(
       id: id ?? this.id,
       name: name ?? this.name,
+      quantity: quantity ?? this.quantity,
       amount: amount ?? this.amount,
       note: note ?? this.note,
       attachments: attachments ?? this.attachments,
@@ -264,6 +268,7 @@ class OperasionalItemSheetResult {
 class MaterialPengeluaranDraft {
   final String materialCode;
   final DateTime date;
+  final String createdBy;
   final String note;
   final List<MaterialAttachmentItem> attachments;
   final List<MaterialExpenseItem> items;
@@ -271,6 +276,7 @@ class MaterialPengeluaranDraft {
   const MaterialPengeluaranDraft({
     required this.materialCode,
     required this.date,
+    required this.createdBy,
     required this.note,
     required this.attachments,
     required this.items,
@@ -436,6 +442,30 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     });
   }
 
+  Future<void> _openOperasionalItemPicker() async {
+    final result = await showModalBottomSheet<List<OperasionalExpenseItem>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => OperasionalItemPickerSheet(
+        projectId: widget.projectId,
+        category: widget.category,
+        initialItems: _operasionalItems,
+      ),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _operasionalItems = result;
+    });
+  }
+
   Future<void> _openEditMaterialItemSheet({
     required MaterialExpenseItem item,
     required int itemIndex,
@@ -552,9 +582,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
       builder: (_) => TambahItemOperasionalSheet(
         initialItem: item,
         category: widget.category,
-        defaultName:
-            item?.name ??
-            '${widget.category.label} ${itemIndex != null ? itemIndex + 1 : _operasionalItems.length + 1}',
+        defaultName: item?.name ?? '',
       ),
     );
 
@@ -621,7 +649,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
           items: _operasionalItems.map((item) {
             return PengeluaranSubmissionPayload(
               nama: item.name,
-              jumlah: 1,
+              jumlah: item.quantity,
               nominal: item.amount,
             );
           }).toList(),
@@ -641,7 +669,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
           final item = entry.value;
           return PengeluaranSubmissionPayload(
             nama: item.name,
-            jumlah: 1,
+            jumlah: item.quantity,
             nominal: item.amount,
           );
         }).toList(),
@@ -661,22 +689,13 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   }
 
   String _buildSimpleExpenseCatatan() {
-    for (final item in _operasionalItems) {
-      final note = item.note.trim();
-      if (note.isNotEmpty) {
-        return note;
-      }
-    }
-
-    return '';
+    return _catatanController.text.trim();
   }
 
   List<String> _collectOperasionalAttachmentPaths() {
-    return _operasionalItems
-        .expand((item) => item.attachments)
+    return _selectedImages
         .where((attachment) => attachment.isFile)
         .map((attachment) => attachment.path)
-        .toSet()
         .toList();
   }
 
@@ -867,14 +886,41 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                     onTap: _pickDate,
                                   ),
                                   const SizedBox(height: 16),
+                                  const _FieldLabel('Catatan'),
+                                  const SizedBox(height: 8),
+                                  _NotesField(
+                                    controller: _catatanController,
+                                    hintText: 'Ketik Disini',
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _FieldLabel('Lampiran'),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 92,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      itemCount: _selectedImages.length + 1,
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(width: 8),
+                                      itemBuilder: (context, index) {
+                                        if (index == 0) {
+                                          return _UploadBox(onTap: _pickImages);
+                                        }
+
+                                        return AttachmentThumbnail(
+                                          image: _selectedImages[index - 1],
+                                          galleryImages: _selectedImages,
+                                          initialIndex: index - 1,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
                                   _FieldLabel('Item ${widget.category.label}'),
                                   const SizedBox(height: 8),
                                   if (_operasionalItems.isEmpty)
-                                    _EmptyOperasionalState(
-                                      minHeight:
-                                          MediaQuery.of(context).size.height *
-                                          0.38,
-                                    )
+                                    const _EmptyOperasionalState()
                                   else
                                     Column(
                                       children: _operasionalItems
@@ -963,7 +1009,7 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                       : isMaterial
                                       ? _openItemPicker
                                       : isSimpleExpense
-                                      ? _openOperasionalItemSheet
+                                      ? _openOperasionalItemPicker
                                       : null,
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
@@ -979,7 +1025,9 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                     color: Color(0xFFF7944D),
                                   ),
                                   label: Text(
-                                    isMaterial ? 'Pilih Item' : 'Tambah',
+                                    isMaterial || isSimpleExpense
+                                        ? 'Pilih Item'
+                                        : 'Tambah',
                                     style: const TextStyle(
                                       color: Color(0xFFF7944D),
                                       fontWeight: FontWeight.w600,
@@ -1423,6 +1471,7 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
         OperasionalExpenseItem(
           id: 'rab-${item.id}',
           name: item.uraian,
+          quantity: 0,
           amount: 0,
           note: '',
           attachments: const [],
@@ -1487,7 +1536,7 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
       ),
       builder: (_) => TambahItemOperasionalSheet(
         category: widget.category,
-        defaultName: '${widget.category.label} ${_items.length + 1}',
+        defaultName: '',
       ),
     );
 
@@ -1507,8 +1556,22 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
             (current) => current.id == item.id
                 ? current.copyWith(
                     isSelected: value,
+                    quantity: value ? current.quantity.clamp(1, 9999) : 0,
                     amount: value ? current.amount : 0,
                   )
+                : current,
+          )
+          .toList();
+    });
+  }
+
+  void _updateQuantity(OperasionalExpenseItem item, String rawValue) {
+    final quantity = int.tryParse(rawValue) ?? 0;
+    setState(() {
+      _items = _items
+          .map(
+            (current) => current.id == item.id
+                ? current.copyWith(quantity: quantity)
                 : current,
           )
           .toList();
@@ -1589,6 +1652,8 @@ class _OperasionalItemPickerSheetState extends State<OperasionalItemPickerSheet>
                             key: ValueKey(item.id),
                             item: item,
                             onChanged: (value) => _toggleItem(item, value),
+                            onQuantityChanged: (value) =>
+                                _updateQuantity(item, value),
                             onAmountChanged: (value) =>
                                 _updateAmount(item, value),
                           );
@@ -2217,12 +2282,14 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
 class OperasionalItemSelectionCard extends StatefulWidget {
   final OperasionalExpenseItem item;
   final ValueChanged<bool> onChanged;
+  final ValueChanged<String> onQuantityChanged;
   final ValueChanged<String> onAmountChanged;
 
   const OperasionalItemSelectionCard({
     super.key,
     required this.item,
     required this.onChanged,
+    required this.onQuantityChanged,
     required this.onAmountChanged,
   });
 
@@ -2233,15 +2300,21 @@ class OperasionalItemSelectionCard extends StatefulWidget {
 
 class _OperasionalItemSelectionCardState
     extends State<OperasionalItemSelectionCard> {
+  late final TextEditingController _quantityController;
   late final TextEditingController _amountController;
+  late final FocusNode _quantityFocusNode;
   late final FocusNode _amountFocusNode;
 
   @override
   void initState() {
     super.initState();
+    _quantityController = TextEditingController(
+      text: widget.item.quantity == 0 ? '' : widget.item.quantity.toString(),
+    );
     _amountController = TextEditingController(
       text: widget.item.amount == 0 ? '' : _formatAmountInput(widget.item.amount),
     );
+    _quantityFocusNode = FocusNode();
     _amountFocusNode = FocusNode();
   }
 
@@ -2249,9 +2322,17 @@ class _OperasionalItemSelectionCardState
   void didUpdateWidget(covariant OperasionalItemSelectionCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    final nextQuantity = widget.item.quantity == 0
+        ? ''
+        : widget.item.quantity.toString();
     final nextAmount = widget.item.amount == 0
         ? ''
         : _formatAmountInput(widget.item.amount);
+
+    if (!_quantityFocusNode.hasFocus &&
+        _quantityController.text != nextQuantity) {
+      _quantityController.text = nextQuantity;
+    }
 
     if (!_amountFocusNode.hasFocus && _amountController.text != nextAmount) {
       _amountController.text = nextAmount;
@@ -2260,7 +2341,9 @@ class _OperasionalItemSelectionCardState
 
   @override
   void dispose() {
+    _quantityController.dispose();
     _amountController.dispose();
+    _quantityFocusNode.dispose();
     _amountFocusNode.dispose();
     super.dispose();
   }
@@ -2303,17 +2386,46 @@ class _OperasionalItemSelectionCardState
               ),
             ],
           ),
-          const _FieldLabel('Total'),
-          const SizedBox(height: 6),
-          _CompactTextField(
-            controller: _amountController,
-            focusNode: _amountFocusNode,
-            hintText: 'Rp',
-            prefixText: 'Rp ',
-            keyboardType: TextInputType.number,
-            inputFormatters: const [_ThousandsSeparatorFormatter()],
-            enabled: widget.item.isSelected,
-            onChanged: widget.onAmountChanged,
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _FieldLabel('Kuantitas'),
+                    const SizedBox(height: 6),
+                    _CompactTextField(
+                      controller: _quantityController,
+                      focusNode: _quantityFocusNode,
+                      hintText: '0',
+                      keyboardType: TextInputType.number,
+                      enabled: widget.item.isSelected,
+                      onChanged: widget.onQuantityChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _FieldLabel('Total'),
+                    const SizedBox(height: 6),
+                    _CompactTextField(
+                      controller: _amountController,
+                      focusNode: _amountFocusNode,
+                      hintText: 'Rp',
+                      prefixText: 'Rp ',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: const [_ThousandsSeparatorFormatter()],
+                      enabled: widget.item.isSelected,
+                      onChanged: widget.onAmountChanged,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -2370,18 +2482,23 @@ class OperasionalExpenseCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Total',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatCurrency(item.amount),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1B2A4A),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: _MetaColumn(
+                            label: 'Jumlah',
+                            value: item.quantity.toString(),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _MetaColumn(
+                            label: 'Total',
+                            value: _formatCurrency(item.amount),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -2451,51 +2568,37 @@ class TambahItemOperasionalSheet extends StatefulWidget {
 
 class _TambahItemOperasionalSheetState
     extends State<TambahItemOperasionalSheet> {
+  final _nameController = TextEditingController();
+  final _quantityController = TextEditingController();
   final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  final _imagePicker = ImagePicker();
-  final List<MaterialAttachmentItem> _attachments = [];
 
   bool get _canSubmit {
-    return _parseCurrencyInput(_amountController.text) > 0;
+    return _nameController.text.trim().isNotEmpty &&
+        (int.tryParse(_quantityController.text.trim()) ?? 0) > 0 &&
+        _parseCurrencyInput(_amountController.text) > 0;
   }
 
   @override
   void initState() {
     super.initState();
+    _nameController.text = widget.initialItem?.name ?? '';
+    _quantityController.text = widget.initialItem == null
+        ? ''
+        : widget.initialItem!.quantity.toString();
     _amountController.text = widget.initialItem == null
         ? ''
         : _formatAmountInput(widget.initialItem!.amount);
-    _noteController.text = widget.initialItem?.note ?? '';
-    _attachments.addAll(widget.initialItem?.attachments ?? const []);
+    _nameController.addListener(() => setState(() {}));
+    _quantityController.addListener(() => setState(() {}));
     _amountController.addListener(() => setState(() {}));
-    _noteController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _quantityController.dispose();
     _amountController.dispose();
-    _noteController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickAttachments() async {
-    final pickedImages = await _imagePicker.pickMultiImage(imageQuality: 85);
-    if (!mounted || pickedImages.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      _attachments.addAll(
-        pickedImages.map((image) => MaterialAttachmentItem.file(image.path)),
-      );
-    });
-  }
-
-  void _removeAttachment(int index) {
-    setState(() {
-      _attachments.removeAt(index);
-    });
   }
 
   void _deleteItem() {
@@ -2507,10 +2610,11 @@ class _TambahItemOperasionalSheetState
       id:
           widget.initialItem?.id ??
           'operasional-${DateTime.now().millisecondsSinceEpoch}',
-      name: widget.initialItem?.name ?? widget.defaultName,
+      name: _nameController.text.trim(),
+      quantity: int.tryParse(_quantityController.text.trim()) ?? 0,
       amount: _parseCurrencyInput(_amountController.text),
-      note: _noteController.text.trim(),
-      attachments: List<MaterialAttachmentItem>.from(_attachments),
+      note: widget.initialItem?.note ?? '',
+      attachments: widget.initialItem?.attachments ?? const [],
       isSelected: true,
       isCustom: widget.initialItem?.isCustom ?? true,
     );
@@ -2553,70 +2657,64 @@ class _TambahItemOperasionalSheetState
               ],
             ),
             const SizedBox(height: 12),
-            const _FieldLabel('Jumlah Biaya'),
+            const _FieldLabel('Nama Item'),
             const SizedBox(height: 8),
-            _CompactTextField(
-              controller: _amountController,
-              hintText: 'Rp',
-              prefixText: 'Rp ',
-              keyboardType: TextInputType.number,
-              inputFormatters: const [_ThousandsSeparatorFormatter()],
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                hintText: 'Ketik Disini',
+                hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF5D93E8)),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
-            const _FieldLabel('Catatan'),
-            const SizedBox(height: 8),
-            _NotesField(
-              controller: _noteController,
-              hintText: 'Ketik Disini',
-            ),
-            const SizedBox(height: 16),
-            const _FieldLabel('Lampiran'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: _attachments.length + 1,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _UploadBox(onTap: _pickAttachments);
-                  }
-
-                  final attachment = _attachments[index - 1];
-                  return Stack(
-                    clipBehavior: Clip.none,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AttachmentThumbnail(
-                        image: attachment,
-                        galleryImages: _attachments,
-                        initialIndex: index - 1,
-                      ),
-                      Positioned(
-                        top: -6,
-                        right: -6,
-                        child: GestureDetector(
-                          onTap: () => _removeAttachment(index - 1),
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF111827),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                      const _FieldLabel('Kuantitas'),
+                      const SizedBox(height: 8),
+                      _CompactTextField(
+                        controller: _quantityController,
+                        hintText: '0',
+                        keyboardType: TextInputType.number,
                       ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _FieldLabel('Total'),
+                      const SizedBox(height: 8),
+                      _CompactTextField(
+                        controller: _amountController,
+                        hintText: 'Rp',
+                        prefixText: 'Rp ',
+                        keyboardType: TextInputType.number,
+                        inputFormatters: const [_ThousandsSeparatorFormatter()],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             if (widget.initialItem != null)
@@ -2836,16 +2934,14 @@ class _DetailSheetBox extends StatelessWidget {
   }
 }
 
-class _EmptyOperasionalState extends StatelessWidget {
-  final double? minHeight;
 
-  const _EmptyOperasionalState({this.minHeight});
+class _EmptyOperasionalState extends StatelessWidget {
+  const _EmptyOperasionalState();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: minHeight ?? 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       decoration: BoxDecoration(
         color: Colors.white,

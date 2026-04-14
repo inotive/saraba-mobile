@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
@@ -37,6 +40,14 @@ class ProjectDetailPage extends StatelessWidget {
               builder: (context, state) {
                 final detail = state.detail;
                 final title = detail?.overview.namaProyek ?? projectTitle;
+                final currentUser = Hive.box<User>('userBox').get('current_user');
+                final isProjectFinished = detail != null
+                    ? _isProjectFinished(detail.overview.status)
+                    : false;
+                final canManageProjectActions =
+                    !isProjectFinished &&
+                    hasFullMenuAccess(currentUser?.role ?? '');
+                final canCreateRequest = !isProjectFinished;
 
                 return Column(
                   children: [
@@ -88,17 +99,15 @@ class ProjectDetailPage extends StatelessWidget {
                               ProjectProgressView(
                                 overview: detail.overview,
                                 progress: detail.progress,
-                                canEdit: !_isProjectFinished(detail.overview.status),
+                                canEdit: canManageProjectActions,
                               ),
                               ProjectPengeluaranView(
                                 projectId: projectId,
-                                canEdit:
-                                    !_isProjectFinished(detail.overview.status),
+                                canEdit: canManageProjectActions,
                               ),
                               ProjectRequestView(
                                 projectId: projectId,
-                                canEdit:
-                                    !_isProjectFinished(detail.overview.status),
+                                canEdit: canCreateRequest,
                               ),
                             ],
                           );

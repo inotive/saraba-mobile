@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/core/utils/role_access_helper.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
@@ -118,8 +117,12 @@ class _HomePageState extends State<HomePage> {
               keys: const ['current_user'],
             ),
             builder: (context, _, child) {
-              final currentUser = Hive.box<User>('userBox').get('current_user');
-              final visibleTabs = _buildVisibleTabs(currentUser?.role ?? '');
+              const visibleTabs = [
+                NavigationTab.dashboard,
+                NavigationTab.absensi,
+                NavigationTab.pekerjaan,
+                NavigationTab.akun,
+              ];
               final selectedTab = visibleTabs.contains(state.selectedTab)
                   ? state.selectedTab
                   : NavigationTab.dashboard;
@@ -185,23 +188,6 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
-  }
-
-  List<NavigationTab> _buildVisibleTabs(String role) {
-    if (hasFullMenuAccess(role)) {
-      return const [
-        NavigationTab.dashboard,
-        NavigationTab.absensi,
-        NavigationTab.pekerjaan,
-        NavigationTab.akun,
-      ];
-    }
-
-    return const [
-      NavigationTab.dashboard,
-      NavigationTab.absensi,
-      NavigationTab.akun,
-    ];
   }
 
   String _buildNavAsset(NavigationTab tab) {

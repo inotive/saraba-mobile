@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
+import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
@@ -236,6 +238,12 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
           }
 
           final draft = _buildDraft(detail);
+          final currentUserId =
+              Hive.box<User>('userBox').get('current_user')?.id;
+          final canManageOptions =
+              canEdit &&
+              currentUserId != null &&
+              currentUserId == detail.user.id;
 
           return Scaffold(
             backgroundColor: const Color(0xFFFAFAFA),
@@ -291,6 +299,10 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                               ),
                             ),
                           const SizedBox(height: 18),
+                          const _DetailLabel('Dibuat Oleh'),
+                          const SizedBox(height: 4),
+                          _DetailValue(detail.user.name.isEmpty ? '-' : detail.user.name),
+                          const SizedBox(height: 18),
                           const _DetailLabel('Grand Total'),
                           const SizedBox(height: 4),
                           _DetailValue(_formatDetailCurrency(detail.grandTotal)),
@@ -317,62 +329,58 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x14000000),
-                          blurRadius: 14,
-                          offset: Offset(0, -4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    child: Column(
-                      children: [
-                        if (canEdit)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: state.isDeleting
-                                  ? null
-                                  : () => _openOptions(context, draft),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
+                  if (canManageOptions)
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 14,
+                            offset: Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: state.isDeleting
+                              ? null
+                              : () => _openOptions(context, draft),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: Color(0xFFF7944D),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          icon: state.isDeleting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFF7944D),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.more_horiz,
                                   color: Color(0xFFF7944D),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                minimumSize: const Size.fromHeight(50),
-                              ),
-                              icon: state.isDeleting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFFF7944D),
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.more_horiz,
-                                      color: Color(0xFFF7944D),
-                                    ),
-                              label: Text(
-                                state.isDeleting ? 'Menghapus...' : 'Pilihan',
-                                style: const TextStyle(
-                                  color: Color(0xFFF7944D),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                          label: Text(
+                            state.isDeleting ? 'Menghapus...' : 'Pilihan',
+                            style: const TextStyle(
+                              color: Color(0xFFF7944D),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -386,6 +394,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
     return MaterialPengeluaranDraft(
       materialCode: detail.nomorTransaksi,
       date: _parseDetailDate(detail.tanggal),
+      createdBy: detail.user.name,
       note: detail.catatan,
       attachments: detail.lampiran
           .map((item) => MaterialAttachmentItem.network(item.url))
