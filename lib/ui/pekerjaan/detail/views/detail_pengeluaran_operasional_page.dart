@@ -317,64 +317,59 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        top: BorderSide(color: Color(0xFFF1F3F5)),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x14000000),
-                          blurRadius: 14,
-                          offset: Offset(0, -4),
+                  if (canManageOptions)
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFF1F3F5)),
                         ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    child: Column(
-                      children: [
-                        if (canManageOptions)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => state.isDeleting
-                                  ? null
-                                  : _openOptions(context, draft),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 14,
+                            offset: Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              state.isDeleting ? null : _openOptions(context, draft),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: Color(0xFFF7944D),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          icon: state.isDeleting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFF7944D),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.more_horiz,
                                   color: Color(0xFFF7944D),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                minimumSize: const Size.fromHeight(50),
-                              ),
-                              icon: state.isDeleting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFFF7944D),
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.more_horiz,
-                                      color: Color(0xFFF7944D),
-                                    ),
-                              label: Text(
-                                state.isDeleting ? 'Menghapus...' : 'Pilihan',
-                                style: const TextStyle(
-                                  color: Color(0xFFF7944D),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                          label: Text(
+                            state.isDeleting ? 'Menghapus...' : 'Pilihan',
+                            style: const TextStyle(
+                              color: Color(0xFFF7944D),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
