@@ -72,7 +72,6 @@ class AbsensiService {
       final token = await AuthService().getToken();
 
       final formData = FormData.fromMap({
-        "proyek_id": "",
         "lat": latitude,
         "long": longitude,
         "keterangan": keterangan,

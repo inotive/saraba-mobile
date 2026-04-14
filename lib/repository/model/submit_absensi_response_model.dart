@@ -33,6 +33,8 @@ class SubmitAbsensiData {
   final String longPulang;
   final String fotoMasuk;
   final String fotoPulang;
+  final String fotoMasukUrl;
+  final String fotoPulangUrl;
   final String status;
   final String keterangan;
   final String createdAt;
@@ -56,6 +58,8 @@ class SubmitAbsensiData {
     required this.longPulang,
     required this.fotoMasuk,
     required this.fotoPulang,
+    required this.fotoMasukUrl,
+    required this.fotoPulangUrl,
     required this.status,
     required this.keterangan,
     required this.createdAt,
@@ -81,6 +85,8 @@ class SubmitAbsensiData {
       longPulang: json['long_pulang']?.toString() ?? '',
       fotoMasuk: json['foto_masuk']?.toString() ?? '',
       fotoPulang: json['foto_pulang']?.toString() ?? '',
+      fotoMasukUrl: json['foto_masuk_url']?.toString() ?? '',
+      fotoPulangUrl: json['foto_pulang_url']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       keterangan: json['keterangan']?.toString() ?? '',
       createdAt: json['created_at']?.toString() ?? '',
