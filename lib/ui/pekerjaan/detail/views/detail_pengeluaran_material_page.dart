@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
-import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
@@ -238,12 +236,6 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
           }
 
           final draft = _buildDraft(detail);
-          final currentUserId =
-              Hive.box<User>('userBox').get('current_user')?.id;
-          final canManageOptions =
-              canEdit &&
-              currentUserId != null &&
-              currentUserId == detail.user.id;
 
           return Scaffold(
             backgroundColor: const Color(0xFFFAFAFA),
@@ -325,7 +317,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (canManageOptions)
+                  if (canEdit)
                     Container(
                       decoration: const BoxDecoration(
                         color: Colors.white,

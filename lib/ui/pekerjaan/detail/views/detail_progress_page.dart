@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
-import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
 
 class ProgressDetailPage extends StatefulWidget {
@@ -78,13 +76,6 @@ class _ProgressDetailPageState extends State<ProgressDetailPage> {
     final displayJumlahTukang =
         detail?.jumlahTukang.toString() ?? widget.log.jumlahTukang?.toString() ?? '-';
     final displayCatatan = detail?.catatan ?? widget.log.catatan;
-    final currentUserId = Hive.box<User>('userBox').get('current_user')?.id;
-    final ownerUserId = detail?.user?.id ?? widget.log.user.id;
-    final canManageOptions =
-        widget.canEdit &&
-        _errorMessage == null &&
-        currentUserId != null &&
-        currentUserId == ownerUserId;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -208,7 +199,7 @@ class _ProgressDetailPageState extends State<ProgressDetailPage> {
                       ),
                     ),
             ),
-            if (canManageOptions)
+            if (widget.canEdit && _errorMessage == null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: SizedBox(

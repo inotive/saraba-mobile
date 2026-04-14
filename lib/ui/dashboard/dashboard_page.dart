@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/core/utils/role_access_helper.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
@@ -69,15 +68,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           const SizedBox(height: 16),
-          BlocBuilder<ProfileBloc, ProfileState>(
-            builder: (context, profile) {
-              if (!hasFullMenuAccess(profile.userRoleOnly)) {
-                return const SizedBox.shrink();
-              }
-
-              return _projectSection();
-            },
-          ),
+          _projectSection(),
         ],
       ),
     );
