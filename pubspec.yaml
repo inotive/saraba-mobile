@@ -1,7 +1,7 @@
 name: saraba_mobile
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.9.1+1
+version: 0.9.2+1
 
 environment:
   sdk: ^3.10.4
