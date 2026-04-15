@@ -213,7 +213,7 @@ class AkunPage extends StatelessWidget {
   }
 
   Widget _menuCard(BuildContext context, ProfileState profile) {
-    final canViewProjectProfit = hasFullMenuAccess(profile.userRoleOnly);
+    final canViewProjectProfit = canViewReportKeuangan(profile.userRoleOnly);
 
     final items = <Widget>[
       if (canViewProjectProfit)

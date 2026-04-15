@@ -8,3 +8,8 @@ bool hasFullMenuAccess(String role) {
       normalized == 'owner' ||
       normalized == 'superadmin';
 }
+
+bool canViewReportKeuangan(String role) {
+  final normalized = normalizeRole(role);
+  return normalized == 'owner' || normalized == 'superadmin';
+}
