@@ -1,0 +1,92 @@
+name: Build app-test APK On Main Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build app-test release APK
+        run: flutter build apk --release --dart-define=ENABLE_SHAKE_LOGS=${{ vars.ENABLE_SHAKE_LOGS }}
+
+      - name: Prepare semantic version tag
+        id: release_meta
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -n 1 | awk '{print $2}')
+          VERSION=${VERSION_LINE%%+*}
+          APK_NAME="saraba-mobile-release-${VERSION}.apk"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK artifact
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/${{ steps.release_meta.outputs.apk_name }}
+
+      - name: Create GitHub Release and upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          name: saraba-mobile-${{ steps.release_meta.outputs.version }}
+          prerelease: false
+          files: build/app/outputs/flutter-apk/${{ steps.release_meta.outputs.apk_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Prepare Firebase credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | jq -e . >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase_service_account.json"
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 --decode > "$RUNNER_TEMP/firebase_service_account.json"
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase_service_account.json" >> "$GITHUB_ENV"
+
+      - name: Upload APK to Firebase App Distribution
+        env:
+          FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          FIREBASE_TESTERS: ${{ secrets.FIREBASE_TESTERS }}
+          FIREBASE_GROUPS: ${{ secrets.FIREBASE_GROUPS }}
+          RELEASE_NOTES: "PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+        run: |
+          CMD=(firebase appdistribution:distribute "build/app/outputs/flutter-apk/${{ steps.release_meta.outputs.apk_name }}" --app "$FIREBASE_APP_ID_ANDROID" --release-notes "$RELEASE_NOTES")
+          if [ -n "$FIREBASE_TESTERS" ]; then
+            CMD+=(--testers "$FIREBASE_TESTERS")
+          fi
+          if [ -n "$FIREBASE_GROUPS" ]; then
+            CMD+=(--groups "$FIREBASE_GROUPS")
+          fi
+          "${CMD[@]}"

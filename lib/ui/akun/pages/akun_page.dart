@@ -1,0 +1,305 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
+import 'package:saraba_mobile/repository/services/project_profit_service.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
+import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_bloc.dart';
+import 'package:saraba_mobile/ui/akun/bloc/project_profit/project_profit_event.dart';
+import 'package:saraba_mobile/ui/akun/pages/change_password_page.dart';
+import 'package:saraba_mobile/ui/akun/pages/edit_profile_page.dart';
+import 'package:saraba_mobile/ui/akun/pages/project_profit_page.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_event.dart';
+import 'package:saraba_mobile/ui/common/auth/bloc/auth_state.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/login/login_page.dart';
+
+class AkunPage extends StatelessWidget {
+  const AkunPage({super.key});
+
+  Future<bool?> _showLogoutConfirmation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Keluar Akun'),
+          content: const Text('Apakah kamu yakin ingin keluar dari akun ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Keluar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openEditProfile(
+    BuildContext context,
+    ProfileState profile,
+  ) async {
+    final profileBloc = context.read<ProfileBloc>();
+    final result = await Navigator.push<EditProfileResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: profileBloc,
+          child: EditProfilePage(
+            name: profile.displayName,
+            role: profile.displayRole,
+            avatarPath: profile.avatarPath,
+            avatarUrl: profile.remoteAvatar,
+          ),
+        ),
+      ),
+    );
+
+    if (result == null || !context.mounted) {
+      return;
+    }
+
+    if (result.success) {
+      context.read<ProfileBloc>().add(FetchProfileData());
+    }
+
+    StatusBanner.show(
+      context,
+      title: result.title,
+      message: result.message,
+      type: result.bannerType,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(
+                bannerTitle: 'Logout Berhasil',
+                bannerMessage: 'Kamu berhasil keluar dari akun',
+                bannerType: StatusBannerType.success,
+              ),
+            ),
+            (route) => false,
+          );
+        } else if (state is AuthAuthenticated) {
+          StatusBanner.show(
+            context,
+            title: 'Logout Gagal',
+            message: 'Gagal keluar dari akun. Coba lagi.',
+            type: StatusBannerType.error,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFAFAFA),
+          surfaceTintColor: const Color(0xFFFAFAFA),
+          elevation: 0,
+          title: const Text('Akun'),
+        ),
+        body: BlocConsumer<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state.isError && state.errorMessage != null) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            }
+          },
+          builder: (context, state) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  if (state.isLoading) const LinearProgressIndicator(),
+                  if (state.isLoading) const SizedBox(height: 16),
+                  _profileCard(context, state),
+                  const SizedBox(height: 16),
+                  _menuCard(context, state),
+                  const SizedBox(height: 16),
+                  _logoutButton(context),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _profileCard(BuildContext context, ProfileState profile) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileAvatar(profile),
+              const SizedBox(height: 8),
+              Text(
+                profile.displayName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                profile.displayRole,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          OutlinedButton(
+            onPressed: () => _openEditProfile(context, profile),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.orange),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Edit', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar(ProfileState profile) {
+    if (profile.avatarPath != null && profile.avatarPath!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 30,
+        backgroundImage: FileImage(File(profile.avatarPath!)),
+      );
+    }
+
+    if (profile.remoteAvatar.isNotEmpty) {
+      return CircleAvatar(
+        radius: 30,
+        backgroundImage: NetworkImage(profile.remoteAvatar),
+      );
+    }
+
+    return const CircleAvatar(
+      radius: 30,
+      backgroundColor: Color(0xFFF1F3F5),
+      child: Icon(Icons.person, color: Color(0xFF9AA0A6), size: 30),
+    );
+  }
+
+  Widget _menuCard(BuildContext context, ProfileState profile) {
+    final canViewProjectProfit = canViewReportKeuangan(profile.userRoleOnly);
+
+    final items = <Widget>[
+      if (canViewProjectProfit)
+        _menuItem(
+          icon: Icons.person,
+          title: 'Report Keuntungan',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider(
+                  create: (_) => ProjectProfitBloc(ProjectProfitService())
+                    ..add(FetchProjectProfits())
+                    ..add(FetchGuaranteeProfits()),
+                  child: const ProjectProfitPage(),
+                ),
+              ),
+            );
+          },
+        ),
+      _menuItem(
+        icon: Icons.build,
+        title: 'General',
+        onTap: () {
+          final profileBloc = context.read<ProfileBloc>();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider.value(
+                value: profileBloc,
+                child: const ChangePasswordPage(),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    return Container(
+      decoration: _cardDecoration(),
+      child: Column(children: items),
+    );
+  }
+
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+
+  Widget _logoutButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: _cardDecoration(),
+      child: ListTile(
+        leading: const Icon(Icons.logout, color: Colors.red),
+        title: const Text('Keluar', style: TextStyle(color: Colors.red)),
+        onTap: () async {
+          final shouldLogout = await _showLogoutConfirmation(context);
+          if (shouldLogout != true || !context.mounted) {
+            return;
+          }
+          context.read<AuthBloc>().add(LogoutRequested());
+        },
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+}

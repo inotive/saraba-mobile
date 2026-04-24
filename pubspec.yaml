@@ -1,8 +1,7 @@
 name: saraba_mobile
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
-version: 1.0.0+1
+publish_to: 'none'
+version: 0.9.3+1
 
 environment:
   sdk: ^3.10.4
@@ -10,32 +9,66 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+  flutter_localizations:
+    sdk: flutter
+ 
+  flutter_bloc: ^8.1.3
+  bloc: ^8.1.2
+  equatable: ^2.0.5
+  go_router: ^13.0.0
+  dio: ^5.4.0
+  pretty_dio_logger: ^1.3.1
+  shared_preferences: ^2.2.2
+  hive_flutter: ^1.1.0
+  hive: ^2.2.3
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.8
+  image_picker: ^1.0.7
+  camera: ^0.10.5+5
+  geolocator: ^11.0.0
+  geocoding: ^3.0.0
+  http_parser: ^4.0.2
+  path: ^1.9.0
+  path_provider: ^2.1.2
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.9
   intl: ^0.20.2
-  dashed_border: ^1.0.2
-
+  shimmer: ^3.0.0
+  fluttertoast: ^8.2.4
+  permission_handler: ^11.3.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  sensors_plus: ^6.1.1
+  device_info_plus: ^11.2.1
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
+  flutter_alice: ^2.0.1
+  overlay_support: ^2.1.0
+  pdfrx: ^2.2.24
+ 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^6.0.0
 
 flutter:
-
   uses-material-design: true
-
   assets:
-    - assets/icons/
     - assets/images/
+    - assets/icons/
 
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/splash_logo.png
+  adaptive_icon_background: "#F5F5F5"
+  adaptive_icon_foreground: assets/images/splash_logo.png
+
+flutter_native_splash:
+  color: "#F5F5F5"
+  image: assets/images/splash_logo.png
+  android: true
+  ios: true
+  android_12:
+    color: "#F5F5F5"
+    image: assets/images/splash_logo.png
