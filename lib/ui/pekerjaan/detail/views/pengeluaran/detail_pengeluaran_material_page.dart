@@ -10,7 +10,7 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_state.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/tambah_pengeluaran_page.dart';
 
 class DetailPengeluaranMaterialPage extends StatelessWidget {
   final String projectId;

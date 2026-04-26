@@ -7,11 +7,11 @@ import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_state.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_overview_view.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_pengeluaran_view.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_progress_view.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_rab_view.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/project_request_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/overview/project_overview_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/project_pengeluaran_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/project_progress_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/rab/project_rab_view.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/project_request_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/detail_header.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/detail_top_tab_bar.dart';
 

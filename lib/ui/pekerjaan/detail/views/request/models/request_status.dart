@@ -1,0 +1,1 @@
+enum RequestStatus { pending, processed, done }

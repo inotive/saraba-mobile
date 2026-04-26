@@ -6,10 +6,10 @@ import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_material_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_pengeluaran_operasional_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/pengeluaran_item_card.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/detail_pengeluaran_material_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/detail_pengeluaran_operasional_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/tambah_pengeluaran_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_item_card.dart';
 
 class ProjectPengeluaranView extends StatefulWidget {
   final String projectId;

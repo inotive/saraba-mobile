@@ -6,8 +6,8 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/progress_item_card.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_progress_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/detail_progress_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/tambah_progress_page.dart';
 
 class ProjectProgressView extends StatelessWidget {
   final ProjectOverviewDetail overview;
