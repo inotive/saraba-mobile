@@ -7,6 +7,8 @@ class ProjectRequestItem {
   final DateTime requestDate;
   final RequestStatus status;
   final String requestText;
+  final int totalItem;
+  final double grandTotal;
 
   const ProjectRequestItem({
     required this.requestId,
@@ -15,6 +17,8 @@ class ProjectRequestItem {
     required this.requestDate,
     required this.status,
     required this.requestText,
+    required this.totalItem,
+    required this.grandTotal,
   });
 
   ProjectRequestItem copyWith({
@@ -24,6 +28,8 @@ class ProjectRequestItem {
     DateTime? requestDate,
     RequestStatus? status,
     String? requestText,
+    int? totalItem,
+    double? grandTotal,
   }) {
     return ProjectRequestItem(
       requestId: requestId ?? this.requestId,
@@ -32,6 +38,8 @@ class ProjectRequestItem {
       requestDate: requestDate ?? this.requestDate,
       status: status ?? this.status,
       requestText: requestText ?? this.requestText,
+      totalItem: totalItem ?? this.totalItem,
+      grandTotal: grandTotal ?? this.grandTotal,
     );
   }
 }

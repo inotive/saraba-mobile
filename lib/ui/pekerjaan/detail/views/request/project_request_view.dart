@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/detail_project_request_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/project_request_mapper.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
@@ -240,6 +241,26 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     );
   }
 
+  void _openDetail(ProjectRequestItem item) {
+    final canManageItem =
+        widget.canEdit &&
+        item.status == RequestStatus.pending &&
+        _currentUserName.isNotEmpty &&
+        item.createdBy.trim().toLowerCase() == _currentUserName;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailProjectRequestView(
+          item: item,
+          canManage: canManageItem,
+          onEdit: canManageItem ? () => _openEditRequest(item) : null,
+          onDelete: canManageItem ? () => _deleteRequest(item) : null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -281,19 +302,9 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
                     final item = _requests[index];
-                    final canManageItem =
-                        widget.canEdit &&
-                        item.status == RequestStatus.pending &&
-                        _currentUserName.isNotEmpty &&
-                        item.createdBy.trim().toLowerCase() == _currentUserName;
                     return RequestCard(
                       item: item,
-                      onEdit: canManageItem
-                          ? () => _openEditRequest(item)
-                          : null,
-                      onDelete: canManageItem
-                          ? () => _deleteRequest(item)
-                          : null,
+                      onDetail: () => _openDetail(item),
                     );
                   },
                 ),

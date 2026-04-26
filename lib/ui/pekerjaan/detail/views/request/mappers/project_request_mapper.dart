@@ -6,33 +6,31 @@ import 'package:saraba_mobile/repository/model/project/project_request_response_
 import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
 
 class ProjectRequestMapper {
-  static ProjectRequestItem fromResponse(
-    ProjectRequestData item,
-  ) {
+  static ProjectRequestItem fromResponse(ProjectRequestData item) {
     return ProjectRequestItem(
-      requestId: item.id.toString(),
+      requestId: item.idPermintaan.toString(),
       displayId: item.id.toString(),
       createdBy: item.createdBy.isNotEmpty ? item.createdBy : '-',
       requestDate:
-          RequestDateParser.parse(item.tanggalPermintaan) ??
-          DateTime.now(),
+          RequestDateParser.parse(item.tanggalPermintaan) ?? DateTime.now(),
       status: _mapStatus(item.status),
       requestText: item.deskripsi,
+      totalItem: item.totalItem ?? 0,
+      grandTotal: item.grandTotal ?? 0,
     );
   }
 
-  static ProjectRequestItem fromSubmit(
-    ProjectRequestSubmitData item,
-  ) {
+  static ProjectRequestItem fromSubmit(ProjectRequestSubmitData item) {
     return ProjectRequestItem(
       requestId: item.id.toString(),
       displayId: item.id.toString(),
       createdBy: item.createdBy.isNotEmpty ? item.createdBy : '-',
       requestDate:
-          RequestDateParser.parse(item.tanggalPermintaan) ??
-          DateTime.now(),
+          RequestDateParser.parse(item.tanggalPermintaan) ?? DateTime.now(),
       status: _mapStatus(item.status),
       requestText: item.deskripsi,
+      totalItem: item.totalItem ?? 0,
+      grandTotal: item.grandTotal ?? 0,
     );
   }
 
