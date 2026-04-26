@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/core/utils/role_access_helper.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
@@ -9,6 +10,7 @@ import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/pages/akun_page.dart';
+import 'package:saraba_mobile/ui/approval/approval_page.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
@@ -73,7 +75,8 @@ class _HomePageState extends State<HomePage> {
           providers: [
             BlocProvider(create: (_) => AttendanceBloc(AbsensiService())),
             BlocProvider(
-              create: (_) => AbsensiBloc(AbsensiService())..add(FetchTodayAbsensi()),
+              create: (_) =>
+                  AbsensiBloc(AbsensiService())..add(FetchTodayAbsensi()),
             ),
             BlocProvider(
               create: (_) =>
@@ -97,6 +100,13 @@ class _HomePageState extends State<HomePage> {
           create: (_) => PekerjaanBloc(PekerjaanService())..add(FetchProyeks()),
           child: const PekerjaanPage(),
         );
+      case NavigationTab.approval:
+        return const ApprovalPage();
+      // case NavigationTab.approval:
+      //   return BlocProvider(
+      //     create: (_) => ApprovalBloc(ApprovalService())..add(FetchApprovals()),
+      //     child: const ApprovalPage(),
+      //   );
       case NavigationTab.akun:
         return BlocProvider(
           create: (_) =>
@@ -113,14 +123,21 @@ class _HomePageState extends State<HomePage> {
       child: BlocBuilder<NavigationBloc, NavigationState>(
         builder: (context, state) {
           return ValueListenableBuilder(
-            valueListenable: Hive.box<User>('userBox').listenable(
-              keys: const ['current_user'],
-            ),
+            valueListenable: Hive.box<User>(
+              'userBox',
+            ).listenable(keys: const ['current_user']),
             builder: (context, _, child) {
-              const visibleTabs = [
+              final currentUser = Hive.box<User>('userBox').get('current_user');
+
+              final role = currentUser?.role ?? '';
+
+              final visibleTabs = [
                 NavigationTab.dashboard,
                 NavigationTab.absensi,
                 NavigationTab.pekerjaan,
+
+                if (hasFullMenuAccess(role)) NavigationTab.approval,
+
                 NavigationTab.akun,
               ];
               final selectedTab = visibleTabs.contains(state.selectedTab)
@@ -198,6 +215,8 @@ class _HomePageState extends State<HomePage> {
         return 'assets/icons/ic_absensi_menu.png';
       case NavigationTab.pekerjaan:
         return 'assets/icons/ic_pekerjaan_menu.png';
+      case NavigationTab.approval:
+        return 'assets/icons/ic_pekerjaan_menu.png';
       case NavigationTab.akun:
         return 'assets/icons/ic_akun_menu.png';
     }
@@ -211,6 +230,8 @@ class _HomePageState extends State<HomePage> {
         return 'Absensi';
       case NavigationTab.pekerjaan:
         return 'Pekerjaan';
+      case NavigationTab.approval:
+        return 'Approval';
       case NavigationTab.akun:
         return 'Akun';
     }

@@ -93,13 +93,12 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final app = MaterialApp(
+      debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
       title: 'Saraba Mobile',
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFFAFAFA),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFF7944D),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF7944D)),
       ),
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
