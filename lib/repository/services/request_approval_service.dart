@@ -91,7 +91,7 @@ class RequestApprovalService {
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
-      final response = await dio.put(
+      final response = await dio.post(
         '/permintaans/$requestId/reject',
         data: {'tanggal_permintaan': tanggalPermintaan, 'deskripsi': deskripsi},
       );
