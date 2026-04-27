@@ -17,9 +17,7 @@ class _ProjectRabViewState extends State<ProjectRabView> {
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.rab.items
-        .where((item) => item.tipe.trim().toLowerCase() == 'header')
-        .toList();
+    final items = widget.rab.items.where((item) => item.tipe.trim().toLowerCase() == 'header').toList();
 
     if (items.isEmpty) {
       return const _EmptyRabState();
@@ -47,6 +45,7 @@ class _ProjectRabViewState extends State<ProjectRabView> {
                   subtitle: _buildSubtitle(detail),
                   category: _buildCategoryLabel(detail.kategori),
                   amount: _formatCurrency(detail.jumlah),
+                  hargaSatuan: _formatCurrency(detail.hargaSatuan),
                 ),
               )
               .toList(),
@@ -89,19 +88,13 @@ class _ProjectRabViewState extends State<ProjectRabView> {
     return result;
   }
 
-  String _buildTotalHarga(
-    ProjectRabItem header,
-    List<ProjectRabItem> detailItems,
-  ) {
+  String _buildTotalHarga(ProjectRabItem header, List<ProjectRabItem> detailItems) {
     final headerTotal = double.tryParse(header.jumlah) ?? 0;
     if (headerTotal > 0) {
       return _formatCurrency(header.jumlah);
     }
 
-    final childTotal = detailItems.fold<double>(
-      0,
-      (sum, item) => sum + (double.tryParse(item.jumlah) ?? 0),
-    );
+    final childTotal = detailItems.fold<double>(0, (sum, item) => sum + (double.tryParse(item.jumlah) ?? 0));
     return _formatCurrency(childTotal.toString());
   }
 
@@ -120,16 +113,12 @@ class _ProjectRabViewState extends State<ProjectRabView> {
       case 'operasional':
         return 'Operasional';
       default:
-        return kategori.isEmpty
-            ? '-'
-            : toBeginningOfSentenceCase(kategori) ?? kategori;
+        return kategori.isEmpty ? '-' : toBeginningOfSentenceCase(kategori) ?? kategori;
     }
   }
 
   String _buildHeaderIconAsset(List<ProjectRabItem> detailItems) {
-    final firstCategory = detailItems.isEmpty
-        ? ''
-        : detailItems.first.kategori.trim().toLowerCase();
+    final firstCategory = detailItems.isEmpty ? '' : detailItems.first.kategori.trim().toLowerCase();
 
     switch (firstCategory) {
       case 'material':
@@ -147,11 +136,7 @@ class _ProjectRabViewState extends State<ProjectRabView> {
 
 String _formatCurrency(String rawValue) {
   final parsedValue = double.tryParse(rawValue) ?? 0;
-  return NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  ).format(parsedValue);
+  return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(parsedValue);
 }
 
 String _formatNumber(String rawValue) {

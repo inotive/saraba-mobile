@@ -16,10 +16,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:saraba_mobile/ui/common/auth/auth_wrapper.dart';
 import 'package:saraba_mobile/ui/common/auth/bloc/auth_bloc.dart';
 
-const bool _enableShakeLogsInRelease = bool.fromEnvironment(
-  'ENABLE_SHAKE_LOGS',
-  defaultValue: false,
-);
+const bool _enableShakeLogsInRelease = bool.fromEnvironment('ENABLE_SHAKE_LOGS', defaultValue: false);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,17 +62,14 @@ class _MyAppState extends State<MyApp> {
     }
 
     _shakeSubscription = accelerometerEventStream().listen((event) {
-      final totalForce = math.sqrt(
-        (event.x * event.x) + (event.y * event.y) + (event.z * event.z),
-      );
+      final totalForce = math.sqrt((event.x * event.x) + (event.y * event.y) + (event.z * event.z));
 
       if (totalForce < 22) {
         return;
       }
 
       final now = DateTime.now();
-      if (_lastShakeAt != null &&
-          now.difference(_lastShakeAt!) < const Duration(seconds: 1)) {
+      if (_lastShakeAt != null && now.difference(_lastShakeAt!) < const Duration(seconds: 1)) {
         return;
       }
 
@@ -94,12 +88,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final app = MaterialApp(
       navigatorKey: _navigatorKey,
+      debugShowCheckedModeBanner: false,
       title: 'Saraba Mobile',
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFFAFAFA),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFF7944D),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF7944D)),
       ),
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,

@@ -5,12 +5,14 @@ class RabDetailRowData {
   final String subtitle;
   final String category;
   final String amount;
+  final String hargaSatuan;
 
   const RabDetailRowData({
     required this.title,
     required this.subtitle,
     required this.category,
     required this.amount,
+    required this.hargaSatuan,
   });
 }
 
@@ -52,24 +54,13 @@ class RabItemCard extends StatelessWidget {
               SizedBox(
                 width: 30,
                 height: 30,
-                child: Center(
-                  child: Image.asset(
-                    iconAsset,
-                    width: 28,
-                    height: 28,
-                    fit: BoxFit.contain,
-                  ),
-                ),
+                child: Center(child: Image.asset(iconAsset, width: 28, height: 28, fit: BoxFit.contain)),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F1F1F),
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1F1F1F)),
                 ),
               ),
             ],
@@ -99,11 +90,7 @@ class RabItemCard extends StatelessWidget {
                   children: [
                     Text(
                       isExpanded ? 'Lebih Sedikit' : 'Lihat Detail',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF3D3D3D),
-                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF3D3D3D)),
                     ),
                     const SizedBox(width: 8),
                     Container(
@@ -114,9 +101,7 @@ class RabItemCard extends StatelessWidget {
                         border: Border.all(color: const Color(0xFF3D3D3D)),
                       ),
                       child: Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
+                        isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                         size: 14,
                         color: const Color(0xFF3D3D3D),
                       ),
@@ -143,21 +128,11 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF525252),
-            ),
-          ),
+          child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF525252))),
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1F1F1F),
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1F1F1F)),
         ),
       ],
     );
@@ -187,20 +162,14 @@ class _RabDetailRow extends StatelessWidget {
               children: [
                 Text(
                   data.title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1F1F1F),
-                  ),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1F1F1F)),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  data.subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6B7280),
-                  ),
+                  'Harga Satuan ${data.hargaSatuan}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                 ),
+                Text('Volume : ${data.subtitle}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
               ],
             ),
           ),
@@ -212,11 +181,7 @@ class _RabDetailRow extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 data.amount,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F1F1F),
-                ),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1F1F1F)),
               ),
             ],
           ),
@@ -242,11 +207,7 @@ class _CategoryPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF3E6DB1),
-        ),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3E6DB1)),
       ),
     );
   }
