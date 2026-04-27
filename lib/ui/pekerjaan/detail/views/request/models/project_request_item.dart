@@ -1,5 +1,7 @@
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 
+import 'project_request_detail_item.dart';
+
 class ProjectRequestItem {
   final String requestId;
   final String displayId;
@@ -9,6 +11,7 @@ class ProjectRequestItem {
   final String requestText;
   final int totalItem;
   final double grandTotal;
+  final List<ProjectRequestDetailItem> items;
 
   const ProjectRequestItem({
     required this.requestId,
@@ -19,6 +22,7 @@ class ProjectRequestItem {
     required this.requestText,
     required this.totalItem,
     required this.grandTotal,
+    this.items = const [],
   });
 
   ProjectRequestItem copyWith({
@@ -30,6 +34,7 @@ class ProjectRequestItem {
     String? requestText,
     int? totalItem,
     double? grandTotal,
+    List<ProjectRequestDetailItem>? items,
   }) {
     return ProjectRequestItem(
       requestId: requestId ?? this.requestId,
@@ -40,6 +45,7 @@ class ProjectRequestItem {
       requestText: requestText ?? this.requestText,
       totalItem: totalItem ?? this.totalItem,
       grandTotal: grandTotal ?? this.grandTotal,
+      items: items ?? this.items,
     );
   }
 }

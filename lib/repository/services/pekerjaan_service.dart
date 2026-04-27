@@ -125,7 +125,9 @@ class PekerjaanService {
 
       _logger.error('Pengeluaran item detail request was not successful');
     } catch (e) {
-      _logger.error('Unexpected error while loading pengeluaran item detail: $e');
+      _logger.error(
+        'Unexpected error while loading pengeluaran item detail: $e',
+      );
     }
 
     return null;
@@ -180,14 +182,17 @@ class PekerjaanService {
     required String projectId,
     required String tanggalPermintaan,
     required String deskripsi,
+    required List<Map<String, dynamic>> items,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
+
       final response = await dio.post(
         '/proyeks/$projectId/permintaans',
         data: {
           'tanggal_permintaan': tanggalPermintaan,
           'deskripsi': deskripsi,
+          'items': items,
         },
       );
 
@@ -225,10 +230,7 @@ class PekerjaanService {
       final dio = await AuthService().getAuthDio();
       final response = await dio.put(
         '/proyeks/$projectId/permintaans/$requestId',
-        data: {
-          'tanggal_permintaan': tanggalPermintaan,
-          'deskripsi': deskripsi,
-        },
+        data: {'tanggal_permintaan': tanggalPermintaan, 'deskripsi': deskripsi},
       );
 
       _logger.response(response);
@@ -464,10 +466,7 @@ class PekerjaanService {
 
       for (final path in lampiranPaths) {
         formData.files.add(
-          MapEntry(
-            'lampiran[]',
-            await MultipartFile.fromFile(path),
-          ),
+          MapEntry('lampiran[]', await MultipartFile.fromFile(path)),
         );
       }
 

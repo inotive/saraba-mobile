@@ -6,13 +6,13 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/peng
 
 class TambahItemOperasionalSheet extends StatefulWidget {
   final OperasionalExpenseItem? initialItem;
-  final PengeluaranCategory category;
+  final PengeluaranCategory? category;
   final String defaultName;
 
   const TambahItemOperasionalSheet({
     super.key,
     this.initialItem,
-    required this.category,
+    this.category,
     required this.defaultName,
   });
 

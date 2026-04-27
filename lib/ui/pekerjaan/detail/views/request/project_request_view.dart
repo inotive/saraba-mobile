@@ -88,6 +88,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
         "yyyy-MM-dd'T'HH:mm:ss'Z'",
       ).format(result.requestDate),
       deskripsi: result.requestText,
+      items: result.items,
     );
 
     if (!mounted) {
