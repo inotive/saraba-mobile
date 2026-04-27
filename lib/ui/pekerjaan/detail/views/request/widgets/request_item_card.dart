@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 class RequestItemCard extends StatelessWidget {
   final String itemName;
   final int qty;
-  final double price;
-  final double total;
+  final int price;
+  final int total;
 
   const RequestItemCard({
     super.key,

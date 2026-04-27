@@ -6,11 +6,14 @@ import 'package:saraba_mobile/repository/services/absensi_service.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/repository/services/profile_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:saraba_mobile/repository/services/request_approval_service.dart';
 import 'package:saraba_mobile/ui/absensi/absensi_page.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/pages/akun_page.dart';
 import 'package:saraba_mobile/ui/approval/approval_page.dart';
+import 'package:saraba_mobile/ui/approval/bloc/approval_bloc.dart';
+import 'package:saraba_mobile/ui/approval/bloc/approval_event.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigatioin_state.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_bloc.dart';
 import 'package:saraba_mobile/ui/common/bottomsheet_navigation/bloc/navigation_event.dart';
@@ -101,12 +104,11 @@ class _HomePageState extends State<HomePage> {
           child: const PekerjaanPage(),
         );
       case NavigationTab.approval:
-        return const ApprovalPage();
-      // case NavigationTab.approval:
-      //   return BlocProvider(
-      //     create: (_) => ApprovalBloc(ApprovalService())..add(FetchApprovals()),
-      //     child: const ApprovalPage(),
-      //   );
+        return BlocProvider(
+          create: (_) =>
+              ApprovalBloc(RequestApprovalService())..add(FetchRequests()),
+          child: const ApprovalPage(),
+        );
       case NavigationTab.akun:
         return BlocProvider(
           create: (_) =>

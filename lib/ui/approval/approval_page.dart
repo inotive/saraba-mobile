@@ -1,65 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:saraba_mobile/ui/approval/detail_approval_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class ApprovalPage extends StatelessWidget {
+import 'package:saraba_mobile/ui/approval/bloc/approval_bloc.dart';
+import 'package:saraba_mobile/ui/approval/bloc/approval_event.dart';
+import 'package:saraba_mobile/ui/approval/bloc/approval_state.dart';
+
+import 'package:saraba_mobile/ui/approval/detail_approval_page.dart';
+import 'package:saraba_mobile/repository/model/request_approval/request_approval_model.dart';
+import 'package:saraba_mobile/ui/approval/widgets/approval_card.dart';
+
+class ApprovalPage extends StatefulWidget {
   const ApprovalPage({super.key});
 
-  List<ProjectRequestItem> get _dummyData => [
-    ProjectRequestItem(
-      requestId: '20260410001',
-      createdBy: 'Lily Karmila',
-      requestDate: DateTime(2026, 4, 10),
-      requestText: 'Lorem ipsum dolor sit amet',
-      totalItem: 10,
-      grandTotal: 300000,
-      status: RequestStatus.pending,
-      displayId: 'REQ-001',
-    ),
-    ProjectRequestItem(
-      requestId: '20260410002',
-      createdBy: 'Lily Karmila',
-      requestDate: DateTime(2026, 4, 10),
-      requestText: 'Lorem ipsum dolor sit amet',
-      totalItem: 10,
-      grandTotal: 150000000,
-      status: RequestStatus.pending,
-      displayId: 'REQ-002',
-    ),
-  ];
+  @override
+  State<ApprovalPage> createState() => _ApprovalPageState();
+}
 
-  void _openDetail(BuildContext context, ProjectRequestItem item) {
+class _ApprovalPageState extends State<ApprovalPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ApprovalBloc>().add(FetchRequests());
+  }
+
+  void _openDetail(BuildContext context, RequestApprovalData item) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => DetailApprovalPage(item: item)),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<ApprovalBloc>(),
+          child: DetailApprovalPage(requestId: item.id.toString()),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final requests = _dummyData;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Approval Request'),
         backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView.separated(
-          itemCount: requests.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 14),
-          itemBuilder: (context, index) {
-            final item = requests[index];
 
-            return RequestCard(
-              item: item,
-              onDetail: () => _openDetail(context, item),
-            );
-          },
-        ),
+      body: BlocBuilder<ApprovalBloc, ApprovalState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.requests.isEmpty) {
+            return const Center(child: Text('Tidak ada request'));
+          }
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView.separated(
+              itemCount: state.requests.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 14),
+
+              itemBuilder: (context, index) {
+                final item = state.requests[index];
+
+                return ApprovalCard(
+                  item: item,
+                  onDetail: () => _openDetail(context, item),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
