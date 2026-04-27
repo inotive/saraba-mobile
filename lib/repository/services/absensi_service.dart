@@ -18,7 +18,8 @@ class AbsensiService {
   Dio _buildDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: "https://saraba.inotivedev.com/api/v1",
+        baseUrl: "http://192.168.1.24:8000/api/v1",
+        // baseUrl: "https://saraba.inotivedev.com/api/v1",
         headers: {"Accept": "application/json"},
       ),
     );

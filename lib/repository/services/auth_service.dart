@@ -14,7 +14,8 @@ class AuthService {
 
   late final Dio _dio = _buildDio(
     BaseOptions(
-      baseUrl: "https://saraba.inotivedev.com/api/v1",
+      baseUrl: "http://192.168.1.24:8000/api/v1",
+      // baseUrl: "https://saraba.inotivedev.com/api/v1",
       headers: {"Accept": "application/json"},
     ),
   );
@@ -171,7 +172,8 @@ class AuthService {
 
     return _buildDio(
       BaseOptions(
-        baseUrl: "https://saraba.inotivedev.com/api/v1",
+        baseUrl: "http://192.168.1.24:8000/api/v1",
+        // baseUrl: "https://saraba.inotivedev.com/api/v1",
         headers: {"Authorization": token ?? "", "Accept": "application/json"},
       ),
     );

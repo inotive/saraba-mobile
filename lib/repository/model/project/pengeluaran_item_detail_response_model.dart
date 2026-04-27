@@ -153,7 +153,8 @@ String _normalizeUrl(String rawUrl) {
   }
 
   if (rawUrl.startsWith('/')) {
-    return 'https://saraba.inotivedev.com$rawUrl';
+    return 'http://192.168.1.24:8000$rawUrl';
+    // return 'https://saraba.inotivedev.com$rawUrl';
   }
 
   return rawUrl;
