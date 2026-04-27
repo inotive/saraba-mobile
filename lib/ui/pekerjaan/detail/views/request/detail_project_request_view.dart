@@ -166,6 +166,30 @@ class DetailProjectRequestView extends StatelessWidget {
                             total: 100000,
                           ),
                           const SizedBox(height: 20),
+                          const SizedBox(height: 10),
+
+                          // if (item.items.isEmpty)
+                          //   const Text(
+                          //     'Belum ada item',
+                          //     style: TextStyle(
+                          //       fontSize: 12,
+                          //       color: Color(0xFF8C8C8C),
+                          //     ),
+                          //   )
+                          // else
+                          //   Column(
+                          //     children: item.items.map((e) {
+                          //       return Padding(
+                          //         padding: const EdgeInsets.only(bottom: 10),
+                          //         child: RequestItemCard(
+                          //           itemName: e.namaItem,
+                          //           qty: e.qty,
+                          //           price: e.hargaSatuan,
+                          //           total: e.total,
+                          //         ),
+                          //       );
+                          //     }).toList(),
+                          //   ),
                         ],
                       ),
                     ),
