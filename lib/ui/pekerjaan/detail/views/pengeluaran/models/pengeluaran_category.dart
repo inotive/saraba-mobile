@@ -1,0 +1,1 @@
+enum PengeluaranCategory { operasional, material, pettyCash }

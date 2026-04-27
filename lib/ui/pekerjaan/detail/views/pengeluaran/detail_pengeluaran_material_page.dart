@@ -10,7 +10,13 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_state.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/material_attachment_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/material_expense_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/material_pengeluaran_draft.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/pengeluaran_category.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/pengeluaran_material_flow_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/tambah_pengeluaran_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/attachment_widget.dart';
 
 class DetailPengeluaranMaterialPage extends StatelessWidget {
   final String projectId;
@@ -238,8 +244,9 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
           }
 
           final draft = _buildDraft(detail);
-          final currentUserId =
-              Hive.box<User>('userBox').get('current_user')?.id;
+          final currentUserId = Hive.box<User>(
+            'userBox',
+          ).get('current_user')?.id;
           final canManageOptions =
               canEdit &&
               currentUserId != null &&
@@ -301,11 +308,15 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                           const SizedBox(height: 18),
                           const _DetailLabel('Dibuat Oleh'),
                           const SizedBox(height: 4),
-                          _DetailValue(detail.user.name.isEmpty ? '-' : detail.user.name),
+                          _DetailValue(
+                            detail.user.name.isEmpty ? '-' : detail.user.name,
+                          ),
                           const SizedBox(height: 18),
                           const _DetailLabel('Grand Total'),
                           const SizedBox(height: 4),
-                          _DetailValue(_formatDetailCurrency(detail.grandTotal)),
+                          _DetailValue(
+                            _formatDetailCurrency(detail.grandTotal),
+                          ),
                           const SizedBox(height: 18),
                           const Text(
                             'Item Material',
@@ -321,7 +332,8 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 14),
                               child: _MaterialDetailItemCard(
                                 item: item,
-                                onTapDetail: () => _openItemDetail(context, item),
+                                onTapDetail: () =>
+                                    _openItemDetail(context, item),
                               ),
                             ),
                           ),
@@ -333,7 +345,9 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                     Container(
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        border: Border(top: BorderSide(color: Color(0xFFF1F3F5))),
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFF1F3F5)),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Color(0x14000000),
@@ -350,9 +364,7 @@ class DetailPengeluaranMaterialPage extends StatelessWidget {
                               ? null
                               : () => _openOptions(context, draft),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: Color(0xFFF7944D),
-                            ),
+                            side: const BorderSide(color: Color(0xFFF7944D)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
