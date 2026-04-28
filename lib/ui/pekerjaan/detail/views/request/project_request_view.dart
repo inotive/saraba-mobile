@@ -253,6 +253,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
       context,
       MaterialPageRoute(
         builder: (_) => DetailProjectRequestView(
+          projectId: widget.projectId,
           item: item,
           canManage: canManageItem,
           onEdit: canManageItem ? () => _openEditRequest(item) : null,

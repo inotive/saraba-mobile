@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_detail_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
 
-class DetailProjectRequestView extends StatelessWidget {
+class DetailProjectRequestView extends StatefulWidget {
+  final String projectId;
   final ProjectRequestItem item;
   final bool canManage;
   final VoidCallback? onEdit;
@@ -18,7 +21,59 @@ class DetailProjectRequestView extends StatelessWidget {
     required this.canManage,
     this.onEdit,
     this.onDelete,
+    required this.projectId,
   });
+
+  @override
+  State<DetailProjectRequestView> createState() =>
+      _DetailProjectRequestViewState();
+}
+
+class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
+  final PekerjaanService _service = PekerjaanService();
+
+  bool _isLoading = true;
+  String? _error;
+
+  List<ProjectRequestDetailItem> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final response = await _service.fetchProjectRequestDetail(
+      projectId: widget.projectId,
+      requestId: widget.item.requestId,
+    );
+
+    if (!mounted) return;
+
+    if (response == null) {
+      setState(() {
+        _error = 'Gagal memuat detail request';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _items = (response.data.items as List)
+          .map(
+            (e) => ProjectRequestDetailItem.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +104,14 @@ class DetailProjectRequestView extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  item.requestId,
+                                  widget.item.requestId,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
                                 ),
                               ),
-                              RequestStatusChip(status: item.status),
+                              RequestStatusChip(status: widget.item.status),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -65,7 +120,7 @@ class DetailProjectRequestView extends StatelessWidget {
                               Expanded(
                                 child: InfoColumn(
                                   label: 'Dibuat Oleh',
-                                  value: item.createdBy,
+                                  value: widget.item.createdBy,
                                 ),
                               ),
                               Expanded(
@@ -74,7 +129,7 @@ class DetailProjectRequestView extends StatelessWidget {
                                   value: DateFormat(
                                     'dd MMMM yyyy',
                                     'id_ID',
-                                  ).format(item.requestDate),
+                                  ).format(widget.item.requestDate),
                                   alignEnd: true,
                                 ),
                               ),
@@ -86,7 +141,7 @@ class DetailProjectRequestView extends StatelessWidget {
                               Expanded(
                                 child: InfoColumn(
                                   label: 'Total Item',
-                                  value: '${item.totalItem} Item',
+                                  value: '${widget.item.totalItem} Item',
                                 ),
                               ),
                               Expanded(
@@ -96,7 +151,7 @@ class DetailProjectRequestView extends StatelessWidget {
                                     locale: 'id_ID',
                                     symbol: 'Rp ',
                                     decimalDigits: 0,
-                                  ).format(item.grandTotal),
+                                  ).format(widget.item.grandTotal),
                                   alignEnd: true,
                                 ),
                               ),
@@ -112,7 +167,7 @@ class DetailProjectRequestView extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            item.requestText,
+                            widget.item.requestText,
                             style: const TextStyle(fontSize: 14),
                           ),
                           const SizedBox(height: 16),
@@ -131,7 +186,7 @@ class DetailProjectRequestView extends StatelessWidget {
                                   locale: 'id_ID',
                                   symbol: 'Rp ',
                                   decimalDigits: 0,
-                                ).format(item.grandTotal),
+                                ).format(widget.item.grandTotal),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -147,26 +202,44 @@ class DetailProjectRequestView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          const RequestItemCard(
-                            itemName: 'Barang 1',
-                            qty: 10,
-                            price: 10000,
-                            total: 100000,
-                          ),
-                          const RequestItemCard(
-                            itemName: 'Barang 2',
-                            qty: 10,
-                            price: 10000,
-                            total: 100000,
-                          ),
-                          const RequestItemCard(
-                            itemName: 'Barang 3',
-                            qty: 10,
-                            price: 10000,
-                            total: 100000,
-                          ),
-                          const SizedBox(height: 20),
-                          const SizedBox(height: 10),
+
+                          if (_isLoading)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(12),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          else if (_error != null)
+                            Text(
+                              _error!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8C8C8C),
+                              ),
+                            )
+                          else if (_items.isEmpty)
+                            const Text(
+                              'Belum ada item',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8C8C8C),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: _items.map((e) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: RequestItemCard(
+                                    itemName: e.namaItem,
+                                    qty: e.qty.toInt(),
+                                    price: e.hargaSatuan.toInt(),
+                                    total: e.total.toInt(),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
 
                           // if (item.items.isEmpty)
                           //   const Text(
@@ -197,14 +270,15 @@ class DetailProjectRequestView extends StatelessWidget {
                 ),
               ),
             ),
-            if (canManage && item.status == RequestStatus.pending) ...[
+            if (widget.canManage &&
+                widget.item.status == RequestStatus.pending) ...[
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: onDelete,
+                        onPressed: widget.onDelete,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFFF5B5B)),
                         ),
@@ -217,7 +291,7 @@ class DetailProjectRequestView extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: onEdit,
+                        onPressed: widget.onEdit,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFF7944D)),
                         ),
