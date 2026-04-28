@@ -659,14 +659,14 @@ class _MaterialDetailItemCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: _MaterialItemMeta(
+                      child: MaterialItemMeta(
                         label: 'Qty',
                         value: item.quantity.toString(),
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: _MaterialItemMeta(
+                      child: MaterialItemMeta(
                         label: 'Total',
                         value: _formatDetailCurrency(item.total),
                       ),
@@ -704,11 +704,11 @@ class _MaterialDetailItemCard extends StatelessWidget {
   }
 }
 
-class _MaterialItemMeta extends StatelessWidget {
+class MaterialItemMeta extends StatelessWidget {
   final String label;
   final String value;
 
-  const _MaterialItemMeta({required this.label, required this.value});
+  const MaterialItemMeta({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
