@@ -163,7 +163,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       ),
       builder: (_) => _SimpleExpenseDetailSheet(
         name: detail.namaItem,
-        showName: category != PengeluaranCategory.pettyCash,
+        // showName: category != PengeluaranCategory.pettyCash,
         total: _formatOperasionalCurrency(detail.jumlah),
         note: detail.keterangan,
         attachments: attachments,
@@ -346,8 +346,8 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _SimpleExpenseItemCard(
                                 item: item,
-                                showName:
-                                    category != PengeluaranCategory.pettyCash,
+                                // showName:
+                                //     category != PengeluaranCategory.pettyCash,
                                 onTapDetail: () =>
                                     _openItemDetail(context, item),
                               ),
@@ -612,12 +612,12 @@ class _DetailValue extends StatelessWidget {
 class _SimpleExpenseItemCard extends StatelessWidget {
   final OperasionalExpenseItem item;
   final VoidCallback onTapDetail;
-  final bool showName;
+  // final bool showName;
 
   const _SimpleExpenseItemCard({
     required this.item,
     required this.onTapDetail,
-    required this.showName,
+    // required this.showName,
   });
 
   @override
@@ -651,21 +651,21 @@ class _SimpleExpenseItemCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (showName) ...[
-                  const Text(
-                    'Nama Item',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                // if (showName) ...[
+                const Text(
+                  'Nama Item',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1F1F1F),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1F1F1F),
-                    ),
-                  ),
-                ],
+                ),
+                // ],
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -717,7 +717,7 @@ class _SimpleExpenseItemCard extends StatelessWidget {
 
 class _SimpleExpenseDetailSheet extends StatelessWidget {
   final String name;
-  final bool showName;
+  // final bool showName;
   final String total;
   final String quantity;
   final String note;
@@ -725,7 +725,7 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
 
   const _SimpleExpenseDetailSheet({
     required this.name,
-    required this.showName,
+    // required this.showName,
     required this.total,
     required this.quantity,
     required this.note,
@@ -757,10 +757,10 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            if (showName) ...[
-              _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
-              const SizedBox(height: 14),
-            ],
+            // if (showName) ...[
+            _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
+            const SizedBox(height: 14),
+            // ],
             _SimpleExpenseBottomRow(label: 'Total', value: total),
             const SizedBox(height: 14),
             _SimpleExpenseBottomRow(label: 'Qty', value: quantity),
