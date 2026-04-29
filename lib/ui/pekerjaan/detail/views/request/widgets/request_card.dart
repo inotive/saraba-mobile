@@ -37,7 +37,7 @@ class RequestCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      item.requestId,
+                      item.displayId,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
