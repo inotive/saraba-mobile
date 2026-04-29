@@ -8,8 +8,8 @@ import 'package:saraba_mobile/repository/model/project/project_request_submit_re
 class ProjectRequestMapper {
   static ProjectRequestItem fromResponse(ProjectRequestData item) {
     return ProjectRequestItem(
-      requestId: item.idPermintaan.toString(),
-      displayId: item.id.toString(),
+      requestId: item.id.toString(),
+      displayId: item.idPermintaan.toString(),
       createdBy: item.createdBy.isNotEmpty ? item.createdBy : '-',
       requestDate:
           RequestDateParser.parse(item.tanggalPermintaan) ?? DateTime.now(),

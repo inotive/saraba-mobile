@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_detail_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
@@ -35,7 +35,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
   bool _isLoading = true;
   String? _error;
 
-  List<ProjectRequestDetailItem> _items = [];
+  List<ProjectRequestItemDetail> _items = [];
 
   @override
   void initState() {
@@ -65,11 +65,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
     }
 
     setState(() {
-      _items = (response.data.items as List)
-          .map(
-            (e) => ProjectRequestDetailItem.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      _items = List<ProjectRequestItemDetail>.from(response.data.items);
 
       _isLoading = false;
     });
@@ -88,185 +84,141 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// HEADER
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.item.requestId,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              RequestStatusChip(status: widget.item.status),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InfoColumn(
-                                  label: 'Dibuat Oleh',
-                                  value: widget.item.createdBy,
-                                ),
-                              ),
-                              Expanded(
-                                child: InfoColumn(
-                                  label: 'Tanggal Request',
-                                  value: DateFormat(
-                                    'dd MMMM yyyy',
-                                    'id_ID',
-                                  ).format(widget.item.requestDate),
-                                  alignEnd: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InfoColumn(
-                                  label: 'Total Item',
-                                  value: '${widget.item.totalItem} Item',
-                                ),
-                              ),
-                              Expanded(
-                                child: InfoColumn(
-                                  label: 'Grand Total',
-                                  value: NumberFormat.currency(
-                                    locale: 'id_ID',
-                                    symbol: 'Rp ',
-                                    decimalDigits: 0,
-                                  ).format(widget.item.grandTotal),
-                                  alignEnd: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Request',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF8C8C8C),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            widget.item.requestText,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Grand Total',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF8C8C8C),
-                                ),
-                              ),
-                              Text(
-                                NumberFormat.currency(
-                                  locale: 'id_ID',
-                                  symbol: 'Rp ',
-                                  decimalDigits: 0,
-                                ).format(widget.item.grandTotal),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Daftar Item',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          if (_isLoading)
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(12),
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          else if (_error != null)
-                            Text(
-                              _error!,
+                          Expanded(
+                            child: Text(
+                              widget.item.displayId,
                               style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF8C8C8C),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
-                            )
-                          else if (_items.isEmpty)
-                            const Text(
-                              'Belum ada item',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF8C8C8C),
-                              ),
-                            )
-                          else
-                            Column(
-                              children: _items.map((e) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: RequestItemCard(
-                                    itemName: e.namaItem,
-                                    qty: e.qty.toInt(),
-                                    price: e.hargaSatuan.toInt(),
-                                    total: e.total.toInt(),
-                                  ),
-                                );
-                              }).toList(),
                             ),
-
-                          // if (item.items.isEmpty)
-                          //   const Text(
-                          //     'Belum ada item',
-                          //     style: TextStyle(
-                          //       fontSize: 12,
-                          //       color: Color(0xFF8C8C8C),
-                          //     ),
-                          //   )
-                          // else
-                          //   Column(
-                          //     children: item.items.map((e) {
-                          //       return Padding(
-                          //         padding: const EdgeInsets.only(bottom: 10),
-                          //         child: RequestItemCard(
-                          //           itemName: e.namaItem,
-                          //           qty: e.qty,
-                          //           price: e.hargaSatuan,
-                          //           total: e.total,
-                          //         ),
-                          //       );
-                          //     }).toList(),
-                          //   ),
+                          ),
+                          RequestStatusChip(status: widget.item.status),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 16),
+
+                      /// ROW 1
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InfoColumn(
+                              label: 'Dibuat Oleh',
+                              value: widget.item.createdBy,
+                            ),
+                          ),
+                          Expanded(
+                            child: InfoColumn(
+                              label: 'Tanggal Request',
+                              value: DateFormat(
+                                'dd MMMM yyyy',
+                                'id_ID',
+                              ).format(widget.item.requestDate),
+                              alignEnd: true,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      /// ROW 2
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InfoColumn(
+                              label: 'Total Item',
+                              value: '${widget.item.totalItem} Item',
+                            ),
+                          ),
+                          Expanded(
+                            child: InfoColumn(
+                              label: 'Grand Total',
+                              value: NumberFormat.currency(
+                                locale: 'id_ID',
+                                symbol: 'Rp ',
+                                decimalDigits: 0,
+                              ).format(widget.item.grandTotal),
+                              alignEnd: true,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      /// REQUEST TEXT (mirip Catatan)
+                      const Text(
+                        'Catatan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF8C8C8C),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(widget.item.requestText),
+
+                      const SizedBox(height: 16),
+
+                      /// TITLE ITEM
+                      const Text(
+                        'Daftar Item',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      /// ITEM LIST
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_error != null)
+                        Text(
+                          _error!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8C8C8C),
+                          ),
+                        )
+                      else if (_items.isEmpty)
+                        const Text(
+                          'Belum ada item',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8C8C8C),
+                          ),
+                        )
+                      else
+                        ..._items.map(
+                          (e) => RequestItemCard(
+                            itemName: e.namaItem,
+                            qty: e.qty.toInt(),
+                            price: e.hargaSatuan.toInt(),
+                            total: e.total.toInt(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
