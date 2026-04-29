@@ -1,8 +1,11 @@
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/tambah_pengeluaran_bloc.dart';
@@ -77,11 +80,12 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         DateTime.now();
     _catatanController.text =
         widget.initialDraft?.note ?? widget.initialOperasionalDraft?.note ?? '';
-    _selectedImages.addAll(
-      widget.initialDraft?.attachments ??
-          widget.initialOperasionalDraft?.attachments ??
-          const [],
-    );
+    // _selectedImages.addAll(
+    //   widget.initialDraft?.attachments ??
+    //       widget.initialOperasionalDraft?.attachments ??
+    //       const [],
+    // );
+    _loadInitialAttachments();
     _selectedItems = widget.initialDraft?.items ?? const [];
     _operasionalItems = widget.initialOperasionalDraft?.items ?? const [];
   }
@@ -91,6 +95,30 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     _submitBloc.close();
     _catatanController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialAttachments() async {
+    final attachments =
+        widget.initialDraft?.attachments ??
+        widget.initialOperasionalDraft?.attachments ??
+        const [];
+
+    for (final attachment in attachments) {
+      if (attachment.isFile) {
+        _selectedImages.add(attachment);
+        continue;
+      }
+
+      final file = await _downloadFile(attachment.path);
+
+      if (file != null) {
+        _selectedImages.add(MaterialAttachmentItem.file(file.path));
+      }
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   double get _grandTotal {
@@ -234,7 +262,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
           kategori: 'material',
           tanggal: _buildSubmitDate(_selectedDate),
           catatan: _catatanController.text.trim(),
-          lampiranPaths: _collectUploadPaths(_selectedImages),
+          // lampiranPaths: _collectUploadPaths(_selectedImages),
+          lampiranPaths: _collectAllAttachmentPaths(),
           items: _selectedItems
               .map(
                 (item) => PengeluaranSubmissionPayload(
@@ -255,7 +284,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         kategori: 'material',
         tanggal: _buildSubmitDate(_selectedDate),
         catatan: _catatanController.text.trim(),
-        lampiranPaths: _collectUploadPaths(_selectedImages),
+        // lampiranPaths: _collectUploadPaths(_selectedImages),
+        lampiranPaths: _collectAllAttachmentPaths(),
         items: _selectedItems
             .map(
               (item) => PengeluaranSubmissionPayload(
@@ -277,6 +307,32 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
     return attachments
         .where((attachment) => attachment.isFile)
         .map((attachment) => attachment.path)
+        .toList();
+  }
+
+  Future<File?> _downloadFile(String url) async {
+    try {
+      final dio = Dio();
+
+      final dir = await getTemporaryDirectory();
+
+      final fileName = url.split('/').last;
+
+      final filePath = "${dir.path}/$fileName";
+
+      await dio.download(url, filePath);
+
+      return File(filePath);
+    } catch (e) {
+      debugPrint("Download error: $e");
+      return null;
+    }
+  }
+
+  List<String> _collectAllAttachmentPaths() {
+    return _selectedImages
+        .map((e) => e.path)
+        .where((path) => path.isNotEmpty)
         .toList();
   }
 
@@ -349,7 +405,12 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         Navigator.pop(context, widget.successResult);
         return;
       }
+      debugPrint("TOTAL ATTACHMENT:");
+      debugPrint("${_selectedImages.length}");
 
+      for (var img in _selectedImages) {
+        debugPrint("PATH: ${img.path}");
+      }
       _submitBloc.add(
         SubmitPengeluaranRequested(
           projectId: widget.projectId!,
@@ -357,7 +418,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
           kategori: _buildSubmitCategory(),
           tanggal: _buildSubmitDate(_selectedDate),
           catatan: _buildSimpleExpenseCatatan(),
-          lampiranPaths: _collectOperasionalAttachmentPaths(),
+          // lampiranPaths: _collectOperasionalAttachmentPaths(),
+          lampiranPaths: _collectAllAttachmentPaths(),
           items: _operasionalItems.map((item) {
             return PengeluaranSubmissionPayload(
               nama: item.name,
@@ -376,7 +438,8 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
         kategori: _buildSubmitCategory(),
         tanggal: _buildSubmitDate(_selectedDate),
         catatan: _buildSimpleExpenseCatatan(),
-        lampiranPaths: _collectOperasionalAttachmentPaths(),
+        // lampiranPaths: _collectOperasionalAttachmentPaths(),
+        lampiranPaths: _collectAllAttachmentPaths(),
         items: _operasionalItems.asMap().entries.map((entry) {
           final item = entry.value;
           return PengeluaranSubmissionPayload(
@@ -450,6 +513,14 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
 
       Navigator.pop(context, result);
     }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      if (index >= 0 && index < _selectedImages.length) {
+        _selectedImages.removeAt(index);
+      }
+    });
   }
 
   @override
@@ -526,10 +597,38 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                           return UploadBox(onTap: _pickImages);
                                         }
 
-                                        return AttachmentThumbnail(
-                                          image: _selectedImages[index - 1],
-                                          galleryImages: _selectedImages,
-                                          initialIndex: index - 1,
+                                        return Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            AttachmentThumbnail(
+                                              image: _selectedImages[index - 1],
+                                              galleryImages: _selectedImages,
+                                              initialIndex: index - 1,
+                                            ),
+
+                                            Positioned(
+                                              top: -6,
+                                              right: -6,
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _removeImage(index - 1),
+                                                child: Container(
+                                                  width: 22,
+                                                  height: 22,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: Colors.red,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 14,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         );
                                       },
                                     ),
@@ -616,10 +715,38 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
                                           return UploadBox(onTap: _pickImages);
                                         }
 
-                                        return AttachmentThumbnail(
-                                          image: _selectedImages[index - 1],
-                                          galleryImages: _selectedImages,
-                                          initialIndex: index - 1,
+                                        return Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            AttachmentThumbnail(
+                                              image: _selectedImages[index - 1],
+                                              galleryImages: _selectedImages,
+                                              initialIndex: index - 1,
+                                            ),
+
+                                            Positioned(
+                                              top: -6,
+                                              right: -6,
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _removeImage(index - 1),
+                                                child: Container(
+                                                  width: 22,
+                                                  height: 22,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: Colors.red,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 14,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         );
                                       },
                                     ),
