@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/detail_project_request_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/project_request_mapper.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
@@ -120,21 +121,46 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
   }
 
   Future<void> _openEditRequest(ProjectRequestItem item) async {
+    final detail = await _service.fetchProjectRequestDetail(
+      projectId: widget.projectId,
+      requestId: item.requestId,
+    );
+
+    if (!mounted || detail == null) {
+      StatusBanner.show(
+        context,
+        title: 'Gagal',
+        message: 'Tidak bisa mengambil detail request',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    final mappedItems = detail.data.items.map((e) {
+      return OperasionalExpenseItem(
+        id: e.namaItem,
+        name: e.namaItem,
+        quantity: e.qty,
+        amount: e.hargaSatuan.toDouble(),
+        note: '',
+        attachments: [],
+      );
+    }).toList();
+
     final result = await Navigator.push<ProjectRequestFormResult>(
       context,
       MaterialPageRoute(
         builder: (_) => RequestFormPage(
           initialDate: item.requestDate,
-          initialRequestText: item.requestText,
+          initialRequestText: detail.data.deskripsi,
+          initialItems: mappedItems, 
           pageTitle: 'Edit Request',
           submitLabel: 'Simpan Request',
         ),
       ),
     );
 
-    if (!mounted || result == null) {
-      return;
-    }
+    if (!mounted || result == null) return;
 
     final response = await _service.updateProjectRequest(
       projectId: widget.projectId,
@@ -143,42 +169,22 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
         "yyyy-MM-dd'T'HH:mm:ss'Z'",
       ).format(result.requestDate),
       deskripsi: result.requestText,
+      items: result.items, 
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    if (response == null || response.success != true || response.data == null) {
+    if (response == null || response.success != true) {
       StatusBanner.show(
         context,
         title: 'Update Gagal',
-        message: response?.message.isNotEmpty == true
-            ? response!.message
-            : 'Gagal memperbarui request proyek',
+        message: response?.message ?? 'Gagal update',
         type: StatusBannerType.error,
       );
       return;
     }
 
-    final updatedItem = ProjectRequestMapper.fromSubmit(response.data!);
-    final index = _requests.indexWhere(
-      (request) => request.requestId == item.requestId,
-    );
-    if (index == -1) {
-      return;
-    }
-
-    setState(() {
-      _requests[index] = updatedItem.copyWith(createdBy: item.createdBy);
-    });
-
-    StatusBanner.show(
-      context,
-      title: 'Update Berhasil',
-      message: response.message,
-      type: StatusBannerType.success,
-    );
+    await _loadRequests();
   }
 
   Future<void> _deleteRequest(ProjectRequestItem item) async {

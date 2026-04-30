@@ -14,6 +14,7 @@ class RequestFormPage extends StatefulWidget {
   final String? initialRequestText;
   final String pageTitle;
   final String submitLabel;
+  final List<OperasionalExpenseItem>? initialItems;
 
   const RequestFormPage({
     super.key,
@@ -21,6 +22,7 @@ class RequestFormPage extends StatefulWidget {
     this.initialRequestText,
     this.pageTitle = 'Tambah Request',
     this.submitLabel = '+ Kirim Request',
+    this.initialItems,
   });
 
   @override
@@ -37,10 +39,12 @@ class _RequestFormPageState extends State<RequestFormPage> {
   @override
   void initState() {
     super.initState();
-
     _selectedDate = widget.initialDate ?? DateTime.now();
-
     _deskripsiController.text = widget.initialRequestText ?? '';
+    _items.clear();
+    if (widget.initialItems != null) {
+      _items.addAll(widget.initialItems!);
+    }
   }
 
   @override
@@ -52,10 +56,6 @@ class _RequestFormPageState extends State<RequestFormPage> {
   double get _grandTotal {
     return _items.fold(0, (sum, item) => sum + item.amount);
   }
-
-  // double get _grandTotal {
-  //   return _items.fold(0, (sum, item) => sum + (item.quantity * item.amount));
-  // }
 
   Future<void> _pickDate() async {
     final pickedDate = await showDatePicker(
@@ -143,39 +143,25 @@ class _RequestFormPageState extends State<RequestFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-                    /// DATE
                     const FieldLabel('Masukkan Tanggal'),
-
                     const SizedBox(height: 8),
-
                     DateField(
                       value: DateFormat(
                         'dd MMMM yyyy',
                         'id_ID',
                       ).format(_selectedDate),
-
                       onTap: _pickDate,
                     ),
-
                     const SizedBox(height: 16),
-
-                    /// CATATAN
                     const FieldLabel('Deskripsi'),
-
                     const SizedBox(height: 8),
-
                     NotesField(
                       controller: _deskripsiController,
                       hintText: 'Ketik Disini',
                     ),
-
                     const SizedBox(height: 16),
-
-                    /// ITEM LIST
                     const FieldLabel('Item Request'),
-
                     const SizedBox(height: 8),
-
                     if (_items.isEmpty)
                       const _EmptyState()
                     else
@@ -204,12 +190,9 @@ class _RequestFormPageState extends State<RequestFormPage> {
               ),
             ),
 
-            /// BOTTOM AREA
             Container(
               color: Colors.white,
-
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-
               child: Column(
                 children: [
                   Row(
@@ -218,9 +201,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
                         'Grand Total',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-
                       const Spacer(),
-
                       Text(
                         'Rp ${_grandTotal.toStringAsFixed(0)}',
                         style: const TextStyle(
@@ -230,26 +211,20 @@ class _RequestFormPageState extends State<RequestFormPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
-
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _openItemSheet(),
-
                           icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
-
                           label: const Text(
                             'Pilih Item',
                             style: TextStyle(color: Color(0xFFF7944D)),
                           ),
                         ),
                       ),
-
                       const SizedBox(width: 12),
-
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _items.isEmpty ? null : _submit,

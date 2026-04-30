@@ -36,7 +36,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
   String? _error;
 
   List<ProjectRequestItemDetail> _items = [];
-
+  String _requestText = '';
   @override
   void initState() {
     super.initState();
@@ -66,7 +66,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
 
     setState(() {
       _items = List<ProjectRequestItemDetail>.from(response.data.items);
-
+      _requestText = response.data.deskripsi;
       _isLoading = false;
     });
   }
@@ -158,10 +158,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 14),
-
-                      /// REQUEST TEXT (mirip Catatan)
                       const Text(
                         'Catatan',
                         style: TextStyle(
@@ -169,22 +166,14 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                           color: Color(0xFF8C8C8C),
                         ),
                       ),
-
                       const SizedBox(height: 6),
-
-                      Text(widget.item.requestText),
-
+                      Text(_requestText),
                       const SizedBox(height: 16),
-
-                      /// TITLE ITEM
                       const Text(
                         'Daftar Item',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-
                       const SizedBox(height: 10),
-
-                      /// ITEM LIST
                       if (_isLoading)
                         const Center(
                           child: Padding(

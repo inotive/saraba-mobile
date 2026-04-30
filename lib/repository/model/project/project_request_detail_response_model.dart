@@ -14,14 +14,16 @@ class ProjectRequestDetailResponse {
 
 class ProjectRequestDetailData {
   final List<ProjectRequestItemDetail> items;
+  final String deskripsi;
 
-  ProjectRequestDetailData({required this.items});
+  ProjectRequestDetailData({required this.items, required this.deskripsi});
 
   factory ProjectRequestDetailData.fromJson(Map<String, dynamic> json) {
     return ProjectRequestDetailData(
       items: (json['items'] as List)
           .map((e) => ProjectRequestItemDetail.fromJson(e))
           .toList(),
+      deskripsi: (json['deskripsi'] ?? '').toString(),
     );
   }
 }
