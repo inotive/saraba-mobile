@@ -252,12 +252,17 @@ class PekerjaanService {
     required String requestId,
     required String tanggalPermintaan,
     required String deskripsi,
+    required List<Map<String, dynamic>> items,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
       final response = await dio.put(
         '/proyeks/$projectId/permintaans/$requestId',
-        data: {'tanggal_permintaan': tanggalPermintaan, 'deskripsi': deskripsi},
+        data: {
+          'tanggal_permintaan': tanggalPermintaan,
+          'deskripsi': deskripsi,
+          'items': items,
+        },
       );
 
       _logger.response(response);
