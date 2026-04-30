@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/request_form_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
@@ -12,14 +16,14 @@ class DetailProjectRequestView extends StatefulWidget {
   final String projectId;
   final ProjectRequestItem item;
   final bool canManage;
-  final VoidCallback? onEdit;
+  // final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const DetailProjectRequestView({
     super.key,
     required this.item,
     required this.canManage,
-    this.onEdit,
+    // this.onEdit,
     this.onDelete,
     required this.projectId,
   });
@@ -37,6 +41,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
 
   List<ProjectRequestItemDetail> _items = [];
   String _requestText = '';
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +74,118 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       _requestText = response.data.deskripsi;
       _isLoading = false;
     });
+  }
+
+  Future<void> _handleEdit() async {
+    final result = await Navigator.push<ProjectRequestFormResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RequestFormPage(
+          initialDate: widget.item.requestDate,
+          initialRequestText: _requestText,
+          initialItems: _items.map((e) {
+            return OperasionalExpenseItem(
+              id: e.namaItem,
+              name: e.namaItem,
+              quantity: e.qty,
+              amount: e.hargaSatuan.toDouble(),
+              note: '',
+              attachments: [],
+            );
+          }).toList(),
+          pageTitle: 'Edit Request',
+          submitLabel: 'Simpan Request',
+        ),
+      ),
+    );
+
+    if (result == null) return;
+
+    final response = await _service.updateProjectRequest(
+      projectId: widget.projectId,
+      requestId: widget.item.requestId,
+      tanggalPermintaan: DateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      ).format(result.requestDate),
+      deskripsi: result.requestText,
+      items: result.items,
+    );
+
+    if (!mounted) return;
+
+    if (response == null || response.success != true) {
+      StatusBanner.show(
+        context,
+        title: 'Gagal Update',
+        message: response?.message ?? 'Terjadi kesalahan',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    // ✅ SUCCESS BANNER
+    StatusBanner.show(
+      context,
+      title: 'Berhasil',
+      message: 'Request berhasil diperbarui',
+      type: StatusBannerType.success,
+    );
+
+    // 🔥 reload detail biar data fresh
+    await _loadDetail();
+
+    // 🔥 optional: kasih signal ke parent kalau dibutuhkan
+    // Navigator.pop(context, true);
+  }
+
+  Future<void> _handleDelete() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Hapus Request'),
+          content: const Text('Yakin ingin menghapus request ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    final response = await PekerjaanService().deleteProjectRequest(
+      projectId: widget.projectId,
+      requestId: widget.item.requestId,
+    );
+
+    if (!mounted) return;
+
+    if (response == null || response.success != true) {
+      StatusBanner.show(
+        context,
+        title: 'Gagal',
+        message: response?.message ?? 'Gagal menghapus',
+        type: StatusBannerType.error,
+      );
+      return;
+    }
+
+    StatusBanner.show(
+      context,
+      title: 'Berhasil',
+      message: 'Request dihapus',
+      type: StatusBannerType.success,
+    );
+
+    Navigator.pop(context, true);
   }
 
   @override
@@ -175,12 +292,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                       ),
                       const SizedBox(height: 10),
                       if (_isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
+                        const Center(child: CircularProgressIndicator())
                       else if (_error != null)
                         Text(
                           _error!,
@@ -219,7 +331,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: widget.onDelete,
+                        onPressed: _handleDelete,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFFF5B5B)),
                         ),
@@ -232,7 +344,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: widget.onEdit,
+                        onPressed: _handleEdit,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFF7944D)),
                         ),

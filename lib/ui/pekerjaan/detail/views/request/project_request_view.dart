@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/detail_project_request_view.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/project_request_mapper.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
@@ -120,153 +119,27 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
     );
   }
 
-  Future<void> _openEditRequest(ProjectRequestItem item) async {
-    final detail = await _service.fetchProjectRequestDetail(
-      projectId: widget.projectId,
-      requestId: item.requestId,
-    );
-
-    if (!mounted || detail == null) {
-      StatusBanner.show(
-        context,
-        title: 'Gagal',
-        message: 'Tidak bisa mengambil detail request',
-        type: StatusBannerType.error,
-      );
-      return;
-    }
-
-    final mappedItems = detail.data.items.map((e) {
-      return OperasionalExpenseItem(
-        id: e.namaItem,
-        name: e.namaItem,
-        quantity: e.qty,
-        amount: e.hargaSatuan.toDouble(),
-        note: '',
-        attachments: [],
-      );
-    }).toList();
-
-    final result = await Navigator.push<ProjectRequestFormResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RequestFormPage(
-          initialDate: item.requestDate,
-          initialRequestText: detail.data.deskripsi,
-          initialItems: mappedItems, 
-          pageTitle: 'Edit Request',
-          submitLabel: 'Simpan Request',
-        ),
-      ),
-    );
-
-    if (!mounted || result == null) return;
-
-    final response = await _service.updateProjectRequest(
-      projectId: widget.projectId,
-      requestId: item.requestId,
-      tanggalPermintaan: DateFormat(
-        "yyyy-MM-dd'T'HH:mm:ss'Z'",
-      ).format(result.requestDate),
-      deskripsi: result.requestText,
-      items: result.items, 
-    );
-
-    if (!mounted) return;
-
-    if (response == null || response.success != true) {
-      StatusBanner.show(
-        context,
-        title: 'Update Gagal',
-        message: response?.message ?? 'Gagal update',
-        type: StatusBannerType.error,
-      );
-      return;
-    }
-
-    await _loadRequests();
-  }
-
-  Future<void> _deleteRequest(ProjectRequestItem item) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Hapus Request'),
-          content: const Text('Apakah kamu yakin ingin menghapus request ini?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF5B5B),
-              ),
-              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldDelete != true || !mounted) {
-      return;
-    }
-
-    final response = await _service.deleteProjectRequest(
-      projectId: widget.projectId,
-      requestId: item.requestId,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (response == null || response.success != true) {
-      StatusBanner.show(
-        context,
-        title: 'Hapus Gagal',
-        message: response?.message.isNotEmpty == true
-            ? response!.message
-            : 'Gagal menghapus request proyek',
-        type: StatusBannerType.error,
-      );
-      return;
-    }
-
-    setState(() {
-      _requests.removeWhere((request) => request.requestId == item.requestId);
-    });
-
-    StatusBanner.show(
-      context,
-      title: 'Request Dihapus',
-      message: response.message,
-      type: StatusBannerType.success,
-    );
-  }
-
-  void _openDetail(ProjectRequestItem item) {
+  void _openDetail(ProjectRequestItem item) async {
     final canManageItem =
         widget.canEdit &&
         item.status == RequestStatus.pending &&
         _currentUserName.isNotEmpty &&
         item.createdBy.trim().toLowerCase() == _currentUserName;
 
-    Navigator.push(
+    final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => DetailProjectRequestView(
           projectId: widget.projectId,
           item: item,
           canManage: canManageItem,
-          onEdit: canManageItem ? () => _openEditRequest(item) : null,
-          onDelete: canManageItem ? () => _deleteRequest(item) : null,
         ),
       ),
     );
+
+    if (updated == true) {
+      await _loadRequests();
+    }
   }
 
   @override
