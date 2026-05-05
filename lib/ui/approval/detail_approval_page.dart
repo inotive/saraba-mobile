@@ -9,6 +9,7 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/request_item_card.dart';
@@ -35,29 +36,41 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
   }
 
   void _approve() {
+    final currentContext = context;
+
     context.read<ApprovalBloc>().add(ApproveRequest(widget.requestId));
 
     StatusBanner.show(
-      context,
+      currentContext,
       title: 'Berhasil',
       message: 'Request berhasil disetujui',
       type: StatusBannerType.success,
     );
 
-    Navigator.pop(context, true);
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        Navigator.pop(currentContext, true);
+      }
+    });
   }
 
   void _reject() {
+    final currentContext = context;
+
     context.read<ApprovalBloc>().add(RejectRequest(widget.requestId));
 
     StatusBanner.show(
-      context,
+      currentContext,
       title: 'Berhasil',
       message: 'Request berhasil ditolak',
       type: StatusBannerType.error,
     );
 
-    Navigator.pop(context, true);
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        Navigator.pop(currentContext, true);
+      }
+    });
   }
 
   @override
@@ -79,7 +92,7 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                   if (detail == null) {
                     return const Center(child: Text('Detail tidak ditemukan'));
                   }
-
+                  final status = mapStatus(detail.status);
                   return Column(
                     children: [
                       Expanded(
@@ -123,7 +136,7 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                                       ),
                                     ),
                                     RequestStatusChip(
-                                      status: mapStatus(detail.statusLabel),
+                                      status: mapStatus(detail.status),
                                     ),
                                   ],
                                 ),
@@ -228,49 +241,54 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                         ),
                       ),
 
-                      /// BUTTONS
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _reject,
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: Color(0xFFFF5B5B)),
-                                  backgroundColor: Color(0xFFFF5B5B),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                      /// BUTTONS (hanya tampil jika pending)
+                      if (status == RequestStatus.pending)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _reject,
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: Color(0xFFFF5B5B),
+                                    ),
+                                    backgroundColor: const Color(0xFFFF5B5B),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    minimumSize: const Size.fromHeight(50),
                                   ),
-                                  minimumSize: const Size.fromHeight(50),
-                                ),
-                                child: const Text(
-                                  'Tolak',
-                                  style: TextStyle(color: Colors.white),
+                                  child: const Text(
+                                    'Tolak',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _approve,
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: Color(0xFFF7944D)),
-                                  backgroundColor: const Color(0xFFF7944D),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _approve,
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: Color(0xFFF7944D),
+                                    ),
+                                    backgroundColor: const Color(0xFFF7944D),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    minimumSize: const Size.fromHeight(50),
                                   ),
-                                  minimumSize: const Size.fromHeight(50),
-                                ),
-                                child: const Text(
-                                  'Setujui',
-                                  style: TextStyle(color: Colors.white),
+                                  child: const Text(
+                                    'Setujui',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
                     ],
                   );
                 },
