@@ -150,6 +150,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
+
               child: const Text('Hapus'),
             ),
           ],
@@ -334,7 +335,12 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                         onPressed: _handleDelete,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFFF5B5B)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          minimumSize: const Size.fromHeight(50),
                         ),
+
                         child: const Text(
                           'Hapus',
                           style: TextStyle(color: Color(0xFFFF5B5B)),
@@ -347,10 +353,15 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                         onPressed: _handleEdit,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFF7944D)),
+                          backgroundColor: Color(0xFFF7944D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          minimumSize: const Size.fromHeight(50),
                         ),
                         child: const Text(
                           'Edit',
-                          style: TextStyle(color: Color(0xFFF7944D)),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),

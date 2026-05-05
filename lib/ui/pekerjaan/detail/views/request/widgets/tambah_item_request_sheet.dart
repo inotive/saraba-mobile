@@ -194,7 +194,7 @@ class _TambahItemRequestSheetState extends State<TambahItemRequestSheet> {
                     child: ElevatedButton(
                       onPressed: _canSubmit ? _saveItem : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF7944D),
+                        backgroundColor: const Color.fromARGB(255, 247, 128, 43),
                         disabledBackgroundColor: const Color(0xFFFAD1B7),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
