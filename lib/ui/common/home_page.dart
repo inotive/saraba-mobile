@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
       case NavigationTab.pekerjaan:
         return 'assets/icons/ic_pekerjaan_menu.png';
       case NavigationTab.approval:
-        return 'assets/icons/ic_pekerjaan_menu.png';
+        return 'assets/icons/approval.png';
       case NavigationTab.akun:
         return 'assets/icons/ic_akun_menu.png';
     }
