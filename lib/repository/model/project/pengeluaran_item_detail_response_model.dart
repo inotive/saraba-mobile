@@ -75,10 +75,7 @@ class PengeluaranItemDetailUser {
   final int id;
   final String name;
 
-  const PengeluaranItemDetailUser({
-    required this.id,
-    required this.name,
-  });
+  const PengeluaranItemDetailUser({required this.id, required this.name});
 
   factory PengeluaranItemDetailUser.fromJson(Map<String, dynamic> json) {
     return PengeluaranItemDetailUser(
@@ -153,8 +150,8 @@ String _normalizeUrl(String rawUrl) {
   }
 
   if (rawUrl.startsWith('/')) {
-    // return 'http://192.168.1.24:8000$rawUrl';
-    return 'https://saraba.inotivedev.com$rawUrl';
+    return 'https://sarabakawabonding.id$rawUrl';
+    // return 'https://saraba.inotivedev.com$rawUrl';
   }
 
   return rawUrl;

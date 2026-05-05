@@ -57,9 +57,8 @@ class PengeluaranDetailData {
       grandTotal: _parseDouble(json['grand_total']),
       lampiran: (json['lampiran'] as List<dynamic>? ?? [])
           .map(
-            (item) => PengeluaranLampiranItem.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) =>
+                PengeluaranLampiranItem.fromJson(item as Map<String, dynamic>),
           )
           .toList(),
       items: (json['items'] as List<dynamic>? ?? [])
@@ -76,10 +75,7 @@ class PengeluaranDetailUser {
   final int id;
   final String name;
 
-  PengeluaranDetailUser({
-    required this.id,
-    required this.name,
-  });
+  PengeluaranDetailUser({required this.id, required this.name});
 
   factory PengeluaranDetailUser.fromJson(Map<String, dynamic> json) {
     return PengeluaranDetailUser(
@@ -149,8 +145,8 @@ String _normalizeUrl(String rawUrl) {
   }
 
   if (rawUrl.startsWith('/')) {
-    // return 'http://192.168.1.24:8000$rawUrl';
-    return 'https://saraba.inotivedev.com$rawUrl';
+    return 'https://sarabakawabonding.id$rawUrl';
+    // return 'https://saraba.inotivedev.com$rawUrl';
   }
 
   return rawUrl;
