@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
@@ -17,6 +19,7 @@ class DetailProjectRequestView extends StatefulWidget {
   final ProjectRequestItem item;
   final bool canManage;
   final VoidCallback? onDelete;
+  final String pageTitle;
 
   const DetailProjectRequestView({
     super.key,
@@ -24,6 +27,7 @@ class DetailProjectRequestView extends StatefulWidget {
     required this.canManage,
     this.onDelete,
     required this.projectId,
+    this.pageTitle = 'Detail Request',
   });
 
   @override
@@ -183,13 +187,10 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Request'),
-        backgroundColor: Colors.white,
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            TambahPengeluaranHeader(title: widget.pageTitle),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -207,12 +208,9 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              widget.item.displayId,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            child: InfoColumn(
+                              label: 'Id request',
+                              value: widget.item.displayId,
                             ),
                           ),
                           RequestStatusChip(status: widget.item.status),
@@ -244,30 +242,6 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                       ),
 
                       const SizedBox(height: 14),
-
-                      /// ROW 2
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InfoColumn(
-                              label: 'Total Item',
-                              value: '${widget.item.totalItem} Item',
-                            ),
-                          ),
-                          Expanded(
-                            child: InfoColumn(
-                              label: 'Grand Total',
-                              value: NumberFormat.currency(
-                                locale: 'id_ID',
-                                symbol: 'Rp ',
-                                decimalDigits: 0,
-                              ).format(widget.item.grandTotal),
-                              alignEnd: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
                       const Text(
                         'Catatan',
                         style: TextStyle(
@@ -286,7 +260,34 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                               : const Color(0xFF1F1F1F),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Grand Total',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8C8C8C),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              formatCurrency(widget.item.grandTotal),
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1F1F1F),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      /// ROW 2
+                      const SizedBox(height: 14),
                       const Text(
                         'Daftar Item',
                         style: TextStyle(fontWeight: FontWeight.w600),
