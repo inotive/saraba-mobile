@@ -107,9 +107,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
       return;
     }
 
-    setState(() {
-      _requests.insert(0, ProjectRequestMapper.fromSubmit(response.data!));
-    });
+    await _loadRequests();
 
     StatusBanner.show(
       context,
