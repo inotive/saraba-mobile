@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/request_approval/request_approval_model.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
 
 class ApprovalCard extends StatelessWidget {
   final RequestApprovalData item;
@@ -41,9 +43,7 @@ class ApprovalCard extends StatelessWidget {
                       'Id Request',
                       style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
                     ),
-
                     const SizedBox(height: 2),
-
                     Text(
                       item.idPermintaan,
                       style: const TextStyle(
@@ -55,24 +55,24 @@ class ApprovalCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              /// STATUS
-              _StatusChip(label: item.statusLabel),
+              RequestStatusChip(status: mapStatus(item.statusLabel)),
             ],
           ),
           const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
-                child: _InfoColumn(label: 'Dibuat Oleh', value: item.createdBy),
+                child: InfoColumn(label: 'Dibuat Oleh', value: item.createdBy),
               ),
 
               const SizedBox(width: 12),
 
               Expanded(
-                child: _InfoColumn(
+                child: InfoColumn(
                   label: 'Tanggal Request',
-                  value: item.tanggalPermintaan,
+                  value: DateFormat('dd MMMM yyyy', 'id_ID').format(
+                    DateFormat('dd/MM/yyyy').parse(item.tanggalPermintaan),
+                  ),
                   alignEnd: true,
                 ),
               ),
@@ -85,7 +85,7 @@ class ApprovalCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _InfoColumn(
+                child: InfoColumn(
                   label: 'Total Item',
                   value: '${item.totalItem} Item',
                 ),
@@ -94,7 +94,7 @@ class ApprovalCard extends StatelessWidget {
               const SizedBox(width: 12),
 
               Expanded(
-                child: _InfoColumn(
+                child: InfoColumn(
                   label: 'Grand Total',
                   value: currency.format(item.grandTotal),
                   alignEnd: true,
@@ -110,102 +110,24 @@ class ApprovalCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: onDetail,
-
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF1F1F1F)),
-
+                side: const BorderSide(color: Color(0xFFF7944D)),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-
-                minimumSize: const Size(double.infinity, 44),
+                minimumSize: const Size.fromHeight(40),
               ),
 
               child: const Text(
                 'Lihat Detail',
                 style: TextStyle(
-                  color: Color(0xFF1F1F1F),
+                  color: Color(0xFFF7944D),
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _InfoColumn extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool alignEnd;
-
-  const _InfoColumn({
-    required this.label,
-    required this.value,
-    this.alignEnd = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
-        ),
-
-        const SizedBox(height: 2),
-
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String label;
-
-  const _StatusChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    Color bgColor = Colors.orange.shade100;
-    Color textColor = Colors.orange;
-
-    /// Optional status coloring
-    if (label.toLowerCase().contains('approve')) {
-      bgColor = Colors.green.shade100;
-      textColor = Colors.green;
-    }
-
-    if (label.toLowerCase().contains('reject')) {
-      bgColor = Colors.red.shade100;
-      textColor = Colors.red;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
       ),
     );
   }
