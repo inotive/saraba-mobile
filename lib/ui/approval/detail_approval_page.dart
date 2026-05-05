@@ -35,7 +35,14 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
     context.read<ApprovalBloc>().add(FetchRequestDetail(widget.requestId));
   }
 
-  void _approve() {
+  void _approve() async {
+    final confirm = await _showConfirmation(
+      title: 'Setujui Request?',
+      message: 'Apakah Anda yakin ingin menyetujui request ini?',
+    );
+
+    if (!confirm) return;
+
     final currentContext = context;
 
     context.read<ApprovalBloc>().add(ApproveRequest(widget.requestId));
@@ -54,7 +61,14 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
     });
   }
 
-  void _reject() {
+  void _reject() async {
+    final confirm = await _showConfirmation(
+      title: 'Tolak Request?',
+      message: 'Apakah Anda yakin ingin menolak request ini?',
+    );
+
+    if (!confirm) return;
+
     final currentContext = context;
 
     context.read<ApprovalBloc>().add(RejectRequest(widget.requestId));
@@ -71,6 +85,39 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
         Navigator.pop(currentContext, true);
       }
     });
+  }
+
+  Future<bool> _showConfirmation({
+    required String title,
+    required String message,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF7944D),
+              ),
+              child: const Text('Ya'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   @override
