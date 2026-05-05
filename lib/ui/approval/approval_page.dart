@@ -38,38 +38,49 @@ class _ApprovalPageState extends State<ApprovalPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Approval Request'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
+      body: Column(
+        children: [
+          _headerSection(),
+          Expanded(
+            child: BlocBuilder<ApprovalBloc, ApprovalState>(
+              builder: (context, state) {
+                if (state.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-      body: BlocBuilder<ApprovalBloc, ApprovalState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.requests.isEmpty) {
-            return const Center(child: Text('Tidak ada request'));
-          }
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: ListView.separated(
-              itemCount: state.requests.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 14),
+                if (state.requests.isEmpty) {
+                  return const Center(child: Text('Tidak ada request'));
+                }
 
-              itemBuilder: (context, index) {
-                final item = state.requests[index];
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.requests.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final item = state.requests[index];
 
-                return ApprovalCard(
-                  item: item,
-                  onDetail: () => _openDetail(context, item),
+                    return ApprovalCard(
+                      item: item,
+                      onDetail: () => _openDetail(context, item),
+                    );
+                  },
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
+}
+
+Widget _headerSection() {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(16, 50, 16, 0),
+    child: const Text(
+      "Request Approval",
+      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    ),
+  );
 }

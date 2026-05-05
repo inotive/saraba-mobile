@@ -4,10 +4,7 @@ import '../models/request_status.dart';
 class RequestStatusChip extends StatelessWidget {
   final RequestStatus status;
 
-  const RequestStatusChip({
-    super.key,
-    required this.status,
-  });
+  const RequestStatusChip({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +27,7 @@ class RequestStatusChip extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
@@ -48,5 +42,18 @@ class RequestStatusChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+RequestStatus mapStatus(String status) {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return RequestStatus.pending;
+    case 'processed':
+      return RequestStatus.processed;
+    case 'done':
+      return RequestStatus.done;
+    default:
+      return RequestStatus.pending;
   }
 }
