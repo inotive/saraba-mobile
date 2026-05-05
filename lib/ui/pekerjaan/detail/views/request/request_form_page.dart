@@ -140,7 +140,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-                    const FieldLabel('Masukkan Tanggal'),
+                    const FieldLabel('Tanggal Request'),
                     const SizedBox(height: 8),
                     DateField(
                       value: DateFormat(

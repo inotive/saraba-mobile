@@ -16,14 +16,12 @@ class DetailProjectRequestView extends StatefulWidget {
   final String projectId;
   final ProjectRequestItem item;
   final bool canManage;
-  // final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const DetailProjectRequestView({
     super.key,
     required this.item,
     required this.canManage,
-    // this.onEdit,
     this.onDelete,
     required this.projectId,
   });
@@ -121,7 +119,6 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       return;
     }
 
-    // ✅ SUCCESS BANNER
     StatusBanner.show(
       context,
       title: 'Berhasil',
@@ -129,11 +126,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       type: StatusBannerType.success,
     );
 
-    // 🔥 reload detail biar data fresh
     await _loadDetail();
-
-    // 🔥 optional: kasih signal ke parent kalau dibutuhkan
-    // Navigator.pop(context, true);
   }
 
   Future<void> _handleDelete() async {
@@ -283,7 +276,16 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(_requestText),
+                      Text(
+                        _requestText.trim().isEmpty
+                            ? 'Tidak ada catatan'
+                            : _requestText,
+                        style: TextStyle(
+                          color: _requestText.trim().isEmpty
+                              ? const Color(0xFF8C8C8C)
+                              : const Color(0xFF1F1F1F),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'Daftar Item',
