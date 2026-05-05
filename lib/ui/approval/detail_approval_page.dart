@@ -6,6 +6,7 @@ import 'package:saraba_mobile/ui/approval/bloc/approval_bloc.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_event.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_state.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
@@ -134,40 +135,21 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                                     Expanded(
                                       child: InfoColumn(
                                         label: 'Tanggal Request',
-                                        value: detail.tanggalPermintaan,
+                                        value:
+                                            DateFormat(
+                                              'dd MMMM yyyy',
+                                              'id_ID',
+                                            ).format(
+                                              DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).parse(detail.tanggalPermintaan),
+                                            ),
                                         alignEnd: true,
                                       ),
                                     ),
                                   ],
                                 ),
-
                                 const SizedBox(height: 14),
-
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: InfoColumn(
-                                        label: 'Total Item',
-                                        value: '${detail.totalItem} Item',
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: InfoColumn(
-                                        label: 'Grand Total',
-                                        value: NumberFormat.currency(
-                                          locale: 'id_ID',
-                                          symbol: 'Rp ',
-                                          decimalDigits: 0,
-                                        ).format(detail.grandTotal),
-                                        alignEnd: true,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                /// CATATAN
                                 const Text(
                                   'Catatan',
                                   style: TextStyle(
@@ -185,6 +167,33 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                                         ? const Color(0xFF8C8C8C)
                                         : const Color(0xFF1F1F1F),
                                   ),
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Grand Total',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF8C8C8C),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        formatCurrency(
+                                          (detail.grandTotal.toDouble()),
+                                        ),
+                                        textAlign: TextAlign.end,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1F1F1F),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
 
                                 const SizedBox(height: 16),
