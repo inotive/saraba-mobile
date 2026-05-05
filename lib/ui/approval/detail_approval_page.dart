@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_bloc.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_event.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_state.dart';
+import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
@@ -36,21 +37,27 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
   void _approve() {
     context.read<ApprovalBloc>().add(ApproveRequest(widget.requestId));
 
-    ScaffoldMessenger.of(
+    StatusBanner.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Request Disetujui')));
+      title: 'Berhasil',
+      message: 'Request berhasil disetujui',
+      type: StatusBannerType.success,
+    );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   void _reject() {
     context.read<ApprovalBloc>().add(RejectRequest(widget.requestId));
 
-    ScaffoldMessenger.of(
+    StatusBanner.show(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Request Ditolak')));
+      title: 'Berhasil',
+      message: 'Request berhasil ditolak',
+      type: StatusBannerType.error,
+    );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override

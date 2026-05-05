@@ -23,8 +23,8 @@ class _ApprovalPageState extends State<ApprovalPage> {
     context.read<ApprovalBloc>().add(FetchRequests());
   }
 
-  void _openDetail(BuildContext context, RequestApprovalData item) {
-    Navigator.push(
+  void _openDetail(BuildContext context, RequestApprovalData item) async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
@@ -33,6 +33,10 @@ class _ApprovalPageState extends State<ApprovalPage> {
         ),
       ),
     );
+
+    if (result == true) {
+      context.read<ApprovalBloc>().add(FetchRequests());
+    }
   }
 
   @override

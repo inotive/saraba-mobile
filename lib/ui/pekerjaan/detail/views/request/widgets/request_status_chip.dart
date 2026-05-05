@@ -14,15 +14,29 @@ class RequestStatusChip extends StatelessWidget {
         const Color(0xFFF7944D),
         const Color(0xFFFFF4EA),
       ),
+
       RequestStatus.processed => (
         'Processed',
         const Color(0xFF5D93E8),
         const Color(0xFFEEF5FF),
       ),
+
       RequestStatus.done => (
         'Done',
         const Color(0xFF2FA44F),
         const Color(0xFFEFFAF2),
+      ),
+
+      RequestStatus.approved => (
+        'Disetujui',
+        const Color(0xFF16A34A),
+        const Color(0xFFE8F8EF),
+      ),
+
+      RequestStatus.rejected => (
+        'Ditolak',
+        const Color(0xFFDC2626),
+        const Color(0xFFFDECEC),
       ),
     };
 
@@ -49,10 +63,10 @@ RequestStatus mapStatus(String status) {
   switch (status.toLowerCase()) {
     case 'pending':
       return RequestStatus.pending;
-    case 'processed':
-      return RequestStatus.processed;
-    case 'done':
-      return RequestStatus.done;
+    case 'disetujui':
+      return RequestStatus.approved;
+    case 'ditolak':
+      return RequestStatus.rejected;
     default:
       return RequestStatus.pending;
   }

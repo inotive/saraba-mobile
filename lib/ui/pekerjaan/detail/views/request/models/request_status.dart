@@ -1,1 +1,1 @@
-enum RequestStatus { pending, processed, done }
+enum RequestStatus { pending, processed, done, approved, rejected }

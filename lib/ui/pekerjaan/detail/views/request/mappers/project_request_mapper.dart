@@ -37,11 +37,24 @@ class ProjectRequestMapper {
 
   static RequestStatus _mapStatus(String value) {
     switch (value.trim().toLowerCase()) {
+      /// ===== APPROVAL FLOW =====
+      case 'disetujui':
+      case 'approved':
+        return RequestStatus.approved;
+
+      case 'ditolak':
+      case 'rejected':
+        return RequestStatus.rejected;
+
+      /// ===== REQUEST FLOW (LEGACY) =====
       case 'processed':
       case 'diproses':
         return RequestStatus.processed;
+
       case 'done':
         return RequestStatus.done;
+
+      /// ===== DEFAULT =====
       case 'pending':
       default:
         return RequestStatus.pending;
