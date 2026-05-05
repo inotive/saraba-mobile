@@ -43,7 +43,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
 
   List<ProjectRequestItemDetail> _items = [];
   String _requestText = '';
-
+  double _grandTotal = 0;
   @override
   void initState() {
     super.initState();
@@ -74,6 +74,10 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
     setState(() {
       _items = List<ProjectRequestItemDetail>.from(response.data.items);
       _requestText = response.data.deskripsi;
+      _grandTotal = response.data.items.fold(
+        0.0,
+        (sum, item) => sum + item.total.toDouble(),
+      );
       _isLoading = false;
     });
   }
@@ -274,7 +278,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                           ),
                           Expanded(
                             child: Text(
-                              formatCurrency(widget.item.grandTotal),
+                              formatCurrency(_grandTotal),
                               textAlign: TextAlign.end,
                               style: const TextStyle(
                                 fontSize: 15,
