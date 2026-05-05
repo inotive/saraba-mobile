@@ -44,6 +44,8 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
   List<ProjectRequestItemDetail> _items = [];
   String _requestText = '';
   double _grandTotal = 0;
+  bool _hasChanged = false;
+
   @override
   void initState() {
     super.initState();
@@ -133,7 +135,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       message: 'Request berhasil diperbarui',
       type: StatusBannerType.success,
     );
-
+    _hasChanged = true;
     await _loadDetail();
   }
 
@@ -184,199 +186,205 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       message: 'Request dihapus',
       type: StatusBannerType.success,
     );
-
+    _hasChanged = true;
     Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            TambahPengeluaranHeader(title: widget.pageTitle),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Container(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _hasChanged);
+        return false;
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              TambahPengeluaranHeader(title: widget.pageTitle),
+              Expanded(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// HEADER
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InfoColumn(
-                              label: 'Id request',
-                              value: widget.item.displayId,
-                            ),
-                          ),
-                          RequestStatusChip(status: widget.item.status),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// ROW 1
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InfoColumn(
-                              label: 'Dibuat Oleh',
-                              value: widget.item.createdBy,
-                            ),
-                          ),
-                          Expanded(
-                            child: InfoColumn(
-                              label: 'Tanggal Request',
-                              value: DateFormat(
-                                'dd MMMM yyyy',
-                                'id_ID',
-                              ).format(widget.item.requestDate),
-                              alignEnd: true,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 14),
-                      const Text(
-                        'Catatan',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8C8C8C),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _requestText.trim().isEmpty
-                            ? 'Tidak ada catatan'
-                            : _requestText,
-                        style: TextStyle(
-                          color: _requestText.trim().isEmpty
-                              ? const Color(0xFF8C8C8C)
-                              : const Color(0xFF1F1F1F),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Grand Total',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF8C8C8C),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// HEADER
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InfoColumn(
+                                label: 'Id request',
+                                value: widget.item.displayId,
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              formatCurrency(_grandTotal),
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1F1F1F),
+                            RequestStatusChip(status: widget.item.status),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        /// ROW 1
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InfoColumn(
+                                label: 'Dibuat Oleh',
+                                value: widget.item.createdBy,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                            Expanded(
+                              child: InfoColumn(
+                                label: 'Tanggal Request',
+                                value: DateFormat(
+                                  'dd MMMM yyyy',
+                                  'id_ID',
+                                ).format(widget.item.requestDate),
+                                alignEnd: true,
+                              ),
+                            ),
+                          ],
+                        ),
 
-                      /// ROW 2
-                      const SizedBox(height: 14),
-                      const Text(
-                        'Daftar Item',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 10),
-                      if (_isLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else if (_error != null)
-                        Text(
-                          _error!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF8C8C8C),
-                          ),
-                        )
-                      else if (_items.isEmpty)
+                        const SizedBox(height: 14),
                         const Text(
-                          'Belum ada item',
+                          'Catatan',
                           style: TextStyle(
                             fontSize: 12,
                             color: Color(0xFF8C8C8C),
                           ),
-                        )
-                      else
-                        ..._items.map(
-                          (e) => RequestItemCard(
-                            item: RequestItem(
-                              id: e.namaItem,
-                              name: e.namaItem,
-                              quantity: e.qty,
-                              unitPrice: e.hargaSatuan.toDouble(),
-                            ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _requestText.trim().isEmpty
+                              ? 'Tidak ada catatan'
+                              : _requestText,
+                          style: TextStyle(
+                            color: _requestText.trim().isEmpty
+                                ? const Color(0xFF8C8C8C)
+                                : const Color(0xFF1F1F1F),
                           ),
                         ),
-                    ],
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Grand Total',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF8C8C8C),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                formatCurrency(_grandTotal),
+                                textAlign: TextAlign.end,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1F1F1F),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        /// ROW 2
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Daftar Item',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 10),
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_error != null)
+                          Text(
+                            _error!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8C8C8C),
+                            ),
+                          )
+                        else if (_items.isEmpty)
+                          const Text(
+                            'Belum ada item',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8C8C8C),
+                            ),
+                          )
+                        else
+                          ..._items.map(
+                            (e) => RequestItemCard(
+                              item: RequestItem(
+                                id: e.namaItem,
+                                name: e.namaItem,
+                                quantity: e.qty,
+                                unitPrice: e.hargaSatuan.toDouble(),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            if (widget.canManage &&
-                widget.item.status == RequestStatus.pending) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _handleDelete,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFFF5B5B)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+              if (widget.canManage &&
+                  widget.item.status == RequestStatus.pending) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _handleDelete,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFFF5B5B)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
                           ),
-                          minimumSize: const Size.fromHeight(50),
-                        ),
 
-                        child: const Text(
-                          'Hapus',
-                          style: TextStyle(color: Color(0xFFFF5B5B)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _handleEdit,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFF7944D)),
-                          backgroundColor: Color(0xFFF7944D),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          child: const Text(
+                            'Hapus',
+                            style: TextStyle(color: Color(0xFFFF5B5B)),
                           ),
-                          minimumSize: const Size.fromHeight(50),
-                        ),
-                        child: const Text(
-                          'Edit',
-                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _handleEdit,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFF7944D)),
+                            backgroundColor: Color(0xFFF7944D),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          child: const Text(
+                            'Edit',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
