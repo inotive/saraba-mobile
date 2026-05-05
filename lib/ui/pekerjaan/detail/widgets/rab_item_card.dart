@@ -5,12 +5,14 @@ class RabDetailRowData {
   final String subtitle;
   final String category;
   final String amount;
+  final String hargaSatuan;
 
   const RabDetailRowData({
     required this.title,
     required this.subtitle,
     required this.category,
     required this.amount,
+    required this.hargaSatuan,
   });
 }
 
@@ -93,7 +95,10 @@ class RabItemCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               onTap: onToggle,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -145,10 +150,7 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF525252),
-            ),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF525252)),
           ),
         ),
         Text(
@@ -195,7 +197,15 @@ class _RabDetailRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  data.subtitle,
+                  'Harga Satuan: ${data.hargaSatuan}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Volume: ${data.subtitle}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF6B7280),

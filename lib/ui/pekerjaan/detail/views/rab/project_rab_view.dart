@@ -47,6 +47,7 @@ class _ProjectRabViewState extends State<ProjectRabView> {
                   subtitle: _buildSubtitle(detail),
                   category: _buildCategoryLabel(detail.kategori),
                   amount: _formatCurrency(detail.jumlah),
+                  hargaSatuan: _formatCurrency(detail.hargaSatuan),
                 ),
               )
               .toList(),
