@@ -40,6 +40,20 @@ class ApprovalCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
+                      'Projek',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.proyekName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
                       'Id Request',
                       style: TextStyle(fontSize: 12, color: Color(0xFF8C8C8C)),
                     ),
