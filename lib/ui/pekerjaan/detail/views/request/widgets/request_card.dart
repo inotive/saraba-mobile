@@ -104,16 +104,17 @@ class RequestCard extends StatelessWidget {
             child: OutlinedButton(
               onPressed: onDetail,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF1F1F1F)),
+                side: const BorderSide(color: Color(0xFFF7944D)),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                minimumSize: const Size(double.infinity, 44),
+                minimumSize: const Size.fromHeight(40),
               ),
+
               child: const Text(
                 'Lihat Detail',
                 style: TextStyle(
-                  color: Color(0xFF1F1F1F),
+                  color: Color(0xFFF7944D),
                   fontWeight: FontWeight.w600,
                 ),
               ),
