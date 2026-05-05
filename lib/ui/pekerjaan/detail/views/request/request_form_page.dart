@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_item_sheet_result.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/operasional_expenses_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/tambah_item_operasional_sheet.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item_sheet_result.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/tambah_item_request_sheet.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/request_item_card.dart';
 
 class RequestFormPage extends StatefulWidget {
   final DateTime? initialDate;
   final String? initialRequestText;
   final String pageTitle;
   final String submitLabel;
-  final List<OperasionalExpenseItem>? initialItems;
+  final List<RequestItem>? initialItems;
 
   const RequestFormPage({
     super.key,
@@ -34,7 +34,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
 
   late DateTime _selectedDate;
 
-  final List<OperasionalExpenseItem> _items = [];
+  final List<RequestItem> _items = [];
 
   @override
   void initState() {
@@ -54,7 +54,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
   }
 
   double get _grandTotal {
-    return _items.fold(0, (sum, item) => sum + item.amount);
+    return _items.fold(0, (sum, item) => sum + item.total);
   }
 
   Future<void> _pickDate() async {
@@ -73,18 +73,15 @@ class _RequestFormPageState extends State<RequestFormPage> {
     });
   }
 
-  Future<void> _openItemSheet({
-    OperasionalExpenseItem? item,
-    int? index,
-  }) async {
-    final result = await showModalBottomSheet<OperasionalItemSheetResult>(
+  Future<void> _openItemSheet({RequestItem? item, int? index}) async {
+    final result = await showModalBottomSheet<RequestItemSheetResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFFAFAFA),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => TambahItemOperasionalSheet(
+      builder: (_) => TambahItemRequestSheet(
         initialItem: item,
         defaultName: item?.name ?? '',
       ),
@@ -111,7 +108,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
         "nama_item": item.name,
         "qty": item.quantity.toDouble(),
         "satuan": "pcs",
-        "harga_satuan": item.amount,
+        "harga_satuan": item.unitPrice,
       };
     }).toList();
 
@@ -160,7 +157,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
                       hintText: 'Ketik Disini',
                     ),
                     const SizedBox(height: 16),
-                    const FieldLabel('Item Request'),
+                    const FieldLabel('Daftar Item'),
                     const SizedBox(height: 8),
                     if (_items.isEmpty)
                       const _EmptyState()
@@ -173,9 +170,8 @@ class _RequestFormPageState extends State<RequestFormPage> {
                               (entry) => Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
 
-                                child: OperasionalExpenseCard(
+                                child: RequestItemCard(
                                   item: entry.value,
-
                                   onTapEdit: () => _openItemSheet(
                                     item: entry.value,
                                     index: entry.key,
@@ -203,7 +199,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
                       ),
                       const Spacer(),
                       Text(
-                        'Rp ${_grandTotal.toStringAsFixed(0)}',
+                        formatCurrency(_grandTotal),
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFF7944D),
@@ -218,9 +214,19 @@ class _RequestFormPageState extends State<RequestFormPage> {
                         child: OutlinedButton.icon(
                           onPressed: () => _openItemSheet(),
                           icon: const Icon(Icons.add, color: Color(0xFFF7944D)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFF7944D)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
+                          ),
                           label: const Text(
-                            'Pilih Item',
-                            style: TextStyle(color: Color(0xFFF7944D)),
+                            'Tambah Item',
+                            style: TextStyle(
+                              color: Color(0xFFF7944D),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -231,9 +237,22 @@ class _RequestFormPageState extends State<RequestFormPage> {
 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFF7944D),
+                            disabledBackgroundColor: const Color(0xFFFAD1B7),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size.fromHeight(50),
+                            elevation: 0,
                           ),
 
-                          child: const Text('Simpan'),
+                          child: const Text(
+                            'Simpan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ],

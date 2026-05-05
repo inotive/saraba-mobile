@@ -5,8 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_bloc.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_event.dart';
 import 'package:saraba_mobile/ui/approval/bloc/approval_state.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_item_card.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/request_item_card.dart';
 
 class DetailApprovalPage extends StatefulWidget {
   final String requestId;
@@ -151,11 +152,13 @@ class _DetailApprovalPageState extends State<DetailApprovalPage> {
                         ),
                         const SizedBox(height: 10),
                         ...detail.items.map(
-                          (item) => RequestItemCard(
-                            itemName: item.namaItem,
-                            qty: item.qty,
-                            price: item.hargaSatuan,
-                            total: item.total,
+                          (e) => RequestItemCard(
+                            item: RequestItem(
+                              id: e.namaItem,
+                              name: e.namaItem,
+                              quantity: e.qty,
+                              unitPrice: e.hargaSatuan.toDouble(),
+                            ),
                           ),
                         ),
                       ],

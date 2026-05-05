@@ -3,14 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_detail_response_model.dart';
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/request_form_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/info_column.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_item_card.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_status_chip.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/request_item_card.dart';
 
 class DetailProjectRequestView extends StatefulWidget {
   final String projectId;
@@ -84,13 +84,11 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
           initialDate: widget.item.requestDate,
           initialRequestText: _requestText,
           initialItems: _items.map((e) {
-            return OperasionalExpenseItem(
+            return RequestItem(
               id: e.namaItem,
               name: e.namaItem,
               quantity: e.qty,
-              amount: e.hargaSatuan.toDouble(),
-              note: '',
-              attachments: [],
+              unitPrice: e.hargaSatuan.toDouble(),
             );
           }).toList(),
           pageTitle: 'Edit Request',
@@ -312,10 +310,12 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
                       else
                         ..._items.map(
                           (e) => RequestItemCard(
-                            itemName: e.namaItem,
-                            qty: e.qty.toInt(),
-                            price: e.hargaSatuan.toInt(),
-                            total: e.total.toInt(),
+                            item: RequestItem(
+                              id: e.namaItem,
+                              name: e.namaItem,
+                              quantity: e.qty,
+                              unitPrice: e.hargaSatuan.toDouble(),
+                            ),
                           ),
                         ),
                     ],
