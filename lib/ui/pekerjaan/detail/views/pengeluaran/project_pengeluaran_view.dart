@@ -16,12 +16,12 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/peng
 
 class ProjectPengeluaranView extends StatefulWidget {
   final String projectId;
-  final bool canEdit;
+  // final bool canEdit;
 
   const ProjectPengeluaranView({
     super.key,
     required this.projectId,
-    required this.canEdit,
+    // required this.canEdit,
   });
 
   @override
@@ -100,7 +100,8 @@ class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
     return Stack(
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, widget.canEdit ? 80 : 16),
+          // padding: EdgeInsets.fromLTRB(16, 16, 16, widget.canEdit ? 80 : 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           child: _items.isEmpty
               ? const _EmptyPengeluaranState()
               : ListView.builder(
@@ -134,7 +135,7 @@ class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
                         ...items.map(
                           (item) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                          child: PengeluaranItemCard(
+                            child: PengeluaranItemCard(
                               code: _buildCardCode(item),
                               title: _buildCardTitle(item.kategori),
                               tanggal: _formatShortDate(item.tanggal),
@@ -147,7 +148,8 @@ class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
                                 context,
                                 widget.projectId,
                                 item,
-                                widget.canEdit,
+                                // widget.canEdit,
+                                true,
                                 _loadPengeluaran,
                               ),
                             ),
@@ -160,7 +162,7 @@ class _ProjectPengeluaranViewState extends State<ProjectPengeluaranView> {
                 ),
         ),
 
-        if (widget.canEdit)
+        // if (widget.canEdit)
           Positioned(
             left: 16,
             right: 16,

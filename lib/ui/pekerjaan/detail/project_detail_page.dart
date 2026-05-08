@@ -44,9 +44,9 @@ class ProjectDetailPage extends StatelessWidget {
                 final isProjectFinished = detail != null
                     ? _isProjectFinished(detail.overview.status)
                     : false;
-                final canManageProjectActions =
-                    !isProjectFinished &&
-                    hasFullMenuAccess(currentUser?.role ?? '');
+                // final canManageProjectActions =
+                //     !isProjectFinished &&
+                //     hasFullMenuAccess(currentUser?.role ?? '');
                 final canCreateRequest = !isProjectFinished;
 
                 return Column(
@@ -99,11 +99,11 @@ class ProjectDetailPage extends StatelessWidget {
                               ProjectProgressView(
                                 overview: detail.overview,
                                 progress: detail.progress,
-                                canEdit: canManageProjectActions,
+                                // canEdit: canManageProjectActions,
                               ),
                               ProjectPengeluaranView(
                                 projectId: projectId,
-                                canEdit: canManageProjectActions,
+                                // canEdit: canManageProjectActions,
                               ),
                               ProjectRequestView(
                                 projectId: projectId,
