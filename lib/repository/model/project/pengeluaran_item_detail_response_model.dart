@@ -150,8 +150,8 @@ String _normalizeUrl(String rawUrl) {
   }
 
   if (rawUrl.startsWith('/')) {
-    return 'https://sarabakawabonding.id$rawUrl';
-    // return 'https://saraba.inotivedev.com$rawUrl';
+    // return 'https://sarabakawabonding.id$rawUrl';
+    return 'https://saraba.inotivedev.com$rawUrl';
   }
 
   return rawUrl;
