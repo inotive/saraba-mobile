@@ -89,6 +89,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       context,
       MaterialPageRoute(
         builder: (_) => RequestFormPage(
+          category: widget.item.category,
           initialDate: widget.item.requestDate,
           initialRequestText: _requestText,
           initialItems: _items.map((e) {
@@ -115,6 +116,7 @@ class _DetailProjectRequestViewState extends State<DetailProjectRequestView> {
       ).format(result.requestDate),
       deskripsi: result.requestText,
       items: result.items,
+      kategori: result.category,
     );
 
     if (!mounted) return;

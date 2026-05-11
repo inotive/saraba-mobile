@@ -8,9 +8,11 @@ import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/detail_project_r
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/project_request_mapper.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_category.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_status.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/request_form_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_card.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/request_category_sheet.dart';
 
 class ProjectRequestView extends StatefulWidget {
   final String projectId;
@@ -73,9 +75,22 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
   }
 
   Future<void> _openCreateRequest() async {
+    final category = await showModalBottomSheet<RequestCategory>(
+      context: context,
+      backgroundColor: const Color(0xFFFAFAFA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const RequestCategorySheet(),
+    );
+
+    if (!mounted || category == null) {
+      return;
+    }
+
     final result = await Navigator.push<ProjectRequestFormResult>(
       context,
-      MaterialPageRoute(builder: (_) => const RequestFormPage()),
+      MaterialPageRoute(builder: (_) => RequestFormPage(category: category)),
     );
 
     if (!mounted || result == null) {
@@ -89,6 +104,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
       ).format(result.requestDate),
       deskripsi: result.requestText,
       items: result.items,
+      kategori: result.category,
     );
 
     if (!mounted) {
@@ -205,7 +221,7 @@ class _ProjectRequestViewState extends State<ProjectRequestView> {
                 ),
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  'Tambah Request',
+                  'Tambah Request tambah ',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

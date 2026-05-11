@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/pengeluaran_widget.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/utils/header.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/request_category_extension.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/project_request_form_result.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_category.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/models/request_item_sheet_result.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/widgets/tambah_item_request_sheet.dart';
@@ -15,14 +17,16 @@ class RequestFormPage extends StatefulWidget {
   final String pageTitle;
   final String submitLabel;
   final List<RequestItem>? initialItems;
+  final RequestCategory category;
 
   const RequestFormPage({
     super.key,
     this.initialDate,
     this.initialRequestText,
-    this.pageTitle = 'Tambah Request',
+    this.pageTitle = '',
     this.submitLabel = '+ Kirim Request',
     this.initialItems,
+    required this.category,
   });
 
   @override
@@ -118,6 +122,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
         requestDate: _selectedDate,
         requestText: _deskripsiController.text,
         items: mappedItems,
+        category: widget.category.submitValue,
       ),
     );
   }
@@ -130,7 +135,11 @@ class _RequestFormPageState extends State<RequestFormPage> {
       body: SafeArea(
         child: Column(
           children: [
-            TambahPengeluaranHeader(title: widget.pageTitle),
+            TambahPengeluaranHeader(
+              title: widget.pageTitle.isNotEmpty
+                  ? widget.pageTitle
+                  : 'Request ${widget.category.label}',
+            ),
 
             Expanded(
               child: SingleChildScrollView(
@@ -140,6 +149,16 @@ class _RequestFormPageState extends State<RequestFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
+                    Text(
+                      'Request ${widget.category.label}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F1F1F),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
                     const FieldLabel('Tanggal Request'),
                     const SizedBox(height: 8),
                     DateField(
@@ -157,7 +176,7 @@ class _RequestFormPageState extends State<RequestFormPage> {
                       hintText: 'Ketik Disini',
                     ),
                     const SizedBox(height: 16),
-                    const FieldLabel('Daftar Item'),
+                    FieldLabel('Item ${widget.category.label}'),
                     const SizedBox(height: 8),
                     if (_items.isEmpty)
                       const _EmptyState()

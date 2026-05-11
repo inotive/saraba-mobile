@@ -210,6 +210,7 @@ class PekerjaanService {
     required String tanggalPermintaan,
     required String deskripsi,
     required List<Map<String, dynamic>> items,
+    required String kategori,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
@@ -220,6 +221,7 @@ class PekerjaanService {
           'tanggal_permintaan': tanggalPermintaan,
           'deskripsi': deskripsi,
           'items': items,
+          "kategori_pengeluaran": kategori,
         },
       );
 
@@ -253,6 +255,7 @@ class PekerjaanService {
     required String tanggalPermintaan,
     required String deskripsi,
     required List<Map<String, dynamic>> items,
+    required String kategori,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
@@ -262,6 +265,7 @@ class PekerjaanService {
           'tanggal_permintaan': tanggalPermintaan,
           'deskripsi': deskripsi,
           'items': items,
+          'kategori_pengeluaran': kategori,
         },
       );
 

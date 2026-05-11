@@ -1,3 +1,5 @@
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/request/mappers/request_category_extension.dart';
+
 import '../models/project_request_item.dart';
 import '../models/request_status.dart';
 import '../utils/request_date_parser.dart';
@@ -17,6 +19,7 @@ class ProjectRequestMapper {
       requestText: item.deskripsi,
       totalItem: item.totalItem ?? 0,
       grandTotal: item.grandTotal ?? 0,
+      category: requestCategoryFromString(item.kategoriRequest),
       // items: (item.items ?? []).map(ProjectRequestDetailItem.fromJson).toList(),
     );
   }
@@ -32,6 +35,7 @@ class ProjectRequestMapper {
       requestText: item.deskripsi,
       totalItem: item.totalItem ?? 0,
       grandTotal: item.grandTotal ?? 0,
+      category: requestCategoryFromString(item.kategoriRequest),
     );
   }
 
