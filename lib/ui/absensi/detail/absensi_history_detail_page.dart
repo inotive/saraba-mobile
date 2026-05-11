@@ -191,7 +191,7 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _employeeName,
+                              detail.namaKaryawan,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -269,7 +269,7 @@ class _AbsensiHistoryDetailPageState extends State<AbsensiHistoryDetailPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              _buildInfoBlock('Nama Pegawai', _employeeName),
+              _buildInfoBlock('Nama Pegawai', detail.namaKaryawan),
               const SizedBox(height: 20),
               _buildInfoBlock('Periode', _formatLongDate(detail.tanggal)),
               const SizedBox(height: 20),
