@@ -87,6 +87,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final app = MaterialApp(
+      debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Saraba Mobile',

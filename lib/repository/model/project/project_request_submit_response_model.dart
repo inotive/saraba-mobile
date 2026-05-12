@@ -30,6 +30,9 @@ class ProjectRequestSubmitData {
   final String deskripsi;
   final String status;
   final String createdBy;
+  final int? totalItem;
+  final double? grandTotal;
+  final String kategoriRequest;
 
   const ProjectRequestSubmitData({
     required this.id,
@@ -39,6 +42,9 @@ class ProjectRequestSubmitData {
     required this.deskripsi,
     required this.status,
     required this.createdBy,
+    this.totalItem,
+    this.grandTotal,
+    required this.kategoriRequest,
   });
 
   factory ProjectRequestSubmitData.fromJson(Map<String, dynamic> json) {
@@ -50,6 +56,9 @@ class ProjectRequestSubmitData {
       deskripsi: (json['deskripsi'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       createdBy: (json['created_by'] ?? '').toString(),
+      totalItem: _parseInt(json['total_item']),
+      grandTotal: double.tryParse(json['grand_total']?.toString() ?? '') ?? 0,
+      kategoriRequest: (json['kategori_pengeluaran'] ?? '').toString(),
     );
   }
 }

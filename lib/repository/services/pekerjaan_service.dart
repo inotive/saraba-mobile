@@ -7,6 +7,7 @@ import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_respon
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_list_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_pengeluaran_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/project_request_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_request_submit_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/submit_pengeluaran_response_model.dart';
@@ -125,7 +126,9 @@ class PekerjaanService {
 
       _logger.error('Pengeluaran item detail request was not successful');
     } catch (e) {
-      _logger.error('Unexpected error while loading pengeluaran item detail: $e');
+      _logger.error(
+        'Unexpected error while loading pengeluaran item detail: $e',
+      );
     }
 
     return null;
@@ -176,18 +179,49 @@ class PekerjaanService {
     return null;
   }
 
+  Future<ProjectRequestDetailResponse?> fetchProjectRequestDetail({
+    required String projectId,
+    required String requestId,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/proyeks/$projectId/permintaans/$requestId',
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return ProjectRequestDetailResponse.fromJson(response.data);
+      }
+
+      _logger.error('Project request detail was not successful');
+    } catch (e) {
+      _logger.error(
+        'Unexpected error while loading project request detail: $e',
+      );
+    }
+
+    return null;
+  }
+
   Future<ProjectRequestSubmitResponse?> submitProjectRequest({
     required String projectId,
     required String tanggalPermintaan,
     required String deskripsi,
+    required List<Map<String, dynamic>> items,
+    required String kategori,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
+
       final response = await dio.post(
         '/proyeks/$projectId/permintaans',
         data: {
           'tanggal_permintaan': tanggalPermintaan,
           'deskripsi': deskripsi,
+          'items': items,
+          "kategori_pengeluaran": kategori,
         },
       );
 
@@ -220,6 +254,8 @@ class PekerjaanService {
     required String requestId,
     required String tanggalPermintaan,
     required String deskripsi,
+    required List<Map<String, dynamic>> items,
+    required String kategori,
   }) async {
     try {
       final dio = await AuthService().getAuthDio();
@@ -228,6 +264,8 @@ class PekerjaanService {
         data: {
           'tanggal_permintaan': tanggalPermintaan,
           'deskripsi': deskripsi,
+          'items': items,
+          'kategori_pengeluaran': kategori,
         },
       );
 
@@ -464,10 +502,7 @@ class PekerjaanService {
 
       for (final path in lampiranPaths) {
         formData.files.add(
-          MapEntry(
-            'lampiran[]',
-            await MultipartFile.fromFile(path),
-          ),
+          MapEntry('lampiran[]', await MultipartFile.fromFile(path)),
         );
       }
 

@@ -1,0 +1,1 @@
+enum RequestCategory { operasional, material }

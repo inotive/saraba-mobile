@@ -84,7 +84,10 @@ class RabItemCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               onTap: onToggle,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -128,7 +131,10 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF525252))),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF525252)),
+          ),
         ),
         Text(
           value,
@@ -166,10 +172,20 @@ class _RabDetailRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Harga Satuan ${data.hargaSatuan}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                  'Harga Satuan: ${data.hargaSatuan}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
                 ),
-                Text('Volume : ${data.subtitle}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                const SizedBox(height: 4),
+                Text(
+                  'Volume: ${data.subtitle}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
               ],
             ),
           ),

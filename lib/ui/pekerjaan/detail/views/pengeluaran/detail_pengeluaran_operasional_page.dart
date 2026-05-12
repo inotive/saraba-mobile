@@ -9,7 +9,15 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/pengeluaran_detail_state.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_pengeluaran_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/detail_pengeluaran_material_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/mappers/pengeluaran_category_extension.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/material_attachment_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_expense_item.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/operasional_pengeluaran_draft.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/pengeluaran_category.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/models/pengeluaran_material_flow_result.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/tambah_pengeluaran_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/pengeluaran/widgets/attachment_widget.dart';
 
 class DetailPengeluaranOperasionalPage extends StatelessWidget {
   final String projectId;
@@ -49,10 +57,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       }
 
       context.read<PengeluaranDetailBloc>().add(
-        DeletePengeluaran(
-          projectId: projectId,
-          pengeluaranId: pengeluaranId,
-        ),
+        DeletePengeluaran(projectId: projectId, pengeluaranId: pengeluaranId),
       );
       return;
     }
@@ -100,10 +105,7 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC52222),
               ),
-              child: const Text(
-                'Hapus',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -161,10 +163,11 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       ),
       builder: (_) => _SimpleExpenseDetailSheet(
         name: detail.namaItem,
-        showName: category != PengeluaranCategory.pettyCash,
+        // showName: category != PengeluaranCategory.pettyCash,
         total: _formatOperasionalCurrency(detail.jumlah),
         note: detail.keterangan,
         attachments: attachments,
+        quantity: detail.kuantitas.toString(),
       ),
     );
   }
@@ -183,9 +186,9 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
         listener: (context, state) {
           if (state.deleteErrorMessage != null &&
               state.deleteErrorMessage!.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.deleteErrorMessage!)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.deleteErrorMessage!)));
           }
 
           if (state.deleteSuccessMessage != null &&
@@ -255,8 +258,9 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
 
           final draft = _buildDraft(detail);
           final categoryLabel = draft.category.label;
-          final currentUserId =
-              Hive.box<User>('userBox').get('current_user')?.id;
+          final currentUserId = Hive.box<User>(
+            'userBox',
+          ).get('current_user')?.id;
           final canManageOptions =
               canEdit &&
               currentUserId != null &&
@@ -318,7 +322,9 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                           const SizedBox(height: 18),
                           const _DetailLabel('Dibuat Oleh'),
                           const SizedBox(height: 4),
-                          _DetailValue(detail.user.name.isEmpty ? '-' : detail.user.name),
+                          _DetailValue(
+                            detail.user.name.isEmpty ? '-' : detail.user.name,
+                          ),
                           const SizedBox(height: 18),
                           const _DetailLabel('Grand Total'),
                           const SizedBox(height: 4),
@@ -340,9 +346,10 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _SimpleExpenseItemCard(
                                 item: item,
-                                showName:
-                                    category != PengeluaranCategory.pettyCash,
-                                onTapDetail: () => _openItemDetail(context, item),
+                                // showName:
+                                //     category != PengeluaranCategory.pettyCash,
+                                onTapDetail: () =>
+                                    _openItemDetail(context, item),
                               ),
                             ),
                           ),
@@ -369,12 +376,11 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
                       child: SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () =>
-                              state.isDeleting ? null : _openOptions(context, draft),
+                          onPressed: () => state.isDeleting
+                              ? null
+                              : _openOptions(context, draft),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: Color(0xFFF7944D),
-                            ),
+                            side: const BorderSide(color: Color(0xFFF7944D)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -484,7 +490,8 @@ class _OperasionalDetailOptionsSheet extends StatelessWidget {
             _DetailOptionRow(
               icon: Icons.edit_outlined,
               label: 'Edit',
-              onTap: () => Navigator.pop(context, _OperasionalDetailAction.edit),
+              onTap: () =>
+                  Navigator.pop(context, _OperasionalDetailAction.edit),
             ),
             _DetailOptionRow(
               icon: Icons.delete_outline,
@@ -604,13 +611,13 @@ class _DetailValue extends StatelessWidget {
 
 class _SimpleExpenseItemCard extends StatelessWidget {
   final OperasionalExpenseItem item;
-  final bool showName;
   final VoidCallback onTapDetail;
+  // final bool showName;
 
   const _SimpleExpenseItemCard({
     required this.item,
-    required this.showName,
     required this.onTapDetail,
+    // required this.showName,
   });
 
   @override
@@ -644,34 +651,38 @@ class _SimpleExpenseItemCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (showName) ...[
-                  const Text(
-                    'Nama Item',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1F1F1F),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                // if (showName) ...[
                 const Text(
-                  'Total',
+                  'Nama Item',
                   style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _formatOperasionalCurrency(item.amount),
+                  item.name,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1F1F1F),
                   ),
+                ),
+                // ],
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: MaterialItemMeta(
+                        label: 'Qty',
+                        value: item.quantity.toString(),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: MaterialItemMeta(
+                        label: 'Total',
+                        value: _formatOperasionalCurrency(item.amount),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -706,15 +717,17 @@ class _SimpleExpenseItemCard extends StatelessWidget {
 
 class _SimpleExpenseDetailSheet extends StatelessWidget {
   final String name;
-  final bool showName;
+  // final bool showName;
   final String total;
+  final String quantity;
   final String note;
   final List<MaterialAttachmentItem> attachments;
 
   const _SimpleExpenseDetailSheet({
     required this.name,
-    required this.showName,
+    // required this.showName,
     required this.total,
+    required this.quantity,
     required this.note,
     required this.attachments,
   });
@@ -744,50 +757,13 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            if (showName) ...[
-              _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
-              const SizedBox(height: 14),
-            ],
+            // if (showName) ...[
+            _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
+            const SizedBox(height: 14),
+            // ],
             _SimpleExpenseBottomRow(label: 'Total', value: total),
             const SizedBox(height: 14),
-            _SimpleExpenseBottomRow(
-              label: 'Catatan',
-              value: note.trim().isEmpty ? '-' : note,
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Lampiran',
-              style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-            ),
-            const SizedBox(height: 8),
-            if (attachments.isEmpty)
-              const Text(
-                '-',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F1F1F),
-                ),
-              )
-            else
-              SizedBox(
-                height: 74,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: attachments.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) => ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AttachmentThumbnail(
-                      image: attachments[index],
-                      galleryImages: attachments,
-                      initialIndex: index,
-                      width: 74,
-                      height: 74,
-                    ),
-                  ),
-                ),
-              ),
+            _SimpleExpenseBottomRow(label: 'Qty', value: quantity),
           ],
         ),
       ),

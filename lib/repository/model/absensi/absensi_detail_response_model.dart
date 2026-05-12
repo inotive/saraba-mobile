@@ -14,6 +14,7 @@ class AbsensiDetailResponse {
 
 class AbsensiDetailData {
   final int id;
+  final String namaKaryawan;
   final String tanggal;
   final String jamMasuk;
   final String jamPulang;
@@ -31,6 +32,7 @@ class AbsensiDetailData {
 
   AbsensiDetailData({
     required this.id,
+    required this.namaKaryawan,
     required this.tanggal,
     required this.jamMasuk,
     required this.jamPulang,
@@ -50,6 +52,7 @@ class AbsensiDetailData {
   factory AbsensiDetailData.fromJson(Map<String, dynamic> json) {
     return AbsensiDetailData(
       id: json['id'] as int? ?? 0,
+      namaKaryawan: json['nama_karyawan']?.toString() ?? '',
       tanggal: json['tanggal']?.toString() ?? '',
       jamMasuk: json['jam_masuk']?.toString() ?? '',
       jamPulang: json['jam_pulang']?.toString() ?? '',

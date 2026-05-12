@@ -5,7 +5,7 @@ import 'package:saraba_mobile/repository/model/project/project_detail_response_m
 import 'package:saraba_mobile/repository/services/pekerjaan_service.dart';
 import 'package:saraba_mobile/repository/model/project/submit_progress_response_model.dart';
 import 'package:saraba_mobile/repository/model/user_model.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/tambah_progress_page.dart';
 
 class ProgressDetailPage extends StatefulWidget {
   final String projectId;

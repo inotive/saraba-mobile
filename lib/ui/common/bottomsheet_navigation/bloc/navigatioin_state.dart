@@ -1,9 +1,4 @@
-enum NavigationTab {
-  dashboard,
-  absensi,
-  pekerjaan,
-  akun,
-}
+enum NavigationTab { dashboard, absensi, pekerjaan, approval, akun }
 
 class NavigationState {
   final NavigationTab selectedTab;

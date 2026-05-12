@@ -6,7 +6,8 @@ bool hasFullMenuAccess(String role) {
   final normalized = normalizeRole(role);
   return normalized == 'pengawas' ||
       normalized == 'owner' ||
-      normalized == 'superadmin';
+      normalized == 'superadmin' ||
+      normalized == 'supervisor';
 }
 
 bool canViewReportKeuangan(String role) {

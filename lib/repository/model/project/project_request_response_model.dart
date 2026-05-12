@@ -2,10 +2,7 @@ class ProjectRequestResponse {
   final bool success;
   final List<ProjectRequestData> data;
 
-  const ProjectRequestResponse({
-    required this.success,
-    required this.data,
-  });
+  const ProjectRequestResponse({required this.success, required this.data});
 
   factory ProjectRequestResponse.fromJson(Map<String, dynamic> json) {
     return ProjectRequestResponse(
@@ -20,6 +17,7 @@ class ProjectRequestResponse {
 
 class ProjectRequestData {
   final int id;
+  final String idPermintaan;
   final String tanggalPermintaan;
   final String deskripsi;
   final String status;
@@ -27,9 +25,13 @@ class ProjectRequestData {
   final String proyekName;
   final String createdAt;
   final String createdBy;
+  final int? totalItem;
+  final double? grandTotal;
+  final String kategoriRequest;
 
   const ProjectRequestData({
     required this.id,
+    required this.idPermintaan,
     required this.tanggalPermintaan,
     required this.deskripsi,
     required this.status,
@@ -37,11 +39,15 @@ class ProjectRequestData {
     required this.proyekName,
     required this.createdAt,
     required this.createdBy,
+    this.totalItem,
+    this.grandTotal,
+    required this.kategoriRequest,
   });
 
   factory ProjectRequestData.fromJson(Map<String, dynamic> json) {
     return ProjectRequestData(
       id: _parseInt(json['id']),
+      idPermintaan: (json['id_permintaan'] ?? '').toString(),
       tanggalPermintaan: (json['tanggal_permintaan'] ?? '').toString(),
       deskripsi: (json['deskripsi'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
@@ -49,6 +55,9 @@ class ProjectRequestData {
       proyekName: (json['proyek_name'] ?? '').toString(),
       createdAt: (json['created_at'] ?? '').toString(),
       createdBy: (json['created_by'] ?? '').toString(),
+      totalItem: _parseInt(json['total_item']),
+      grandTotal: double.tryParse(json['grand_total']?.toString() ?? '') ?? 0,
+      kategoriRequest: (json['kategori_pengeluaran'] ?? '').toString(),
     );
   }
 }

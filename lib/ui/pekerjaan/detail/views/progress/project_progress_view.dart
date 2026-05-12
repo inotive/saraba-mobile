@@ -6,19 +6,19 @@ import 'package:saraba_mobile/ui/common/widgets/status_banner.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/bloc/project_detail_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/detail/widgets/progress_item_card.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/detail_progress_page.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/views/tambah_progress_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/detail_progress_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/detail/views/progress/tambah_progress_page.dart';
 
 class ProjectProgressView extends StatelessWidget {
   final ProjectOverviewDetail overview;
   final ProjectProgressSection progress;
-  final bool canEdit;
+  // final bool canEdit;
 
   const ProjectProgressView({
     super.key,
     required this.overview,
     required this.progress,
-    required this.canEdit,
+    // required this.canEdit,
   });
 
   @override
@@ -26,7 +26,8 @@ class ProjectProgressView extends StatelessWidget {
     return Stack(
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, canEdit ? 92 : 16),
+          // padding: EdgeInsets.fromLTRB(16, 16, 16, canEdit ? 92 : 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 92),
           child: Column(
             children: [
               _DateFilterField(value: _formatLongDate(DateTime.now())),
@@ -62,7 +63,8 @@ class ProjectProgressView extends StatelessWidget {
                               context,
                               overview.id.toString(),
                               item,
-                              canEdit,
+                              // canEdit,
+                              true,
                             ),
                           );
                         },
@@ -71,60 +73,57 @@ class ProjectProgressView extends StatelessWidget {
             ],
           ),
         ),
-        if (canEdit)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: SizedBox(
-              height: 58,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push<String>(
+        // if (canEdit)
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 16,
+          child: SizedBox(
+            height: 58,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push<String>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        TambahProgressPage(projectId: overview.id.toString()),
+                  ),
+                ).then((message) {
+                  if (!context.mounted || message == null || message.isEmpty) {
+                    return;
+                  }
+
+                  context.read<ProjectDetailBloc>().add(
+                    FetchProjectDetail(overview.id.toString()),
+                  );
+
+                  StatusBanner.show(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => TambahProgressPage(
-                        projectId: overview.id.toString(),
-                      ),
-                    ),
-                  ).then((message) {
-                    if (!context.mounted ||
-                        message == null ||
-                        message.isEmpty) {
-                      return;
-                    }
-
-                    context.read<ProjectDetailBloc>().add(
-                      FetchProjectDetail(overview.id.toString()),
-                    );
-
-                    StatusBanner.show(
-                      context,
-                      title: 'Progress Berhasil',
-                      message: message,
-                      type: StatusBannerType.success,
-                    );
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF7944D),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
+                    title: 'Progress Berhasil',
+                    message: message,
+                    type: StatusBannerType.success,
+                  );
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF7944D),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text(
-                  "Tambah Progress",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Tambah Progress",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
                 ),
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -139,11 +138,8 @@ Future<void> _openProgressDetail(
   final result = await Navigator.push<ProgressDetailActionResult>(
     context,
     MaterialPageRoute(
-      builder: (_) => ProgressDetailPage(
-        projectId: projectId,
-        log: log,
-        canEdit: canEdit,
-      ),
+      builder: (_) =>
+          ProgressDetailPage(projectId: projectId, log: log, canEdit: canEdit),
     ),
   );
 
@@ -156,9 +152,7 @@ Future<void> _openProgressDetail(
     context,
     title: result.title,
     message: result.message,
-    type: result.isSuccess
-        ? StatusBannerType.success
-        : StatusBannerType.error,
+    type: result.isSuccess ? StatusBannerType.success : StatusBannerType.error,
   );
 }
 
