@@ -9,8 +9,7 @@ import 'package:saraba_mobile/repository/model/today_absensi_model.dart';
 import 'package:saraba_mobile/repository/services/auth_service.dart';
 
 class AbsensiService {
-  static const bool useMock =
-      false; // For development, delete this when backend is ready
+  static const bool useMock = false; // For development, delete this when backend is ready
   static const AppLogger _logger = AppLogger('AbsensiService');
 
   late final Dio _dio = _buildDio();
@@ -106,10 +105,7 @@ class AbsensiService {
     try {
       final token = await AuthService().getToken();
 
-      final response = await _dio.get(
-        "/absensi/today",
-        options: Options(headers: {"Authorization": token}),
-      );
+      final response = await _dio.get("/absensi/today", options: Options(headers: {"Authorization": token}));
 
       if (response.statusCode == 200 && response.data["success"] == true) {
         _logger.log('Today absensi success');
@@ -126,10 +122,7 @@ class AbsensiService {
     try {
       final token = await AuthService().getToken();
 
-      final response = await _dio.get(
-        "/absensi/$absensiId",
-        options: Options(headers: {"Authorization": token}),
-      );
+      final response = await _dio.get("/absensi/$absensiId", options: Options(headers: {"Authorization": token}));
 
       if (response.statusCode == 200 && response.data["success"] == true) {
         _logger.log('Absensi detail success');
@@ -167,12 +160,7 @@ class AbsensiService {
 
       final response = await _dio.get(
         "/absensi/history",
-        queryParameters: {
-          "start_date": startDate,
-          "end_date": endDate,
-          "page": page,
-          "per_page": perPage,
-        },
+        queryParameters: {"start_date": startDate, "end_date": endDate, "page": page, "per_page": perPage},
         options: Options(headers: {"Authorization": token}),
       );
 
