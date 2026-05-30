@@ -47,5 +47,12 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Aplikasi ini membutuhkan akses lokasi untuk absensi karyawan</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Aplikasi ini membutuhkan akses lokasi untuk absensi karyawan.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Aplikasi ini membutuhkan akses kamera untuk absensi karyawan.</string>
 	</dict>
+
 </plist>
