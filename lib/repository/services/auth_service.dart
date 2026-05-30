@@ -8,8 +8,7 @@ import 'package:saraba_mobile/repository/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const bool useMock =
-      false; // For development, delete this when backend is ready
+  static const bool useMock = false; // For development, delete this when backend is ready
   static const AppLogger _logger = AppLogger('AuthService');
 
   late final Dio _dio = _buildDio(
@@ -45,17 +44,11 @@ class AuthService {
     return dio;
   }
 
-  Future<LoginResponse?> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<LoginResponse?> login({required String email, required String password}) async {
     if (useMock) {
       try {
         _logger.log('Mock login request');
-        final response = await AuthServiceMock.login(
-          email: email,
-          password: password,
-        );
+        final response = await AuthServiceMock.login(email: email, password: password);
         final token = "${response.data.tokenType} ${response.data.token}";
         _logger.log('Mock login success: ${response.message}');
 
@@ -71,18 +64,13 @@ class AuthService {
     try {
       final response = await _dio.post(
         "/login",
-        data: {
-          "email": email,
-          "password": password,
-          "device_name": "saraba_app",
-        },
+        data: {"email": email, "password": password, "device_name": "saraba_app"},
       );
 
       if (response.statusCode == 200) {
         final loginResponse = LoginResponse.fromJson(response.data);
 
-        final token =
-            "${loginResponse.data.tokenType} ${loginResponse.data.token}";
+        final token = "${loginResponse.data.tokenType} ${loginResponse.data.token}";
 
         await _saveUserToHive(_mapLoginUser(loginResponse.data));
         await _saveToken(token);
@@ -146,10 +134,7 @@ class AuthService {
     try {
       final token = await getToken();
 
-      final response = await _dio.post(
-        "/logout",
-        options: Options(headers: {"Authorization": token}),
-      );
+      final response = await _dio.post("/logout", options: Options(headers: {"Authorization": token}));
 
       _logger.response(response);
     } catch (e) {

@@ -89,7 +89,6 @@ class _MyAppState extends State<MyApp> {
     final app = MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
       title: 'Saraba Mobile',
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFFAFAFA),
