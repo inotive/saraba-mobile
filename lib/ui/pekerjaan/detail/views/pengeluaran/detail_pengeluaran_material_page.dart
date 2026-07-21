@@ -659,16 +659,43 @@ class _MaterialDetailItemCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: MaterialItemMeta(
-                        label: 'Qty',
-                        value: item.quantity.toString(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MaterialItemMeta(
+                            label: 'Qty',
+                            value: item.quantity.toString(),
+                          ),
+                          SizedBox(height: 6.0),
+                          Text(
+                            "Total",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: MaterialItemMeta(
-                        label: 'Total',
-                        value: _formatDetailCurrency(item.total),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MaterialItemMeta(
+                            label: 'Harga Satuan',
+                            value: _formatDetailCurrency(item.total),
+                          ),
+                          SizedBox(height: 6.0),
+                          Text(
+                            _formatDetailCurrency(item.total * item.quantity),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1F1F1F),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -766,8 +793,13 @@ class _MaterialItemDetailSheet extends StatelessWidget {
             _MaterialBottomRow(label: 'Nama Item', value: detail.namaItem),
             const SizedBox(height: 14),
             _MaterialBottomRow(
-              label: 'Total',
+              label: 'Harga Satuan',
               value: _formatDetailCurrency(detail.jumlah),
+            ),
+            const SizedBox(height: 14),
+            _MaterialBottomRow(
+              label: 'Total',
+              value: _formatDetailCurrency(detail.jumlah * detail.kuantitas),
             ),
             const SizedBox(height: 14),
             _MaterialBottomRow(

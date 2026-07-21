@@ -157,7 +157,7 @@ class _TambahItemOperasionalSheetState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const FieldLabel('Total'),
+                      const FieldLabel('Harga Satuan'),
                       const SizedBox(height: 8),
                       CompactTextField(
                         controller: _amountController,
