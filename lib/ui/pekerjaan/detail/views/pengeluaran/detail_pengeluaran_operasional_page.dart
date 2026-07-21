@@ -164,7 +164,8 @@ class DetailPengeluaranOperasionalPage extends StatelessWidget {
       builder: (_) => _SimpleExpenseDetailSheet(
         name: detail.namaItem,
         // showName: category != PengeluaranCategory.pettyCash,
-        total: _formatOperasionalCurrency(detail.jumlah),
+        amount: _formatOperasionalCurrency(detail.jumlah),
+        total: _formatOperasionalCurrency(detail.jumlah * detail.kuantitas),
         note: detail.keterangan,
         attachments: attachments,
         quantity: detail.kuantitas.toString(),
@@ -747,6 +748,7 @@ class _SimpleExpenseItemCard extends StatelessWidget {
 class _SimpleExpenseDetailSheet extends StatelessWidget {
   final String name;
   // final bool showName;
+  final String amount;
   final String total;
   final String quantity;
   final String note;
@@ -755,6 +757,7 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
   const _SimpleExpenseDetailSheet({
     required this.name,
     // required this.showName,
+    required this.amount,
     required this.total,
     required this.quantity,
     required this.note,
@@ -789,12 +792,9 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
             // if (showName) ...[
             _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
             const SizedBox(height: 14),
-            _SimpleExpenseBottomRow(label: 'Harga Satuan', value: total),
+            _SimpleExpenseBottomRow(label: 'Harga Satuan', value: amount),
             const SizedBox(height: 14),
-            _SimpleExpenseBottomRow(
-              label: 'Total',
-              value: total * int.parse(quantity),
-            ),
+            _SimpleExpenseBottomRow(label: 'Total', value: total),
             const SizedBox(height: 14),
             _SimpleExpenseBottomRow(label: 'Qty', value: quantity),
           ],
