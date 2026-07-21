@@ -232,19 +232,20 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
         Expanded(
           child: Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-          ),
-        ),
-        Text(
-          value,
-          textAlign: TextAlign.right,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF1E2A4A),
-            fontWeight: FontWeight.w500,
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF1E2A4A),
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -279,7 +280,9 @@ class _StatusRow extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 12,
-              color: isActive ? const Color(0xFF2E7D32) : const Color(0xFFB26A00),
+              color: isActive
+                  ? const Color(0xFF2E7D32)
+                  : const Color(0xFFB26A00),
               fontWeight: FontWeight.w600,
             ),
           ),

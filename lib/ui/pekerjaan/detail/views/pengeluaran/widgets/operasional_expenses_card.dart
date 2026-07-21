@@ -65,7 +65,7 @@ class OperasionalExpenseCard extends StatelessWidget {
                           flex: 2,
                           child: MetaColumn(
                             label: 'Total',
-                            value: formatCurrency(item.amount),
+                            value: formatCurrency(item.amount * item.quantity),
                           ),
                         ),
                       ],
