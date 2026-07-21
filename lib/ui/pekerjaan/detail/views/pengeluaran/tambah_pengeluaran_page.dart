@@ -122,11 +122,17 @@ class _TambahPengeluaranPageState extends State<TambahPengeluaranPage> {
   }
 
   double get _grandTotal {
-    return _selectedItems.fold(0, (sum, item) => sum + item.total);
+    return _selectedItems.fold(
+      0,
+      (sum, item) => sum + (item.total * item.quantity),
+    );
   }
 
   double get _operasionalGrandTotal {
-    return _operasionalItems.fold(0, (sum, item) => sum + item.amount);
+    return _operasionalItems.fold(
+      0,
+      (sum, item) => sum + (item.amount * item.quantity),
+    );
   }
 
   Future<void> _pickImages() async {

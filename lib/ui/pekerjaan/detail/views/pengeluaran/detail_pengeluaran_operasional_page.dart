@@ -670,16 +670,45 @@ class _SimpleExpenseItemCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: MaterialItemMeta(
-                        label: 'Qty',
-                        value: item.quantity.toString(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MaterialItemMeta(
+                            label: 'Qty',
+                            value: item.quantity.toString(),
+                          ),
+                          SizedBox(height: 6.0),
+                          Text(
+                            "Total",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: MaterialItemMeta(
-                        label: 'Total',
-                        value: _formatOperasionalCurrency(item.amount),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MaterialItemMeta(
+                            label: 'Harga Satuan',
+                            value: _formatOperasionalCurrency(item.amount),
+                          ),
+                          SizedBox(height: 6.0),
+                          Text(
+                            _formatOperasionalCurrency(
+                              item.amount * item.quantity,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1F1F1F),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -760,8 +789,12 @@ class _SimpleExpenseDetailSheet extends StatelessWidget {
             // if (showName) ...[
             _SimpleExpenseBottomRow(label: 'Nama Item', value: name),
             const SizedBox(height: 14),
-            // ],
-            _SimpleExpenseBottomRow(label: 'Total', value: total),
+            _SimpleExpenseBottomRow(label: 'Harga Satuan', value: total),
+            const SizedBox(height: 14),
+            _SimpleExpenseBottomRow(
+              label: 'Total',
+              value: total * int.parse(quantity),
+            ),
             const SizedBox(height: 14),
             _SimpleExpenseBottomRow(label: 'Qty', value: quantity),
           ],

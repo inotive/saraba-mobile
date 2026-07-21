@@ -82,7 +82,7 @@ class SelectedMaterialItemCard extends StatelessWidget {
                             flex: 2,
                             child: MetaColumn(
                               label: 'Total',
-                              value: formatCurrency(item.total),
+                              value: formatCurrency(item.total * item.quantity),
                             ),
                           ),
                         ],

@@ -132,7 +132,7 @@ class _MaterialItemSelectionCardState extends State<MaterialItemSelectionCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const FieldLabel('Total'),
+                    const FieldLabel('Harga Satuan'),
                     const SizedBox(height: 6),
                     CompactTextField(
                       controller: _totalController,
