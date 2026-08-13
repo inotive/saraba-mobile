@@ -343,6 +343,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
                 );
               },
               child: AttendanceItem(
+                name: item.namaKaryawan,
                 absensiId: item.id,
                 day: _extractDay(item.tanggal),
                 status: item.status,
@@ -411,6 +412,7 @@ class _AbsensiViewState extends State<_AbsensiView> {
 }
 
 class AttendanceItem extends StatelessWidget {
+  final String name;
   final String absensiId;
   final String day;
   final String status;
@@ -419,6 +421,7 @@ class AttendanceItem extends StatelessWidget {
 
   const AttendanceItem({
     super.key,
+    required this.name,
     required this.absensiId,
     required this.day,
     required this.status,
@@ -451,96 +454,108 @@ class AttendanceItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: "Tanggal ",
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                        TextSpan(
-                          text: day,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: "Waktu ",
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                        TextSpan(
-                          text: time,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _divider(),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Status",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  _statusBadge(status),
-                ],
-              ),
-            ),
-            _divider(),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Keterangan",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  Row(
+            Text(name, style: TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          displayNote,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Tanggal ",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            TextSpan(
+                              text: day,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      if (displayNote == "On Time")
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4),
-                          child: Icon(
-                            Icons.check_circle,
-                            size: 12,
-                            color: Colors.green,
-                          ),
+                      const SizedBox(height: 4),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Waktu ",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            TextSpan(
+                              text: time,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                _divider(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Status",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      _statusBadge(status),
+                    ],
+                  ),
+                ),
+                _divider(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Keterangan",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayNote,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          if (displayNote == "On Time")
+                            const Padding(
+                              padding: EdgeInsets.only(left: 4),
+                              child: Icon(
+                                Icons.check_circle,
+                                size: 12,
+                                color: Colors.green,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

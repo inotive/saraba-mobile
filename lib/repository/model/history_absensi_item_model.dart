@@ -18,8 +18,11 @@ class AbsensiItem extends HiveObject {
   final String status;
   @HiveField(6)
   final String keterangan;
+  @HiveField(7)
+  final String namaKaryawan;
 
   AbsensiItem({
+    required this.namaKaryawan,
     required this.id,
     required this.tanggal,
     required this.jamMasuk,
@@ -31,6 +34,7 @@ class AbsensiItem extends HiveObject {
 
   factory AbsensiItem.fromJson(Map<String, dynamic> json) {
     return AbsensiItem(
+      namaKaryawan: json['nama_karyawan'] ?? '',
       id: json['id']?.toString() ?? '',
       tanggal: json['tanggal'] ?? '',
       jamMasuk: json['jam_masuk'] ?? '',
