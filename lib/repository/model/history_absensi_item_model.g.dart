@@ -17,6 +17,7 @@ class AbsensiItemAdapter extends TypeAdapter<AbsensiItem> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return AbsensiItem(
+      namaKaryawan: fields[7] as String,
       id: fields[0] as String,
       tanggal: fields[1] as String,
       jamMasuk: fields[2] as String,
@@ -30,7 +31,7 @@ class AbsensiItemAdapter extends TypeAdapter<AbsensiItem> {
   @override
   void write(BinaryWriter writer, AbsensiItem obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class AbsensiItemAdapter extends TypeAdapter<AbsensiItem> {
       ..writeByte(5)
       ..write(obj.status)
       ..writeByte(6)
-      ..write(obj.keterangan);
+      ..write(obj.keterangan)
+      ..writeByte(7)
+      ..write(obj.namaKaryawan);
   }
 
   @override
