@@ -21,6 +21,18 @@ const bool _enableShakeLogsInRelease = bool.fromEnvironment(
   defaultValue: false,
 );
 
+Future<void> openAbsensiHistoryBox() async {
+  try {
+    await Hive.openBox<AbsensiItem>("absensi_history");
+  } catch (e) {
+    debugPrint('Error opening absensi_history: $e');
+
+    await Hive.deleteBoxFromDisk("absensi_history");
+
+    await Hive.openBox<AbsensiItem>("absensi_history");
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -30,7 +42,8 @@ void main() async {
   Hive.registerAdapter(AbsensiItemAdapter());
 
   await Hive.openBox<User>("userBox");
-  await Hive.openBox<AbsensiItem>("absensi_history");
+  await openAbsensiHistoryBox();
+  // await Hive.openBox<AbsensiItem>("absensi_history");
 
   runApp(const MyApp());
 }
