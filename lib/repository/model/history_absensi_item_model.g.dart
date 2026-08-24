@@ -17,7 +17,7 @@ class AbsensiItemAdapter extends TypeAdapter<AbsensiItem> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return AbsensiItem(
-      namaKaryawan: fields[7] as String,
+      namaKaryawan: fields[7] == null ? '' : fields[7] as String,
       id: fields[0] as String,
       tanggal: fields[1] as String,
       jamMasuk: fields[2] as String,

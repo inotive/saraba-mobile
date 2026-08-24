@@ -18,7 +18,7 @@ class AbsensiItem extends HiveObject {
   final String status;
   @HiveField(6)
   final String keterangan;
-  @HiveField(7)
+  @HiveField(7, defaultValue: '')
   final String namaKaryawan;
 
   AbsensiItem({
