@@ -4,6 +4,7 @@ class PekerjaanState {
   final bool isLoading;
   final bool isLoadingMore;
   final List<ProjectModel> projects;
+  final PekerjaanFilter filter;
   final int currentPage;
   final int lastPage;
   final String? errorMessage;
@@ -12,6 +13,7 @@ class PekerjaanState {
     this.isLoading = false,
     this.isLoadingMore = false,
     this.projects = const [],
+    this.filter = PekerjaanFilter.all,
     this.currentPage = 1,
     this.lastPage = 1,
     this.errorMessage,
@@ -21,6 +23,7 @@ class PekerjaanState {
     bool? isLoading,
     bool? isLoadingMore,
     List<ProjectModel>? projects,
+    PekerjaanFilter? filter,
     int? currentPage,
     int? lastPage,
     String? errorMessage,
@@ -30,6 +33,7 @@ class PekerjaanState {
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       projects: projects ?? this.projects,
+      filter: filter ?? this.filter,
       currentPage: currentPage ?? this.currentPage,
       lastPage: lastPage ?? this.lastPage,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,

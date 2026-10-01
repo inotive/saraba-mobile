@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 
 class DetailTopTabBar extends StatelessWidget {
-  const DetailTopTabBar({super.key});
+  final List<String> tabs;
+
+  const DetailTopTabBar({
+    super.key,
+    this.tabs = const ['Overview', 'RAB', 'Progress', 'Pengeluaran', 'Request'],
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const TabBar(
+    return TabBar(
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      labelColor: Color(0xFF1F1F1F),
-      unselectedLabelColor: Color(0xFF8C8C8C),
-      indicatorColor: Color(0xFF2457F5),
+      labelColor: const Color(0xFF1F1F1F),
+      unselectedLabelColor: const Color(0xFF8C8C8C),
+      indicatorColor: const Color(0xFF2457F5),
       indicatorWeight: 2,
-      labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      unselectedLabelStyle: TextStyle(
+      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
-      tabs: [
-        Tab(text: "Overview"),
-        Tab(text: "RAB"),
-        Tab(text: "Progress"),
-        Tab(text: "Pengeluaran"),
-        Tab(text: "Request"),
-      ],
+      tabs: [for (final tab in tabs) Tab(text: tab)],
     );
   }
 }

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:saraba_mobile/core/utils/app_logger.dart';
+import 'package:saraba_mobile/repository/model/project/pekerjaan_list_response_model.dart';
+import 'package:saraba_mobile/repository/model/project/turnamen_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/project_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_detail_response_model.dart';
 import 'package:saraba_mobile/repository/model/project/pengeluaran_item_detail_response_model.dart';
@@ -36,6 +38,51 @@ class PekerjaanService {
       _logger.error('Project list request was not successful');
     } catch (e) {
       _logger.error('Unexpected error while loading proyeks: $e');
+    }
+
+    return null;
+  }
+
+  /// Daftar gabungan proyek + turnamen, difilter dengan [filter] (all/proyek/turnamen).
+  Future<PekerjaanListResponse?> fetchPekerjaan({
+    int page = 1,
+    PekerjaanFilter filter = PekerjaanFilter.all,
+  }) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get(
+        '/pekerjaan',
+        queryParameters: {'page': page, 'type': filter.apiValue},
+      );
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return PekerjaanListResponse.fromJson(response.data);
+      }
+
+      _logger.error('Pekerjaan list request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading pekerjaan: $e');
+    }
+
+    return null;
+  }
+
+  Future<TurnamenDetailResponse?> fetchTurnamenDetail(String turnamenId) async {
+    try {
+      final dio = await AuthService().getAuthDio();
+      final response = await dio.get('/sport-stations/$turnamenId');
+
+      _logger.response(response);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return TurnamenDetailResponse.fromJson(response.data);
+      }
+
+      _logger.error('Turnamen detail request was not successful');
+    } catch (e) {
+      _logger.error('Unexpected error while loading turnamen detail: $e');
     }
 
     return null;
@@ -549,6 +596,30 @@ class PekerjaanService {
           ),
         )
         .toList();
+  }
+
+  List<ProjectModel> mapPekerjaanToProjectModels(List<PekerjaanItem> items) {
+    return items.map((item) {
+      if (item.isTurnamen) {
+        return ProjectModel(
+          id: item.id.toString(),
+          title: item.title,
+          progress: 0,
+          nilai: '',
+          pengeluaran: _formatCurrency(item.nilaiPengeluaran),
+          type: ProjectType.turnamen,
+          jumlahPemain: item.jumlahPemain,
+        );
+      }
+
+      return ProjectModel(
+        id: item.id.toString(),
+        title: item.title,
+        progress: (item.progress / 100).clamp(0.0, 1.0),
+        nilai: _formatCurrency(item.nilaiProyek),
+        pengeluaran: _formatCurrency(item.nilaiPengeluaran),
+      );
+    }).toList();
   }
 
   String _formatCurrency(String rawValue) {

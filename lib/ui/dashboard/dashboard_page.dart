@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:saraba_mobile/repository/model/project_model.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_bloc.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_event.dart';
 import 'package:saraba_mobile/ui/akun/bloc/profile_state.dart';
@@ -17,9 +18,10 @@ import 'package:saraba_mobile/ui/dashboard/camera_page.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_state.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/project_detail_page.dart';
+import 'package:saraba_mobile/ui/pekerjaan/open_project_detail.dart';
 import 'package:saraba_mobile/ui/widgets/attendance_status_card.dart';
 import 'package:saraba_mobile/ui/widgets/project_card.dart';
+import 'package:saraba_mobile/ui/widgets/project_type_filter.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -264,27 +266,47 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _projectSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: BlocBuilder<PekerjaanBloc, PekerjaanState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          if (state.errorMessage != null && state.projects.isEmpty) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Proyek Anda",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  "Proyek & Turnamen",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                Container(
+              ),
+              BlocBuilder<PekerjaanBloc, PekerjaanState>(
+                buildWhen: (previous, current) =>
+                    previous.filter != current.filter,
+                builder: (context, state) {
+                  return ProjectTypeFilter(
+                    selected: state.filter,
+                    onChanged: (filter) {
+                      context.read<PekerjaanBloc>().add(
+                        ChangePekerjaanFilter(filter),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          BlocBuilder<PekerjaanBloc, PekerjaanState>(
+            builder: (context, state) {
+              if (state.isLoading) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              if (state.errorMessage != null && state.projects.isEmpty) {
+                return Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: _cardDecoration(),
@@ -292,44 +314,24 @@ class _DashboardPageState extends State<DashboardPage> {
                     state.errorMessage!,
                     style: const TextStyle(color: Colors.black54),
                   ),
-                ),
-              ],
-            );
-          }
+                );
+              }
 
-          if (state.projects.isEmpty) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Proyek Anda",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Container(
+              if (state.projects.isEmpty) {
+                return Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: _cardDecoration(),
-                  child: const Text(
-                    'Belum ada proyek untuk ditampilkan',
-                    style: TextStyle(color: Colors.black54),
+                  child: Text(
+                    state.filter.emptyMessage,
+                    style: const TextStyle(color: Colors.black54),
                   ),
-                ),
-              ],
-            );
-          }
+                );
+              }
 
-          final projects = state.projects.take(5).toList();
+              final projects = state.projects.take(5).toList();
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Proyek Anda",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              ListView.separated(
+              return ListView.separated(
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -339,23 +341,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   final item = projects[index];
                   return ProjectCard(
                     project: item,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProjectDetailPage(
-                            projectId: item.id,
-                            projectTitle: item.title,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () => openProjectDetail(context, item),
                   );
                 },
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }

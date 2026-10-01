@@ -27,17 +27,22 @@ class ProjectCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Text("${(project.progress * 100).toInt()}%"),
+                // Turnamen tidak memiliki progress
+                if (!project.isTurnamen) ...[
+                  const SizedBox(width: 12),
+                  Text("${(project.progress * 100).toInt()}%"),
+                ],
               ],
             ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: project.progress,
-              minHeight: 6,
-              backgroundColor: Colors.grey.shade300,
-              color: Colors.blue,
-            ),
+            if (!project.isTurnamen) ...[
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: project.progress,
+                minHeight: 6,
+                backgroundColor: Colors.grey.shade300,
+                color: Colors.blue,
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -45,12 +50,14 @@ class ProjectCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Nilai:",
-                        style: TextStyle(color: Colors.black54),
+                      Text(
+                        project.isTurnamen ? "Jumlah pemain:" : "Nilai:",
+                        style: const TextStyle(color: Colors.black54),
                       ),
                       Text(
-                        project.nilai,
+                        project.isTurnamen
+                            ? "${project.jumlahPemain} orang"
+                            : project.nilai,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

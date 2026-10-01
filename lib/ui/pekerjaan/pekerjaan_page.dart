@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:saraba_mobile/ui/pekerjaan/detail/project_detail_page.dart';
+import 'package:saraba_mobile/repository/model/project_model.dart';
+import 'package:saraba_mobile/ui/pekerjaan/open_project_detail.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_bloc.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_event.dart';
 import 'package:saraba_mobile/ui/pekerjaan/bloc/pekerjaan_state.dart';
 import 'package:saraba_mobile/ui/widgets/project_card.dart';
+import 'package:saraba_mobile/ui/widgets/project_type_filter.dart';
 
 class PekerjaanPage extends StatefulWidget {
   const PekerjaanPage({super.key});
@@ -85,7 +87,7 @@ class _PekerjaanPageState extends State<PekerjaanPage> {
               }
 
               if (state.projects.isEmpty) {
-                return const Center(child: Text('Belum ada data proyek'));
+                return Center(child: Text(state.filter.emptyMessage));
               }
 
               return _projectSection(context, state);
@@ -100,9 +102,28 @@ class _PekerjaanPageState extends State<PekerjaanPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 0),
-      child: const Text(
-        "Pekerjaan",
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              "Pekerjaan",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+          BlocBuilder<PekerjaanBloc, PekerjaanState>(
+            buildWhen: (previous, current) => previous.filter != current.filter,
+            builder: (context, state) {
+              return ProjectTypeFilter(
+                selected: state.filter,
+                onChanged: (filter) {
+                  context.read<PekerjaanBloc>().add(
+                    ChangePekerjaanFilter(filter),
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -129,17 +150,7 @@ class _PekerjaanPageState extends State<PekerjaanPage> {
             final item = state.projects[index];
             return ProjectCard(
               project: item,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProjectDetailPage(
-                      projectId: item.id,
-                      projectTitle: item.title,
-                    ),
-                  ),
-                );
-              },
+              onTap: () => openProjectDetail(context, item),
             );
           },
         ),
